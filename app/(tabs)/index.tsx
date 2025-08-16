@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useProjectStore } from '@/src/stores/projectStore';
-import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useEffect, useCallback } from 'react';
 import { formatDate, calculateProgress } from '@/src/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '@/src/components/common/Button';
@@ -14,6 +14,13 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  // 화면에 포커스될 때마다 프로젝트 목록 새로고침 (프로젝트 생성 후 돌아올 때)
+  useFocusEffect(
+    useCallback(() => {
+      fetchProjects();
+    }, [fetchProjects])
+  );
   
   const handleCreateProject = () => {
     router.push('/project/create');

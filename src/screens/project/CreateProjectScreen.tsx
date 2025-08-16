@@ -88,7 +88,7 @@ const CreateProjectScreen: React.FC = () => {
       type: selectedRecipe.type,
       startDate,
       expectedEndDate: calculatedEndDate,
-      status: 'planning' as const,
+      status: 'in_progress' as const, // 생성과 동시에 진행 중으로 변경
       notes: notes.trim() || undefined,
       images,
       ingredients: ingredientList,

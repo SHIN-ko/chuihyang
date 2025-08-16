@@ -60,7 +60,17 @@ export interface ProgressLog {
   title: string;
   description?: string;
   images: string[];
+  // 평가 관련 필드 추가
+  ratings?: {
+    taste?: number; // 1-5 별점
+    aroma?: number; // 1-5 별점  
+    appearance?: number; // 1-5 별점
+    overall?: number; // 1-5 별점
+  };
+  color?: string; // 색깔 설명
+  notes?: string; // 추가 메모
   createdAt: string;
+  updatedAt: string;
 }
 
 // 알림 타입

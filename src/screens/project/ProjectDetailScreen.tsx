@@ -14,9 +14,10 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useProjectStore } from '@/src/stores/projectStore';
 import { Ionicons } from '@expo/vector-icons';
-import { Project } from '@/src/types';
+import { Project, ProgressLog } from '@/src/types';
 import { getRecipeById } from '@/src/data/presetRecipes';
 import { formatDate, calculateDetailedProgress } from '@/src/utils/date';
+import StarRating from '@/src/components/common/StarRating';
 
 const { width } = Dimensions.get('window');
 
@@ -64,6 +65,10 @@ const ProjectDetailScreen: React.FC = () => {
 
   const handleEdit = () => {
     router.push(`/project/edit/${project.id}`);
+  };
+
+  const handleAddLog = () => {
+    router.push(`/project/add-log/${project.id}`);
   };
 
   const handleComplete = () => {
@@ -159,6 +164,100 @@ const ProjectDetailScreen: React.FC = () => {
     );
   };
 
+  const renderProgressLogs = () => {
+    const logs = project.progressLogs || [];
+    
+    // 날짜순으로 정렬 (최신 순)
+    const sortedLogs = [...logs].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    if (sortedLogs.length === 0) {
+      return (
+        <View style={styles.noLogsContainer}>
+          <Ionicons name="document-text-outline" size={32} color="#9db89d" />
+          <Text style={styles.noLogsText}>아직 진행 로그가 없습니다</Text>
+          <Text style={styles.noLogsSubText}>첫 번째 로그를 추가해보세요!</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.logsContainer}>
+        {sortedLogs.map((log, index) => (
+          <View key={log.id} style={styles.logItem}>
+            {/* 타임라인 라인 */}
+            <View style={styles.timelineContainer}>
+              <View style={styles.timelineCircle} />
+              {index < sortedLogs.length - 1 && <View style={styles.timelineLine} />}
+            </View>
+            
+            {/* 로그 내용 */}
+            <View style={styles.logContent}>
+              <View style={styles.logHeader}>
+                <Text style={styles.logTitle}>{log.title}</Text>
+                <Text style={styles.logDate}>{formatDate(log.date, 'MM.dd')}</Text>
+              </View>
+              
+              {log.description && (
+                <Text style={styles.logDescription}>{log.description}</Text>
+              )}
+              
+              {/* 평가 표시 */}
+              {log.ratings && (
+                <View style={styles.ratingsContainer}>
+                  {log.ratings.overall && (
+                    <View style={styles.ratingRow}>
+                      <Text style={styles.ratingLabel}>전체</Text>
+                      <StarRating rating={log.ratings.overall} readonly size={16} />
+                    </View>
+                  )}
+                  {log.ratings.taste && log.ratings.taste > 0 && (
+                    <View style={styles.ratingRow}>
+                      <Text style={styles.ratingLabel}>맛</Text>
+                      <StarRating rating={log.ratings.taste} readonly size={16} />
+                    </View>
+                  )}
+                </View>
+              )}
+              
+              {/* 색깔 정보 */}
+              {log.color && (
+                <View style={styles.colorInfo}>
+                  <Ionicons name="color-palette-outline" size={16} color="#9db89d" />
+                  <Text style={styles.colorText}>{log.color}</Text>
+                </View>
+              )}
+              
+              {/* 이미지 */}
+              {log.images && log.images.length > 0 && (
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.logImages}
+                >
+                  {log.images.map((imageUri, imgIndex) => (
+                    <Image
+                      key={imgIndex}
+                      source={{ uri: imageUri }}
+                      style={styles.logImage}
+                      resizeMode="cover"
+                    />
+                  ))}
+                </ScrollView>
+              )}
+              
+              {/* 추가 메모 */}
+              {log.notes && (
+                <Text style={styles.logNotes}>{log.notes}</Text>
+              )}
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#111811" />
@@ -238,6 +337,23 @@ const ProjectDetailScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>이미지</Text>
           {renderImageGrid()}
+        </View>
+
+        {/* 진행 로그 섹션 */}
+        <View style={styles.section}>
+          <View style={styles.logsSectionHeader}>
+            <Text style={styles.sectionTitle}>
+              진행 로그 ({project.progressLogs?.length || 0})
+            </Text>
+            <TouchableOpacity 
+              style={styles.addLogButton}
+              onPress={handleAddLog}
+            >
+              <Ionicons name="add" size={20} color="white" />
+              <Text style={styles.addLogButtonText}>추가</Text>
+            </TouchableOpacity>
+          </View>
+          {renderProgressLogs()}
         </View>
 
         {/* 하단 여백 */}
@@ -502,6 +618,138 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  // 진행 로그 관련 스타일
+  logsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addLogButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#293829',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  addLogButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  noLogsContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    backgroundColor: '#1c261c',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3c533c',
+  },
+  noLogsText: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 12,
+  },
+  noLogsSubText: {
+    color: '#9db89d',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  logsContainer: {
+    backgroundColor: '#1c261c',
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#3c533c',
+  },
+  logItem: {
+    flexDirection: 'row',
+    marginBottom: 24,
+  },
+  timelineContainer: {
+    alignItems: 'center',
+    marginRight: 16,
+    paddingTop: 4,
+  },
+  timelineCircle: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#22c55e',
+    zIndex: 1,
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#3c533c',
+    marginTop: 8,
+    marginBottom: -24,
+  },
+  logContent: {
+    flex: 1,
+  },
+  logHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  logTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+  },
+  logDate: {
+    color: '#9db89d',
+    fontSize: 14,
+  },
+  logDescription: {
+    color: 'white',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  ratingsContainer: {
+    marginBottom: 12,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  ratingLabel: {
+    color: '#9db89d',
+    fontSize: 12,
+    width: 40,
+  },
+  colorInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 6,
+  },
+  colorText: {
+    color: 'white',
+    fontSize: 14,
+  },
+  logImages: {
+    marginBottom: 12,
+  },
+  logImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  logNotes: {
+    color: '#9db89d',
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 8,
   },
 });
 

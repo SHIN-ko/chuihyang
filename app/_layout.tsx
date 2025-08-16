@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAuthStore } from '@/src/stores/authStore';
+import { useNotificationStore } from '@/src/stores/notificationStore';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -50,6 +51,14 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { isAuthenticated } = useAuthStore();
+  const { initializeNotifications } = useNotificationStore();
+
+  useEffect(() => {
+    // 사용자가 인증된 경우에만 알림 시스템 초기화
+    if (isAuthenticated) {
+      initializeNotifications();
+    }
+  }, [isAuthenticated, initializeNotifications]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
