@@ -1,31 +1,180 @@
-import { StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useProjectStore } from '@/src/stores/projectStore';
+import { useEffect } from 'react';
+import { formatDate, calculateProgress } from '@/src/utils/date';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+export default function HomeScreen() {
+  const { projects, fetchProjects, isLoading } = useProjectStore();
 
-export default function TabOneScreen() {
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  const inProgressProjects = projects.filter(p => p.status === 'in_progress');
+  const completedProjects = projects.filter(p => p.status === 'completed');
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* 헤더 */}
+          <View style={styles.header}>
+            <Text style={styles.greeting}>
+              안녕하세요! 👋
+            </Text>
+            <Text style={styles.projectCount}>
+              진행 중인 프로젝트: {inProgressProjects.length}개
+            </Text>
+          </View>
+
+          {/* 진행 중인 프로젝트 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              진행 중인 프로젝트
+            </Text>
+            {inProgressProjects.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>
+                  진행 중인 프로젝트가 없습니다.
+                </Text>
+              </View>
+            ) : (
+              inProgressProjects.map((project) => {
+                const progress = calculateProgress(project.startDate, project.expectedEndDate);
+                return (
+                  <TouchableOpacity
+                    key={project.id}
+                    style={styles.projectCard}
+                  >
+                    <View style={styles.projectHeader}>
+                      <Text style={styles.projectName}>
+                        {project.name}
+                      </Text>
+                      <Text style={styles.progressText}>
+                        {progress}%
+                      </Text>
+                    </View>
+                    <Text style={styles.projectInfo}>
+                      {project.type} • {formatDate(project.startDate, 'MM/dd')} ~ {formatDate(project.expectedEndDate, 'MM/dd')}
+                    </Text>
+                    <View style={styles.progressBar}>
+                      <View 
+                        style={[styles.progressFill, { width: `${progress}%` }]}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </View>
+
+          {/* 완료된 프로젝트 */}
+          {completedProjects.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                완료된 프로젝트
+              </Text>
+              {completedProjects.slice(0, 3).map((project) => (
+                <TouchableOpacity
+                  key={project.id}
+                  style={styles.projectCard}
+                >
+                  <Text style={styles.projectName}>
+                    {project.name}
+                  </Text>
+                  <Text style={styles.projectInfo}>
+                    {project.type} • 완료됨
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#111811',
   },
-  title: {
-    fontSize: 20,
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  greeting: {
+    color: 'white',
+    fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 8,
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+  projectCount: {
+    color: 'white',
+    opacity: 0.7,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  emptyCard: {
+    backgroundColor: '#374151',
+    borderRadius: 8,
+    padding: 16,
+  },
+  emptyText: {
+    color: 'white',
+    opacity: 0.7,
+    textAlign: 'center',
+  },
+  projectCard: {
+    backgroundColor: '#374151',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+  },
+  projectHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  projectName: {
+    color: 'white',
+    fontWeight: '600',
+    flex: 1,
+  },
+  progressText: {
+    color: '#22c55e',
+    fontSize: 14,
+  },
+  projectInfo: {
+    color: 'white',
+    opacity: 0.7,
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  progressBar: {
+    backgroundColor: '#4b5563',
+    borderRadius: 4,
+    height: 8,
+  },
+  progressFill: {
+    backgroundColor: '#22c55e',
+    borderRadius: 4,
+    height: 8,
   },
 });

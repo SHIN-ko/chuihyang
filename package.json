@@ -22,6 +22,7 @@
     "expo": "~53.0.20",
     "expo-constants": "~17.1.7",
     "expo-font": "~13.3.2",
+    "expo-linear-gradient": "~14.1.5",
     "expo-linking": "~7.1.7",
     "expo-notifications": "~0.31.4",
     "expo-router": "~5.1.4",
@@ -30,7 +31,6 @@
     "expo-status-bar": "~2.2.3",
     "expo-system-ui": "~5.0.10",
     "expo-web-browser": "~14.2.0",
-    "nativewind": "^4.1.23",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-hook-form": "^7.62.0",
@@ -59,8 +59,8 @@
     "jest-expo": "~53.0.9",
     "prettier": "^3.6.2",
     "react-native-dotenv": "^3.4.11",
+    "react-native-svg-transformer": "^1.5.1",
     "react-test-renderer": "19.0.0",
-    "tailwindcss": "^4.1.12",
     "typescript": "~5.8.3"
   },
   "private": true
