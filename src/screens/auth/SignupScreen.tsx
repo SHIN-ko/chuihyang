@@ -1,0 +1,301 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Image,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/src/stores/authStore';
+import Button from '@/src/components/common/Button';
+import { Ionicons } from '@expo/vector-icons';
+import { signupSchema, SignupFormData } from '@/src/utils/validation';
+import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
+
+const SignupScreen: React.FC = () => {
+  const router = useRouter();
+  const { signup, isLoading } = useAuthStore();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  const handleSignup = async () => {
+    // 입력 데이터 검증
+    const formData: SignupFormData = {
+      email,
+      password,
+      confirmPassword,
+      nickname: name, // name을 nickname으로 매핑
+      birthdate: birthdate || undefined,
+    };
+
+    try {
+      // Zod 스키마로 검증
+      signupSchema.parse(formData);
+    } catch (error: any) {
+      console.log('Validation error:', error.errors); // 디버깅용
+      const errorMessage = error.errors?.[0]?.message || '입력 정보를 확인해주세요.';
+      const fieldName = error.errors?.[0]?.path?.[0] || '';
+      Alert.alert('입력 오류', `${fieldName ? `[${fieldName}] ` : ''}${errorMessage}`);
+      return;
+    }
+
+    // 회원가입 시도
+    const success = await signup(email, password, name, birthdate);
+    if (success) {
+      router.replace('/(tabs)');
+    } else {
+      Alert.alert('회원가입 실패', '다시 시도해주세요.');
+    }
+  };
+
+  const handleGoBack = () => {
+    router.back();
+  };
+
+  const handleSelectProfileImage = () => {
+    const options = {
+      mediaType: 'photo',
+      quality: 0.7,
+      maxWidth: 500,
+      maxHeight: 500,
+    } as any; // 타입 에러 임시 해결
+
+    launchImageLibrary(options, (response: ImagePickerResponse) => {
+      if (response.didCancel) {
+        return;
+      }
+      
+      if (response.errorMessage) {
+        Alert.alert('오류', '이미지 선택 중 오류가 발생했습니다.');
+        return;
+      }
+
+      if (response.assets && response.assets[0]) {
+        setProfileImage(response.assets[0].uri || null);
+      }
+    });
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>회원가입</Text>
+          <View style={styles.placeholder} />
+        </View>
+
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <View style={styles.content}>
+            {/* 입력 필드들 */}
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="이메일"
+                  placeholderTextColor="#9db89d"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="비밀번호"
+                  placeholderTextColor="#9db89d"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="비밀번호 확인"
+                  placeholderTextColor="#9db89d"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="이름"
+                  placeholderTextColor="#9db89d"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="생년월일 (선택사항, 예: 1990-01-01)"
+                  placeholderTextColor="#9db89d"
+                  value={birthdate}
+                  onChangeText={setBirthdate}
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={10}
+                />
+              </View>
+
+              {/* 프로필 이미지 선택 */}
+              <TouchableOpacity 
+                style={styles.imagePickerContainer}
+                onPress={handleSelectProfileImage}
+              >
+                <View style={styles.imageIcon}>
+                  {profileImage ? (
+                    <Image source={{ uri: profileImage }} style={styles.profilePreview} />
+                  ) : (
+                    <Ionicons name="image" size={24} color="white" />
+                  )}
+                </View>
+                <Text style={styles.imagePickerText}>
+                  {profileImage ? '프로필 이미지 변경' : '프로필 이미지 추가'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* 하단 버튼 */}
+        <View style={styles.bottomContainer}>
+          <Button
+            onPress={handleSignup}
+            loading={isLoading}
+            disabled={isLoading}
+            fullWidth
+          >
+            회원가입
+          </Button>
+          
+          <View style={styles.bottomSpacing} />
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#111811',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#111811',
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+  },
+  placeholder: {
+    width: 48,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  form: {
+    gap: 12,
+  },
+  inputContainer: {
+    marginBottom: 12,
+  },
+  input: {
+    backgroundColor: '#293829',
+    color: 'white',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 8,
+    fontSize: 16,
+    height: 56,
+  },
+  imagePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111811',
+    paddingVertical: 14,
+    gap: 16,
+  },
+  imageIcon: {
+    backgroundColor: '#293829',
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imagePickerText: {
+    color: 'white',
+    fontSize: 16,
+    flex: 1,
+  },
+  profilePreview: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+  bottomContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  bottomSpacing: {
+    height: 20,
+  },
+});
+
+export default SignupScreen;

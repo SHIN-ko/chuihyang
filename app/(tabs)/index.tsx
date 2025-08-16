@@ -1,15 +1,23 @@
 import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useProjectStore } from '@/src/stores/projectStore';
+import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { formatDate, calculateProgress } from '@/src/utils/date';
+import { Ionicons } from '@expo/vector-icons';
+import Button from '@/src/components/common/Button';
 
 export default function HomeScreen() {
   const { projects, fetchProjects, isLoading } = useProjectStore();
+  const router = useRouter();
 
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+  
+  const handleCreateProject = () => {
+    router.push('/project/create');
+  };
 
   const inProgressProjects = projects.filter(p => p.status === 'in_progress');
   const completedProjects = projects.filter(p => p.status === 'completed');
@@ -38,6 +46,13 @@ export default function HomeScreen() {
                 <Text style={styles.emptyText}>
                   진행 중인 프로젝트가 없습니다.
                 </Text>
+                <Button
+                  onPress={handleCreateProject}
+                  variant="outline"
+                  size="sm"
+                >
+                  첫 프로젝트 만들기
+                </Button>
               </View>
             ) : (
               inProgressProjects.map((project) => {
@@ -46,6 +61,7 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     key={project.id}
                     style={styles.projectCard}
+                    onPress={() => router.push(`/project/${project.id}`)}
                   >
                     <View style={styles.projectHeader}>
                       <Text style={styles.projectName}>
@@ -79,6 +95,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={project.id}
                   style={styles.projectCard}
+                  onPress={() => router.push(`/project/${project.id}`)}
                 >
                   <Text style={styles.projectName}>
                     {project.name}
@@ -139,7 +156,9 @@ const styles = StyleSheet.create({
     color: 'white',
     opacity: 0.7,
     textAlign: 'center',
+    marginBottom: 16,
   },
+
   projectCard: {
     backgroundColor: '#374151',
     borderRadius: 8,

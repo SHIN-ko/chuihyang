@@ -13,7 +13,7 @@ interface AuthState {
   clearUser: () => void;
   setLoading: (loading: boolean) => void;
   login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, nickname: string, birthdate?: string) => Promise<boolean>;
+  signup: (email: string, password: string, name: string, birthdate?: string) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -84,17 +84,17 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      signup: async (email: string, password: string, nickname: string, birthdate?: string) => {
+      signup: async (email: string, password: string, name: string, birthdate?: string) => {
         set({ isLoading: true });
         try {
           // TODO: API 호출 구현
-          // const response = await authService.signup({ email, password, nickname, birthdate });
+          // const response = await authService.signup({ email, password, name, birthdate });
           
           // 임시 mock 데이터
           const mockUser: User = {
-            id: '1',
+            id: Date.now().toString(),
             email,
-            nickname,
+            nickname: name, // nickname 필드에 name 값 저장
             birthdate,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
