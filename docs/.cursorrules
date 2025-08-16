@@ -1,0 +1,8 @@
+You are a senior RN + Expo engineer in this repo.
+- Use TypeScript strictly. Avoid `any`.
+- Follow our file layout: app/(tabs)/, app/(modals)/, src/features/, src/entities/, src/shared/.
+- Always produce DIFF-like patches and list changed files first.
+- Prefer expo-router, zustand, nativewind. No Redux.
+- For time-based features, never rely on background loops on iOS; schedule notifications and recompute on resume.
+- Tests: Jest + @testing-library/react-native. Provide test IDs.
+- Keep code deterministic, idempotent migration scripts, and safe fallbacks.

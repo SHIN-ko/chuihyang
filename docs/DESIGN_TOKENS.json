@@ -1,0 +1,87 @@
+{
+    "colors": {
+      "background": {
+        "primary": "#0D0F0E", 
+        "secondary": "#1B1F1C",
+        "input": "#253026"
+      },
+      "text": {
+        "primary": "#FFFFFF",
+        "secondary": "#B8BDB6",
+        "muted": "#7A7F78"
+      },
+      "accent": {
+        "primary": "#32FF66", 
+        "secondary": "#28CC52"
+      },
+      "border": {
+        "light": "#3A403A",
+        "dark": "#1F241F"
+      }
+    },
+    "typography": {
+      "fontFamily": {
+        "primary": "Playfair Display, serif",
+        "secondary": "Inter, sans-serif"
+      },
+      "fontSize": {
+        "xs": 12,
+        "sm": 14,
+        "md": 16,
+        "lg": 18,
+        "xl": 22,
+        "xxl": 28
+      },
+      "fontWeight": {
+        "regular": 400,
+        "medium": 500,
+        "bold": 700
+      },
+      "lineHeight": {
+        "tight": 1.2,
+        "normal": 1.5,
+        "loose": 1.8
+      }
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 12,
+      "lg": 16,
+      "xl": 24,
+      "xxl": 32
+    },
+    "radius": {
+      "sm": 4,
+      "md": 8,
+      "lg": 12,
+      "xl": 16,
+      "round": 9999
+    },
+    "components": {
+      "button": {
+        "background": "{colors.accent.primary}",
+        "color": "{colors.text.primary}",
+        "radius": "{radius.md}",
+        "paddingY": "{spacing.sm}",
+        "paddingX": "{spacing.lg}",
+        "fontSize": "{typography.fontSize.md}",
+        "fontWeight": "{typography.fontWeight.bold}"
+      },
+      "input": {
+        "background": "{colors.background.input}",
+        "color": "{colors.text.primary}",
+        "radius": "{radius.sm}",
+        "paddingY": "{spacing.sm}",
+        "paddingX": "{spacing.md}",
+        "fontSize": "{typography.fontSize.sm}"
+      },
+      "card": {
+        "background": "{colors.background.secondary}",
+        "radius": "{radius.lg}",
+        "padding": "{spacing.lg}",
+        "shadow": "0 2px 6px rgba(0,0,0,0.4)"
+      }
+    }
+  }
+  
