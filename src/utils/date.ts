@@ -39,6 +39,49 @@ export const calculateProgress = (startDate: string, endDate: string): number =>
 };
 
 /**
+ * 프로젝트 상세 진행 상황 계산 (객체 반환)
+ */
+export const calculateDetailedProgress = (startDate: string, endDate: string) => {
+  try {
+    const start = parseISO(startDate);
+    const end = parseISO(endDate);
+    const now = new Date();
+    
+    if (!isValid(start) || !isValid(end)) {
+      return {
+        percentage: 0,
+        totalDays: 0,
+        daysElapsed: 0,
+        remainingDays: 0,
+      };
+    }
+    
+    const totalDays = differenceInDays(end, start);
+    const elapsedDays = Math.max(0, differenceInDays(now, start));
+    const remainingDays = Math.max(0, differenceInDays(end, now));
+    
+    let percentage = 0;
+    if (totalDays > 0) {
+      percentage = Math.round((elapsedDays / totalDays) * 100);
+    }
+    
+    return {
+      percentage: Math.min(100, Math.max(0, percentage)),
+      totalDays: Math.max(0, totalDays),
+      daysElapsed: Math.max(0, elapsedDays),
+      remainingDays: Math.max(0, remainingDays),
+    };
+  } catch {
+    return {
+      percentage: 0,
+      totalDays: 0,
+      daysElapsed: 0,
+      remainingDays: 0,
+    };
+  }
+};
+
+/**
  * 남은 일수 계산
  */
 export const getDaysRemaining = (endDate: string): number => {
