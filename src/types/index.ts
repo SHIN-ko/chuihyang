@@ -13,6 +13,17 @@ export interface User {
 export type ProjectStatus = 'planning' | 'in_progress' | 'completed' | 'paused';
 export type ProjectType = 'whiskey' | 'gin' | 'rum' | 'fruit_wine' | 'vodka' | 'other';
 
+// 미리 정의된 담금주 레시피
+export interface PresetRecipe {
+  id: string;
+  name: string;
+  type: ProjectType;
+  description: string;
+  defaultDuration: number; // 기본 숙성 기간 (일)
+  ingredients: string[]; // 미리 정의된 재료 목록
+  instructions?: string; // 제조 방법
+}
+
 export interface Project {
   id: string;
   userId: string;
@@ -26,6 +37,7 @@ export interface Project {
   images: string[];
   ingredients: Ingredient[];
   progressLogs: ProgressLog[];
+  recipeId?: string; // 사용한 레시피 ID (미리 정의된 레시피 사용 시)
   createdAt: string;
   updatedAt: string;
 }
