@@ -50,8 +50,13 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, checkAuthState } = useAuthStore();
   const { initializeNotifications } = useNotificationStore();
+
+  useEffect(() => {
+    // 앱 시작 시 인증 상태 확인
+    checkAuthState();
+  }, [checkAuthState]);
 
   useEffect(() => {
     // 사용자가 인증된 경우에만 알림 시스템 초기화

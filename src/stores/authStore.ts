@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
 import { User } from '@/src/types';
+import { SupabaseService } from '@/src/services/supabaseService';
+import { supabase } from '@/src/lib/supabase';
 
 interface AuthState {
   user: User | null;
@@ -12,6 +14,7 @@ interface AuthState {
   setUser: (user: User) => void;
   clearUser: () => void;
   setLoading: (loading: boolean) => void;
+  checkAuthState: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string, birthdate?: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -61,24 +64,38 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: loading });
       },
 
+      checkAuthState: async () => {
+        set({ isLoading: true });
+        try {
+          const user = await SupabaseService.getCurrentUser();
+          if (user) {
+            set({ user, isAuthenticated: true, isLoading: false });
+          } else {
+            set({ user: null, isAuthenticated: false, isLoading: false });
+          }
+        } catch (error) {
+          console.error('인증 상태 확인 실패:', error);
+          set({ user: null, isAuthenticated: false, isLoading: false });
+        }
+      },
+
       login: async (email: string, password: string) => {
         set({ isLoading: true });
         try {
-          // TODO: API 호출 구현
-          // const response = await authService.login(email, password);
+          const { session, user: authUser } = await SupabaseService.signIn(email, password);
           
-          // 임시 mock 데이터
-          const mockUser: User = {
-            id: '1',
-            email,
-            nickname: '테스트유저',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
+          if (session && authUser) {
+            const user = await SupabaseService.getCurrentUser();
+            if (user) {
+              set({ user, isAuthenticated: true, isLoading: false });
+              return true;
+            }
+          }
           
-          set({ user: mockUser, isAuthenticated: true, isLoading: false });
-          return true;
+          set({ isLoading: false });
+          return false;
         } catch (error) {
+          console.error('로그인 실패:', error);
           set({ isLoading: false });
           return false;
         }
@@ -87,29 +104,34 @@ export const useAuthStore = create<AuthState>()(
       signup: async (email: string, password: string, name: string, birthdate?: string) => {
         set({ isLoading: true });
         try {
-          // TODO: API 호출 구현
-          // const response = await authService.signup({ email, password, name, birthdate });
+          const { user: authUser, session } = await SupabaseService.signUp(email, password, name, birthdate);
           
-          // 임시 mock 데이터
-          const mockUser: User = {
-            id: Date.now().toString(),
-            email,
-            nickname: name, // nickname 필드에 name 값 저장
-            birthdate,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
+          if (session && authUser) {
+            const user = await SupabaseService.getCurrentUser();
+            if (user) {
+              set({ user, isAuthenticated: true, isLoading: false });
+              return true;
+            }
+          }
           
-          set({ user: mockUser, isAuthenticated: true, isLoading: false });
-          return true;
+          set({ isLoading: false });
+          return false;
         } catch (error) {
+          console.error('회원가입 실패:', error);
           set({ isLoading: false });
           return false;
         }
       },
 
       logout: async () => {
-        set({ user: null, isAuthenticated: false });
+        try {
+          await SupabaseService.signOut();
+          set({ user: null, isAuthenticated: false });
+        } catch (error) {
+          console.error('로그아웃 실패:', error);
+          // 오류가 발생해도 로컬 상태는 초기화
+          set({ user: null, isAuthenticated: false });
+        }
       },
     }),
     {

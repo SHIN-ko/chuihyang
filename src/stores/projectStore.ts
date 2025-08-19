@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { Project, ProjectStatus, ProjectType, ProgressLog } from '@/src/types';
 import NotificationService from '@/src/services/notificationService';
+import { SupabaseService } from '@/src/services/supabaseService';
+import { useAuthStore } from './authStore';
 
 interface ProjectState {
   projects: Project[];
@@ -72,39 +74,30 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   fetchProjects: async () => {
     set({ isLoading: true });
     try {
-      // TODO: API 호출 구현
-      // const response = await projectService.getProjects();
-      
-      // 임시 mock 데이터 - 실제 저장된 프로젝트가 있으면 유지, 없으면 빈 배열
-      const savedProjects = get().projects;
-      
-      // 이미 프로젝트가 있으면 API 호출 없이 기존 데이터 유지
-      if (savedProjects.length > 0) {
-        set({ isLoading: false });
+      const authState = useAuthStore.getState();
+      if (!authState.user) {
+        set({ projects: [], isLoading: false });
         return;
       }
 
-      // 초기 mock 데이터 (처음 앱 실행 시에만)
-      const mockProjects: Project[] = [];
-      
-      set({ projects: mockProjects, isLoading: false });
+      const projects = await SupabaseService.getProjects(authState.user.id);
+      set({ projects, isLoading: false });
     } catch (error) {
-      set({ isLoading: false });
+      console.error('프로젝트 조회 실패:', error);
+      set({ projects: [], isLoading: false });
     }
   },
 
   createProject: async (projectData) => {
     set({ isLoading: true });
     try {
-      // TODO: API 호출 구현
-      
-      const newProject: Project = {
-        ...projectData,
-        id: Date.now().toString(),
-        userId: '1', // 현재 사용자 ID
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      const authState = useAuthStore.getState();
+      if (!authState.user) {
+        set({ isLoading: false });
+        return false;
+      }
+
+      const newProject = await SupabaseService.createProject(projectData, authState.user.id);
       
       get().addProject(newProject);
       
@@ -114,6 +107,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ isLoading: false });
       return true;
     } catch (error) {
+      console.error('프로젝트 생성 실패:', error);
       set({ isLoading: false });
       return false;
     }
@@ -121,12 +115,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   updateProjectStatus: async (id: string, status: ProjectStatus) => {
     try {
-      // TODO: API 호출 구현
-      
-      get().updateProject(id, { 
+      const updates = { 
         status,
         actualEndDate: status === 'completed' ? new Date().toISOString() : undefined,
-      });
+      };
+      
+      await SupabaseService.updateProject(id, updates);
+      get().updateProject(id, updates);
       
       // 프로젝트 완료 시 해당 알림 취소
       if (status === 'completed') {
@@ -135,6 +130,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       
       return true;
     } catch (error) {
+      console.error('프로젝트 상태 업데이트 실패:', error);
       return false;
     }
   },
@@ -164,12 +160,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return false;
       }
 
-      const newLog: ProgressLog = {
-        ...logData,
-        id: `log-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      const newLog = await SupabaseService.addProgressLog(logData);
 
       const updatedProjects = [...projects];
       updatedProjects[projectIndex] = {
@@ -179,9 +170,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       };
       
       set({ projects: updatedProjects });
-
-      // TODO: API 호출로 변경 예정
-      // await projectService.addProgressLog(logData);
       
       return true;
     } catch (error) {
