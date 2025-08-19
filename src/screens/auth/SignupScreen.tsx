@@ -45,7 +45,6 @@ const SignupScreen: React.FC = () => {
       // Zod 스키마로 검증
       signupSchema.parse(formData);
     } catch (error: any) {
-      console.log('Validation error:', error.errors); // 디버깅용
       const errorMessage = error.errors?.[0]?.message || '입력 정보를 확인해주세요.';
       const fieldName = error.errors?.[0]?.path?.[0] || '';
       Alert.alert('입력 오류', `${fieldName ? `[${fieldName}] ` : ''}${errorMessage}`);
@@ -54,8 +53,34 @@ const SignupScreen: React.FC = () => {
 
     // 회원가입 시도
     const success = await signup(email, password, name, birthdate);
+    
     if (success) {
-      router.replace('/(tabs)');
+      // 인증 상태 확인 후 적절한 화면으로 이동
+      const { isAuthenticated } = useAuthStore.getState();
+      
+      if (isAuthenticated) {
+        Alert.alert(
+          '회원가입 완료!', 
+          '환영합니다! 앱을 시작해보세요.',
+          [
+            {
+              text: '시작하기',
+              onPress: () => router.replace('/(tabs)')
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          '회원가입 완료', 
+          '이메일을 확인하여 계정을 활성화해주세요.\n확인 후 로그인할 수 있습니다.',
+          [
+            {
+              text: '확인',
+              onPress: () => router.replace('/auth/login')
+            }
+          ]
+        );
+      }
     } else {
       Alert.alert('회원가입 실패', '다시 시도해주세요.');
     }

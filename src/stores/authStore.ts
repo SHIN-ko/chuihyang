@@ -9,11 +9,13 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasCompletedOnboarding: boolean;
   
   // Actions
-  setUser: (user: User) => void;
+  setUser: (user: User | null) => void;
   clearUser: () => void;
   setLoading: (loading: boolean) => void;
+  setOnboardingCompleted: () => void;
   checkAuthState: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string, birthdate?: string) => Promise<boolean>;
@@ -48,12 +50,13 @@ const secureStorage = {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        hasCompletedOnboarding: false,
 
-      setUser: (user: User) => {
-        set({ user, isAuthenticated: true });
+      setUser: (user: User | null) => {
+        set({ user, isAuthenticated: !!user });
       },
 
       clearUser: () => {
@@ -64,12 +67,17 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: loading });
       },
 
+      setOnboardingCompleted: () => {
+        set({ hasCompletedOnboarding: true });
+      },
+
       checkAuthState: async () => {
         set({ isLoading: true });
         try {
           const user = await SupabaseService.getCurrentUser();
+          
           if (user) {
-            set({ user, isAuthenticated: true, isLoading: false });
+            set({ user: user as User, isAuthenticated: true, isLoading: false });
           } else {
             set({ user: null, isAuthenticated: false, isLoading: false });
           }
@@ -87,7 +95,12 @@ export const useAuthStore = create<AuthState>()(
           if (session && authUser) {
             const user = await SupabaseService.getCurrentUser();
             if (user) {
-              set({ user, isAuthenticated: true, isLoading: false });
+              set({ 
+                user: user as User, 
+                isAuthenticated: true, 
+                isLoading: false,
+                hasCompletedOnboarding: true // 로그인 성공 시에도 온보딩 완료 처리
+              });
               return true;
             }
           }
@@ -106,12 +119,24 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { user: authUser, session } = await SupabaseService.signUp(email, password, name, birthdate);
           
-          if (session && authUser) {
+          if (authUser && session) {
             const user = await SupabaseService.getCurrentUser();
             if (user) {
-              set({ user, isAuthenticated: true, isLoading: false });
+              set({ 
+                user: user as User, 
+                isAuthenticated: true, 
+                isLoading: false,
+                hasCompletedOnboarding: true // 회원가입 성공 시 온보딩 완료 처리
+              });
               return true;
             }
+          } else if (authUser && !session) {
+            // 이메일 확인 필요한 경우도 온보딩 완료 처리
+            set({ 
+              isLoading: false,
+              hasCompletedOnboarding: true
+            });
+            return true;
           }
           
           set({ isLoading: false });
@@ -139,7 +164,8 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => secureStorage),
       partialize: (state) => ({ 
         user: state.user, 
-        isAuthenticated: state.isAuthenticated 
+        isAuthenticated: state.isAuthenticated,
+        hasCompletedOnboarding: state.hasCompletedOnboarding
       }),
     }
   )

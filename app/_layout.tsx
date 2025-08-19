@@ -16,11 +16,6 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: 'auth/onboarding',
-};
-
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
@@ -50,13 +45,13 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated, checkAuthState } = useAuthStore();
+  const { isAuthenticated, checkAuthState, isLoading } = useAuthStore();
   const { initializeNotifications } = useNotificationStore();
 
   useEffect(() => {
-    // 앱 시작 시 인증 상태 확인
+    // 앱 시작 시 인증 상태 확인 (한 번만)
     checkAuthState();
-  }, [checkAuthState]);
+  }, []);
 
   useEffect(() => {
     // 사용자가 인증된 경우에만 알림 시스템 초기화
@@ -65,21 +60,19 @@ function RootLayoutNav() {
     }
   }, [isAuthenticated, initializeNotifications]);
 
+  // 로딩 중에는 null 반환 (스플래시 스크린 유지)
+  if (isLoading) {
+    return null;
+  }
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        {!isAuthenticated ? (
-          <>
-            <Stack.Screen name="auth/onboarding" options={{ headerShown: false }} />
-            <Stack.Screen name="auth" options={{ headerShown: false }} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="project" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          </>
-        )}
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="project" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
   );

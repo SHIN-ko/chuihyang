@@ -11,13 +11,16 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuthStore } from '@/src/stores/authStore';
 
 const { width, height } = Dimensions.get('window');
 
 const OnboardingScreen: React.FC = () => {
   const router = useRouter();
+  const { setOnboardingCompleted } = useAuthStore();
 
   const handleGetStarted = () => {
+    setOnboardingCompleted(); // 온보딩 완료 상태 저장
     router.push('/auth/login');
   };
 

@@ -50,6 +50,8 @@ const ProfileScreen: React.FC = () => {
             setIsLoading(true);
             await logout();
             setIsLoading(false);
+            // 로그아웃 후 로그인 화면으로 이동
+            router.replace('/auth/login');
           },
         },
       ]

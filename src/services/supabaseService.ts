@@ -15,22 +15,20 @@ export class SupabaseService {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            nickname,
+            birthdate: birthdate || null,
+          }
+        }
       });
 
       if (authError) throw authError;
       if (!authData.user) throw new Error('사용자 생성 실패');
 
-      // 프로필 생성
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          email,
-          nickname,
-          birthdate: birthdate || null,
-        });
-
-      if (profileError) throw profileError;
+      // 프로필은 Database Trigger가 자동으로 생성함
+      // 트리거가 실행될 시간을 위해 잠시 대기
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       return { user: authData.user, session: authData.session };
     } catch (error) {
@@ -75,7 +73,23 @@ export class SupabaseService {
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // profiles 테이블이 없거나 RLS 오류인 경우 auth user 정보만으로 임시 사용자 반환
+        if (error.code === 'PGRST116' || error.code === '42501') {
+          return {
+            id: user.id,
+            email: user.email || '',
+            nickname: user.user_metadata?.nickname || user.email?.split('@')[0] || 'User',
+            birthdate: user.user_metadata?.birthdate,
+            profileImage: user.user_metadata?.profile_image_url,
+            createdAt: user.created_at || new Date().toISOString(),
+            updatedAt: user.updated_at || new Date().toISOString(),
+          } as User;
+        }
+        throw error;
+      }
+
+      if (!profile) return null;
 
       return this.transformProfileToUser(profile);
     } catch (error) {

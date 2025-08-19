@@ -6,6 +6,10 @@ import { Database } from '@/src/lib/database.types';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Supabase 환경변수가 설정되지 않았습니다!');
+}
+
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
