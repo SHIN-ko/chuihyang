@@ -224,6 +224,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       set({ isLoading: true });
       
+      // 백엔드 업데이트
+      await SupabaseService.updateProgressLog(logId, updates);
+      
       const { projects } = get();
       let updated = false;
 
@@ -263,6 +266,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   deleteProgressLog: async (projectId: string, logId: string) => {
     try {
       set({ isLoading: true });
+      
+      // 백엔드에서 삭제
+      await SupabaseService.deleteProgressLog(logId);
       
       const { projects } = get();
       const projectIndex = projects.findIndex(p => p.id === projectId);

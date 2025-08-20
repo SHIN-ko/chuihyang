@@ -24,7 +24,7 @@ const { width } = Dimensions.get('window');
 const ProjectDetailScreen: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { projects, updateProject, deleteProject, deleteProjectData, updateProjectStatus, isLoading } = useProjectStore();
+  const { projects, updateProject, deleteProject, deleteProjectData, updateProjectStatus, updateProgressLog, deleteProgressLog, isLoading } = useProjectStore();
   
   const [project, setProject] = useState<Project | null>(null);
 
@@ -133,6 +133,36 @@ const ProjectDetailScreen: React.FC = () => {
     );
   };
 
+  const handleEditLog = (logId: string) => {
+    router.push(`/project/edit-log/${logId}?projectId=${project.id}`);
+  };
+
+  const handleDeleteLog = (logId: string, logTitle: string) => {
+    Alert.alert(
+      '로그 삭제',
+      `"${logTitle}" 로그를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`,
+      [
+        {
+          text: '취소',
+          style: 'cancel',
+        },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await deleteProgressLog(project.id, logId);
+            
+            if (success) {
+              Alert.alert('삭제 완료', '로그가 삭제되었습니다.');
+            } else {
+              Alert.alert('오류', '로그 삭제에 실패했습니다.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const getProjectTypeLabel = (type: string) => {
     switch (type) {
       case 'whiskey': return '위스키';
@@ -226,8 +256,24 @@ const ProjectDetailScreen: React.FC = () => {
             {/* 로그 내용 */}
             <View style={styles.logContent}>
               <View style={styles.logHeader}>
-                <Text style={styles.logTitle}>{log.title}</Text>
-                <Text style={styles.logDate}>{formatDate(log.date, 'MM.dd')}</Text>
+                <View style={styles.logHeaderLeft}>
+                  <Text style={styles.logTitle}>{log.title}</Text>
+                  <Text style={styles.logDate}>{formatDate(log.date, 'MM.dd')}</Text>
+                </View>
+                <View style={styles.logActions}>
+                  <TouchableOpacity 
+                    style={styles.logActionButton}
+                    onPress={() => handleEditLog(log.id)}
+                  >
+                    <Ionicons name="create-outline" size={18} color="#9db89d" />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.logActionButton}
+                    onPress={() => handleDeleteLog(log.id, log.title)}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#dc2626" />
+                  </TouchableOpacity>
+                </View>
               </View>
               
               {log.description && (
@@ -745,8 +791,20 @@ const styles = StyleSheet.create({
   logHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
+  },
+  logHeaderLeft: {
+    flex: 1,
+  },
+  logActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logActionButton: {
+    padding: 4,
+    borderRadius: 4,
   },
   logTitle: {
     color: 'white',
