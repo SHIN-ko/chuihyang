@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,14 @@ import {
   StyleSheet,
   StatusBar,
   Alert,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useProjectStore } from '@/src/stores/projectStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { Ionicons } from '@expo/vector-icons';
+import { BRAND_COLORS, SHADOWS, ANIMATIONS } from '@/constants/Colors';
+import GlassCard from '@/src/components/common/GlassCard';
 import * as Notifications from 'expo-notifications';
 import NotificationService from '@/src/services/notificationService';
 import { NotificationDiagnostics, DiagnosticResult } from '@/src/utils/notificationDiagnostics';
@@ -24,6 +27,10 @@ const NotificationDebugScreen: React.FC = () => {
   const [debugInfo, setDebugInfo] = useState<any>({});
   const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   const runDiagnostics = async () => {
     setIsLoading(true);
@@ -102,6 +109,20 @@ const NotificationDebugScreen: React.FC = () => {
 
   useEffect(() => {
     runDiagnostics();
+    
+    // 초기 애니메이션
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const formatDate = (dateString: string) => {
@@ -181,35 +202,48 @@ const NotificationDebugScreen: React.FC = () => {
 
   const renderDebugSection = (title: string, data: any) => {
     return (
-      <View style={styles.section}>
+      <GlassCard style={styles.section} intensity="light">
         <Text style={styles.sectionTitle}>{title}</Text>
         <View style={styles.dataContainer}>
           <Text style={styles.dataText}>
             {typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data)}
           </Text>
         </View>
-      </View>
+      </GlassCard>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLORS.background.primary} />
+      
+      {/* 배경 그라디언트 */}
+      <View style={styles.backgroundGradient} />
       
       {/* 헤더 */}
-      <View style={styles.header}>
+      <GlassCard style={styles.header} intensity="medium">
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={BRAND_COLORS.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>알림 디버그</Text>
         <TouchableOpacity onPress={runDiagnostics} style={styles.refreshButton}>
-          <Ionicons name="refresh" size={24} color="#9db89d" />
+          <Ionicons name="refresh" size={24} color={BRAND_COLORS.accent.primary} />
         </TouchableOpacity>
-      </View>
+      </GlassCard>
+
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* 빠른 액션 */}
-        <View style={styles.section}>
+        <GlassCard style={styles.section} intensity="medium">
           <Text style={styles.sectionTitle}>빠른 진단</Text>
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
@@ -236,22 +270,22 @@ const NotificationDebugScreen: React.FC = () => {
               <Text style={styles.buttonText}>모든 알림 삭제</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </GlassCard>
 
         {/* 진단 요약 */}
         {diagnosticResults.length > 0 && (
-          <View style={styles.section}>
+          <GlassCard style={styles.section} intensity="light">
             <Text style={styles.sectionTitle}>🔍 종합 진단 결과</Text>
             {renderDiagnosticSummary()}
-          </View>
+          </GlassCard>
         )}
 
         {/* 상세 진단 결과 */}
         {diagnosticResults.length > 0 && (
-          <View style={styles.section}>
+          <GlassCard style={styles.section} intensity="light">
             <Text style={styles.sectionTitle}>📋 상세 진단</Text>
             {diagnosticResults.map((result, index) => renderDiagnosticResult(result, index))}
-          </View>
+          </GlassCard>
         )}
 
         {/* 진단 결과 */}
@@ -262,7 +296,7 @@ const NotificationDebugScreen: React.FC = () => {
             {renderDebugSection('2. 예약된 알림 개수', debugInfo.scheduledNotifications?.length || 0)}
             
             {debugInfo.scheduledNotifications?.length > 0 && (
-              <View style={styles.section}>
+              <GlassCard style={styles.section} intensity="light">
                 <Text style={styles.sectionTitle}>예약된 알림 상세</Text>
                 {debugInfo.scheduledNotifications.map((notif: any, index: number) => (
                   <View key={index} style={styles.notificationItem}>
@@ -277,7 +311,7 @@ const NotificationDebugScreen: React.FC = () => {
                     </Text>
                   </View>
                 ))}
-              </View>
+              </GlassCard>
             )}
             
             {renderDebugSection('3. 알림 설정', {
@@ -296,7 +330,7 @@ const NotificationDebugScreen: React.FC = () => {
             {renderDebugSection('5. 프로젝트 개수', debugInfo.projects?.length || 0)}
             
             {debugInfo.projects?.length > 0 && (
-              <View style={styles.section}>
+              <GlassCard style={styles.section} intensity="light">
                 <Text style={styles.sectionTitle}>프로젝트 목록</Text>
                 {debugInfo.projects.map((project: any, index: number) => (
                   <View key={index} style={styles.projectItem}>
@@ -309,13 +343,14 @@ const NotificationDebugScreen: React.FC = () => {
                     </Text>
                   </View>
                 ))}
-              </View>
+              </GlassCard>
             )}
           </>
         )}
 
         <View style={styles.bottomSpacing} />
-      </ScrollView>
+        </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 };
@@ -323,99 +358,131 @@ const NotificationDebugScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111811',
+    backgroundColor: BRAND_COLORS.background.primary,
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: BRAND_COLORS.background.secondary,
+    opacity: 0.3,
+  },
+  content: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3c533c',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    margin: 20,
+    marginBottom: 0,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: BRAND_COLORS.background.surface,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.border.secondary,
+    ...SHADOWS.neumorphism.outset,
   },
   headerTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: BRAND_COLORS.text.primary,
+    fontSize: 20,
+    fontWeight: '700',
     flex: 1,
     textAlign: 'center',
+    letterSpacing: -0.3,
   },
   refreshButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: BRAND_COLORS.background.surface,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.border.accent,
+    ...SHADOWS.neumorphism.outset,
   },
   scrollView: {
     flex: 1,
+    paddingHorizontal: 20,
   },
   section: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    padding: 20,
+    marginBottom: 16,
   },
   sectionTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    color: BRAND_COLORS.text.primary,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
   buttonContainer: {
     gap: 12,
   },
   actionButton: {
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    ...SHADOWS.neumorphism.outset,
   },
   primaryButton: {
-    backgroundColor: '#22c55e',
+    backgroundColor: BRAND_COLORS.accent.primary,
+    borderColor: BRAND_COLORS.accent.secondary,
   },
   secondaryButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: BRAND_COLORS.background.surface,
+    borderColor: BRAND_COLORS.border.accent,
   },
   dangerButton: {
-    backgroundColor: '#ef4444',
+    backgroundColor: BRAND_COLORS.background.surface,
+    borderColor: `${BRAND_COLORS.semantic.error}40`,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: BRAND_COLORS.text.primary,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   dataContainer: {
-    backgroundColor: '#1c261c',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: BRAND_COLORS.background.elevated,
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#3c533c',
+    borderColor: BRAND_COLORS.border.secondary,
+    ...SHADOWS.neumorphism.inset,
   },
   dataText: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 12,
     fontFamily: 'monospace',
   },
   notificationItem: {
-    backgroundColor: '#1c261c',
+    backgroundColor: BRAND_COLORS.background.surface,
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#3c533c',
+    borderColor: BRAND_COLORS.border.secondary,
   },
   notificationTitle: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   notificationBody: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 12,
     marginBottom: 4,
   },
@@ -424,21 +491,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   projectItem: {
-    backgroundColor: '#1c261c',
+    backgroundColor: BRAND_COLORS.background.surface,
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#3c533c',
+    borderColor: BRAND_COLORS.border.secondary,
   },
   projectName: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   projectInfo: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 12,
     marginBottom: 2,
   },
@@ -450,11 +517,11 @@ const styles = StyleSheet.create({
     height: 32,
   },
   summaryContainer: {
-    backgroundColor: '#1c261c',
+    backgroundColor: BRAND_COLORS.background.surface,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#3c533c',
+    borderColor: BRAND_COLORS.border.secondary,
   },
   summaryStats: {
     flexDirection: 'row',
@@ -465,7 +532,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 4,
@@ -481,24 +548,24 @@ const styles = StyleSheet.create({
     borderTopColor: '#3c533c',
   },
   actionsTitle: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 8,
   },
   actionText: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 12,
     marginBottom: 4,
     lineHeight: 16,
   },
   diagnosticItem: {
-    backgroundColor: '#1c261c',
+    backgroundColor: BRAND_COLORS.background.surface,
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#3c533c',
+    borderColor: BRAND_COLORS.border.secondary,
   },
   diagnosticHeader: {
     flexDirection: 'row',
@@ -510,7 +577,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   diagnosticCategory: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 14,
     fontWeight: 'bold',
   },
@@ -519,13 +586,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   diagnosticDetails: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 12,
     marginBottom: 4,
     fontStyle: 'italic',
   },
   diagnosticAction: {
-    color: '#3b82f6',
+    color: BRAND_COLORS.accent.primary,
     fontSize: 12,
     fontWeight: '500',
   },

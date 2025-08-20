@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { useProjectStore } from '@/src/stores/projectStore';
 import Button from '@/src/components/common/Button';
 import { Ionicons } from '@expo/vector-icons';
+import { BRAND_COLORS } from '@/constants/Colors';
 import { ProjectType, PresetRecipe } from '@/src/types';
 import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
 import { PRESET_RECIPES, getRecipeById } from '@/src/data/presetRecipes';
@@ -142,7 +143,7 @@ const CreateProjectScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLORS.background.primary} />
       
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -151,7 +152,7 @@ const CreateProjectScreen: React.FC = () => {
         {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="white" />
+            <Ionicons name="close" size={24} color={BRAND_COLORS.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>새 프로젝트</Text>
           <View style={styles.placeholderView} />
@@ -181,7 +182,7 @@ const CreateProjectScreen: React.FC = () => {
               <Ionicons 
                 name={showRecipePicker ? "chevron-up" : "chevron-down"} 
                 size={20} 
-                color="#9db89d" 
+                color={BRAND_COLORS.text.secondary} 
               />
             </TouchableOpacity>
 
@@ -311,7 +312,7 @@ const CreateProjectScreen: React.FC = () => {
                           style={styles.removeImageButton}
                           onPress={() => removeImage(index)}
                         >
-                          <Ionicons name="close-circle" size={20} color="#ef4444" />
+                          <Ionicons name="close-circle" size={20} color={BRAND_COLORS.semantic.error} />
                         </TouchableOpacity>
                       </View>
                     ))}

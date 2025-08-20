@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { useAuthStore } from '@/src/stores/authStore';
+import { useThemeValues } from '@/src/hooks/useThemedStyles';
 
 export default function IndexScreen() {
   const { isAuthenticated, isLoading, hasCompletedOnboarding } = useAuthStore();
+  const { colors, brandColors } = useThemeValues();
   const [timeoutReached, setTimeoutReached] = useState(false);
 
   useEffect(() => {
@@ -29,15 +31,15 @@ export default function IndexScreen() {
         flex: 1, 
         justifyContent: 'center', 
         alignItems: 'center', 
-        backgroundColor: '#111811',
+        backgroundColor: colors.background.primary,
         padding: 20
       }}>
-        <ActivityIndicator size="large" color="#22c55e" />
-        <Text style={{ color: 'white', marginTop: 16, textAlign: 'center' }}>
+        <ActivityIndicator size="large" color={brandColors.accent.primary} />
+        <Text style={{ color: colors.text.primary, marginTop: 16, textAlign: 'center' }}>
           앱을 초기화하는 중...
         </Text>
         {timeoutReached && (
-          <Text style={{ color: '#ff6b6b', marginTop: 8, textAlign: 'center', fontSize: 12 }}>
+          <Text style={{ color: brandColors.semantic.error, marginTop: 8, textAlign: 'center', fontSize: 12 }}>
             로딩이 오래 걸리고 있습니다.{'\n'}
             네트워크 연결을 확인해주세요.
           </Text>

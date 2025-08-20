@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,40 @@ import {
   StatusBar,
   ScrollView,
   Alert,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { Ionicons } from '@expo/vector-icons';
 import TimePicker from '@/src/components/common/TimePicker';
+import { BRAND_COLORS, SHADOWS, ANIMATIONS } from '@/constants/Colors';
+import GlassCard from '@/src/components/common/GlassCard';
 
 const QuietHoursScreen: React.FC = () => {
   const router = useRouter();
   const { settings, updateSettings, isLoading } = useNotificationStore();
   
   const [localSettings, setLocalSettings] = useState(settings.quietHours);
+  
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  
+  React.useEffect(() => {
+    // 초기 애니메이션
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleSave = async () => {
     try {
@@ -71,51 +94,63 @@ const QuietHoursScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLORS.background.primary} />
+      
+      {/* 배경 그라디언트 */}
+      <View style={styles.backgroundGradient} />
       
       {/* 헤더 */}
-      <View style={styles.header}>
+      <GlassCard style={styles.header} intensity="medium">
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={BRAND_COLORS.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>방해 금지 시간</Text>
         <View style={styles.placeholder} />
-      </View>
+      </GlassCard>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* 설명 */}
-        <View style={styles.descriptionContainer}>
-          <View style={styles.descriptionHeader}>
-            <Ionicons name="moon" size={24} color="#22c55e" />
-            <Text style={styles.descriptionTitle}>방해 금지 시간</Text>
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* 설명 */}
+          <GlassCard style={styles.descriptionContainer} intensity="light">
+            <View style={styles.descriptionHeader}>
+              <Ionicons name="moon" size={24} color={BRAND_COLORS.accent.primary} />
+              <Text style={styles.descriptionTitle}>방해 금지 시간</Text>
           </View>
           <Text style={styles.descriptionText}>
             설정한 시간 동안에는 알림이 발송되지 않습니다. 
             긴급하지 않은 프로젝트 알림을 차단하여 편안한 시간을 보내세요.
-          </Text>
-        </View>
+            </Text>
+          </GlassCard>
 
-        {/* 활성화 토글 */}
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.toggleRow}
-            onPress={() => handleEnabledChange(!localSettings.enabled)}
-          >
-            <View style={styles.toggleInfo}>
-              <Text style={styles.toggleTitle}>방해 금지 시간 사용</Text>
-              <Text style={styles.toggleDescription}>
-                {localSettings.enabled ? formatTimeRange() : '비활성화됨'}
-              </Text>
-            </View>
-            <View style={[styles.toggle, localSettings.enabled && styles.toggleActive]}>
-              <View style={[styles.toggleThumb, localSettings.enabled && styles.toggleThumbActive]} />
-            </View>
-          </TouchableOpacity>
-        </View>
+          {/* 활성화 토글 */}
+          <GlassCard style={styles.section} intensity="medium">
+            <TouchableOpacity
+              style={styles.toggleRow}
+              onPress={() => handleEnabledChange(!localSettings.enabled)}
+            >
+              <View style={styles.toggleInfo}>
+                <Text style={styles.toggleTitle}>방해 금지 시간 사용</Text>
+                <Text style={styles.toggleDescription}>
+                  {localSettings.enabled ? formatTimeRange() : '비활성화됨'}
+                </Text>
+              </View>
+              <View style={[styles.toggle, localSettings.enabled && styles.toggleActive]}>
+                <View style={[styles.toggleThumb, localSettings.enabled && styles.toggleThumbActive]} />
+              </View>
+            </TouchableOpacity>
+          </GlassCard>
 
-        {/* 시간 설정 */}
-        {localSettings.enabled && (
-          <View style={styles.section}>
+          {/* 시간 설정 */}
+          {localSettings.enabled && (
+            <GlassCard style={styles.section} intensity="medium">
             <Text style={styles.sectionTitle}>시간 설정</Text>
             
             <View style={styles.timeSection}>
@@ -134,58 +169,59 @@ const QuietHoursScreen: React.FC = () => {
               />
             </View>
 
-            {/* 시간 범위 미리보기 */}
-            <View style={styles.previewContainer}>
-              <Ionicons name="time-outline" size={16} color="#9db89d" />
-              <Text style={styles.previewText}>
-                {formatTimeRange()} 동안 알림이 차단됩니다
-              </Text>
-            </View>
-          </View>
-        )}
+              {/* 시간 범위 미리보기 */}
+              <View style={styles.previewContainer}>
+                <Ionicons name="time-outline" size={16} color={BRAND_COLORS.text.secondary} />
+                <Text style={styles.previewText}>
+                  {formatTimeRange()} 동안 알림이 차단됩니다
+                </Text>
+              </View>
+            </GlassCard>
+          )}
 
-        {/* 예시 설명 */}
-        <View style={styles.exampleContainer}>
+          {/* 예시 설명 */}
+          <GlassCard style={styles.exampleContainer} intensity="light">
           <Text style={styles.exampleTitle}>📱 알림 차단 예시</Text>
           <View style={styles.exampleList}>
             <View style={styles.exampleItem}>
-              <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
+              <Ionicons name="checkmark-circle" size={16} color={BRAND_COLORS.accent.primary} />
               <Text style={styles.exampleText}>3일 전 완성 알림</Text>
             </View>
             <View style={styles.exampleItem}>
-              <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
+              <Ionicons name="checkmark-circle" size={16} color={BRAND_COLORS.accent.primary} />
               <Text style={styles.exampleText}>중간 점검 알림</Text>
             </View>
             <View style={styles.exampleItem}>
-              <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
+              <Ionicons name="checkmark-circle" size={16} color={BRAND_COLORS.accent.primary} />
               <Text style={styles.exampleText}>완성일 알림</Text>
             </View>
           </View>
-          <Text style={styles.exampleNote}>
-            ※ 긴급 알림은 방해 금지 시간에도 발송될 수 있습니다
-          </Text>
-        </View>
-      </ScrollView>
-
-      {/* 저장 버튼 */}
-      {hasChanges() && (
-        <View style={styles.saveContainer}>
-          <TouchableOpacity
-            style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
-            onPress={handleSave}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Ionicons name="time-outline" size={20} color="white" />
-            ) : (
-              <Ionicons name="checkmark" size={20} color="white" />
-            )}
-            <Text style={styles.saveButtonText}>
-              {isLoading ? '저장 중...' : '변경사항 저장'}
+            <Text style={styles.exampleNote}>
+              ※ 긴급 알림은 방해 금지 시간에도 발송될 수 있습니다
             </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+          </GlassCard>
+        </ScrollView>
+
+        {/* 저장 버튼 */}
+        {hasChanges() && (
+          <View style={styles.saveContainer}>
+            <TouchableOpacity
+              style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+              onPress={handleSave}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Ionicons name="time-outline" size={20} color={BRAND_COLORS.text.primary} />
+              ) : (
+                <Ionicons name="checkmark" size={20} color={BRAND_COLORS.text.primary} />
+              )}
+              <Text style={styles.saveButtonText}>
+                {isLoading ? '저장 중...' : '변경사항 저장'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </Animated.View>
     </SafeAreaView>
   );
 };
@@ -193,43 +229,58 @@ const QuietHoursScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111811',
+    backgroundColor: BRAND_COLORS.background.primary,
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: BRAND_COLORS.background.secondary,
+    opacity: 0.3,
+  },
+  content: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3c533c',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    margin: 20,
+    marginBottom: 0,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: BRAND_COLORS.background.surface,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.border.secondary,
+    ...SHADOWS.neumorphism.outset,
   },
   headerTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: BRAND_COLORS.text.primary,
+    fontSize: 20,
+    fontWeight: '700',
     flex: 1,
     textAlign: 'center',
+    letterSpacing: -0.3,
   },
   placeholder: {
-    width: 40,
+    width: 44,
   },
   scrollView: {
     flex: 1,
+    paddingHorizontal: 20,
   },
   descriptionContainer: {
-    margin: 16,
     padding: 20,
-    backgroundColor: '#1c261c',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#3c533c',
+    marginBottom: 16,
   },
   descriptionHeader: {
     flexDirection: 'row',
@@ -237,48 +288,48 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   descriptionTitle: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 12,
   },
   descriptionText: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
   },
   section: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    padding: 20,
+    marginBottom: 16,
   },
   sectionTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    color: BRAND_COLORS.text.primary,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 20,
+    letterSpacing: -0.3,
   },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1c261c',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#3c533c',
+    borderColor: BRAND_COLORS.border.secondary,
   },
   toggleInfo: {
     flex: 1,
     marginRight: 16,
   },
   toggleTitle: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
   },
   toggleDescription: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 14,
   },
   toggle: {
@@ -290,7 +341,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   toggleActive: {
-    backgroundColor: '#22c55e',
+    backgroundColor: BRAND_COLORS.accent.primary,
   },
   toggleThumb: {
     width: 26,
@@ -308,26 +359,22 @@ const styles = StyleSheet.create({
   previewContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#293829',
+    backgroundColor: BRAND_COLORS.background.elevated,
     borderRadius: 8,
     padding: 12,
     marginTop: 8,
   },
   previewText: {
-    color: '#22c55e',
+    color: BRAND_COLORS.accent.primary,
     fontSize: 14,
     marginLeft: 8,
   },
   exampleContainer: {
-    margin: 16,
     padding: 20,
-    backgroundColor: '#1c261c',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#3c533c',
+    marginBottom: 16,
   },
   exampleTitle: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 16,
@@ -341,38 +388,43 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   exampleText: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 14,
     marginLeft: 8,
   },
   exampleNote: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 12,
     fontStyle: 'italic',
     textAlign: 'center',
   },
   saveContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: '#3c533c',
+    borderTopColor: BRAND_COLORS.border.secondary,
   },
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#22c55e',
+    backgroundColor: BRAND_COLORS.accent.primary,
     borderRadius: 12,
     paddingVertical: 16,
     gap: 8,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.accent.secondary,
+    ...SHADOWS.glass.medium,
   },
   saveButtonDisabled: {
-    backgroundColor: '#666',
+    backgroundColor: BRAND_COLORS.background.elevated,
+    opacity: 0.6,
   },
   saveButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: BRAND_COLORS.text.primary,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
 });
 

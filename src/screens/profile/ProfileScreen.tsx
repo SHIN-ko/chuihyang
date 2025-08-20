@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,15 +8,22 @@ import {
   Switch,
   Alert,
   StyleSheet,
+  Animated,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
+import { useTheme } from '@/src/contexts/ThemeContext';
+import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 import { Ionicons } from '@expo/vector-icons';
+import GlassCard from '@/src/components/common/GlassCard';
 
 const ProfileScreen: React.FC = () => {
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const { theme, toggleTheme } = useTheme();
+  const { colors, brandColors } = useThemeValues();
   const { 
     settings: notificationSettings, 
     isInitialized: notificationInitialized,
@@ -26,12 +33,30 @@ const ProfileScreen: React.FC = () => {
   } = useNotificationStore();
 
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     // 컴포넌트 마운트 시 알림 시스템 초기화
     if (!notificationInitialized) {
       initializeNotifications();
     }
+    
+    // 초기 애니메이션
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [notificationInitialized, initializeNotifications]);
 
   const handleLogout = () => {
@@ -83,28 +108,223 @@ const ProfileScreen: React.FC = () => {
         <Switch
           value={notificationSettings[key] as boolean}
           onValueChange={(value) => updateNotificationSettings({ [key]: value })}
-          trackColor={{ false: '#3c533c', true: '#22c55e' }}
-          thumbColor="#ffffff"
+          trackColor={{ false: colors.background.surface, true: brandColors.accent.primary }}
+          thumbColor={colors.text.primary}
         />
       </View>
     );
   };
 
+  const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    backgroundGradient: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      backgroundColor: colors.background.secondary,
+      opacity: 0.3,
+    },
+    content: {
+      flex: 1,
+    },
+    scrollView: {
+      flex: 1,
+      paddingHorizontal: 20,
+    },
+    header: {
+      padding: 24,
+      marginBottom: 16,
+      alignItems: 'center',
+    },
+    headerTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text.primary,
+      marginBottom: 8,
+      letterSpacing: -0.5,
+    },
+    headerSubtitle: {
+      fontSize: 16,
+      color: colors.text.secondary,
+      textAlign: 'center',
+    },
+    section: {
+      padding: 20,
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.text.primary,
+      marginBottom: 20,
+      letterSpacing: -0.3,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    userInfoContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      ...shadows.neumorphism.outset,
+      backgroundColor: colors.background.elevated,
+      borderRadius: 16,
+      padding: 16,
+    },
+    userAvatar: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.background.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 16,
+      borderWidth: 1,
+      borderColor: colors.border.accent,
+    },
+    userInfo: {
+      flex: 1,
+    },
+    userName: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text.primary,
+      marginBottom: 4,
+    },
+    userEmail: {
+      fontSize: 14,
+      color: colors.text.secondary,
+      marginBottom: 2,
+    },
+    userBirthdate: {
+      fontSize: 13,
+      color: colors.text.muted,
+    },
+    settingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.secondary,
+    },
+    settingInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    settingIcon: {
+      marginRight: 12,
+    },
+    settingTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text.primary,
+      marginBottom: 2,
+    },
+    settingDescription: {
+      fontSize: 13,
+      color: colors.text.secondary,
+    },
+    switch: {
+      marginLeft: 12,
+    },
+    testButton: {
+      backgroundColor: colors.background.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border.accent,
+      ...shadows.neumorphism.outset,
+    },
+    testButtonText: {
+      color: colors.text.primary,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.secondary,
+    },
+    menuInfo: {
+      flex: 1,
+      marginLeft: 16,
+    },
+    menuTitle: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text.primary,
+      marginBottom: 2,
+    },
+    menuDescription: {
+      fontSize: 13,
+      color: colors.text.secondary,
+    },
+    logoutItem: {
+      borderBottomWidth: 0,
+    },
+    logoutButton: {
+      backgroundColor: `${brandColors.semantic.error}20`,
+      borderColor: `${brandColors.semantic.error}40`,
+      borderWidth: 1,
+      borderRadius: 12,
+      paddingVertical: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      ...shadows.neumorphism.outset,
+    },
+    logoutText: {
+      color: brandColors.semantic.error,
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
+    bottomSpacing: {
+      height: 20,
+    },
+  }));
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>프로필</Text>
-          <Text style={styles.headerSubtitle}>계정 및 앱 설정을 관리하세요</Text>
-        </View>
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
+      
+      {/* 배경 그라디언트 */}
+      <View style={styles.backgroundGradient} />
+      
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* 헤더 */}
+          <GlassCard style={styles.header} intensity="medium">
+            <Text style={styles.headerTitle}>프로필</Text>
+            <Text style={styles.headerSubtitle}>계정 및 앱 설정을 관리하세요</Text>
+          </GlassCard>
 
-        {/* 사용자 정보 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>계정 정보</Text>
-          <View style={styles.userInfoContainer}>
-            <View style={styles.userAvatar}>
-              <Ionicons name="person" size={32} color="#22c55e" />
+          {/* 사용자 정보 */}
+          <GlassCard style={styles.section} intensity="light">
+            <Text style={styles.sectionTitle}>계정 정보</Text>
+            <View style={styles.userInfoContainer}>
+              <View style={styles.userAvatar}>
+                <Ionicons name="person" size={32} color={brandColors.accent.primary} />
             </View>
             <View style={styles.userInfo}>
               <Text style={styles.userName}>{user?.nickname || '사용자'}</Text>
@@ -114,10 +334,46 @@ const ProfileScreen: React.FC = () => {
               )}
             </View>
           </View>
-        </View>
+          </GlassCard>
 
-        {/* 알림 설정 */}
-        <View style={styles.section}>
+          {/* 테마 설정 */}
+          <GlassCard style={styles.section} intensity="medium">
+            <Text style={styles.sectionTitle}>테마 설정</Text>
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={toggleTheme}
+            >
+              <View style={styles.settingInfo}>
+                <Ionicons 
+                  name={theme === 'dark' ? 'moon' : 'sunny'} 
+                  size={20} 
+                  color={brandColors.accent.primary} 
+                  style={styles.settingIcon}
+                />
+                <View>
+                  <Text style={styles.settingTitle}>
+                    {theme === 'dark' ? '다크 모드' : '라이트 모드'}
+                  </Text>
+                  <Text style={styles.settingDescription}>
+                    {theme === 'dark' ? '어두운 테마를 사용합니다' : '밝은 테마를 사용합니다'}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={theme === 'dark'}
+                onValueChange={toggleTheme}
+                trackColor={{
+                  false: colors.background.elevated,
+                  true: brandColors.accent.primary,
+                }}
+                thumbColor={colors.text.primary}
+                style={styles.switch}
+              />
+            </TouchableOpacity>
+          </GlassCard>
+
+          {/* 알림 설정 */}
+          <GlassCard style={styles.section} intensity="medium">
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>알림 설정</Text>
             {notificationSettings.enabled && (
@@ -170,242 +426,99 @@ const ProfileScreen: React.FC = () => {
                     }
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#9db89d" />
+                <Ionicons name="chevron-forward" size={20} color={colors.text.muted} />
               </TouchableOpacity>
             </>
           )}
-        </View>
+          </GlassCard>
 
-        {/* 앱 정보 */}
-        <View style={styles.section}>
+          {/* 앱 정보 */}
+          <GlassCard style={styles.section} intensity="medium">
           <Text style={styles.sectionTitle}>알림 관리</Text>
           
           <TouchableOpacity 
             style={styles.menuItem}
             onPress={() => router.push('/profile/notification-history' as any)}
           >
-            <Ionicons name="time-outline" size={24} color="#9db89d" />
+            <Ionicons name="time-outline" size={24} color={colors.text.secondary} />
             <View style={styles.menuInfo}>
               <Text style={styles.menuTitle}>알림 히스토리</Text>
               <Text style={styles.menuDescription}>예약된 알림 목록을 확인합니다</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9db89d" />
+            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.menuItem}
             onPress={() => router.push('/profile/notification-debug' as any)}
           >
-            <Ionicons name="bug-outline" size={24} color="#f59e0b" />
+            <Ionicons name="bug-outline" size={24} color={brandColors.semantic.warning} />
             <View style={styles.menuInfo}>
               <Text style={styles.menuTitle}>알림 디버그</Text>
               <Text style={styles.menuDescription}>알림 시스템 진단 및 문제 해결</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9db89d" />
+            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
-        </View>
+          </GlassCard>
 
-        {/* 앱 정보 */}
-        <View style={styles.section}>
+          {/* 앱 정보 */}
+          <GlassCard style={styles.section} intensity="light">
           <Text style={styles.sectionTitle}>앱 정보</Text>
           
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="help-circle-outline" size={24} color="#9db89d" />
+            <Ionicons name="help-circle-outline" size={24} color={colors.text.secondary} />
             <View style={styles.menuInfo}>
               <Text style={styles.menuTitle}>도움말</Text>
               <Text style={styles.menuDescription}>사용법 및 FAQ</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9db89d" />
+            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="document-text-outline" size={24} color="#9db89d" />
+            <Ionicons name="document-text-outline" size={24} color={colors.text.secondary} />
             <View style={styles.menuInfo}>
               <Text style={styles.menuTitle}>이용약관</Text>
               <Text style={styles.menuDescription}>서비스 이용약관</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9db89d" />
+            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="shield-outline" size={24} color="#9db89d" />
+            <Ionicons name="shield-outline" size={24} color={colors.text.secondary} />
             <View style={styles.menuInfo}>
               <Text style={styles.menuTitle}>개인정보처리방침</Text>
               <Text style={styles.menuDescription}>개인정보 보호정책</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9db89d" />
+            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
-        </View>
+          </GlassCard>
 
-        {/* 계정 관리 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>계정 관리</Text>
-          
-          <TouchableOpacity 
-            style={[styles.menuItem, styles.logoutItem]}
-            onPress={handleLogout}
-            disabled={isLoading}
-          >
-            <Ionicons name="log-out-outline" size={24} color="#ef4444" />
-            <View style={styles.menuInfo}>
-              <Text style={[styles.menuTitle, styles.logoutText]}>로그아웃</Text>
-              <Text style={styles.menuDescription}>계정에서 로그아웃합니다</Text>
-            </View>
-            {isLoading && <Ionicons name="time-outline" size={20} color="#9db89d" />}
-          </TouchableOpacity>
-        </View>
+          {/* 계정 관리 */}
+          <GlassCard style={styles.section} intensity="heavy">
+            <Text style={styles.sectionTitle}>계정 관리</Text>
+            
+            <TouchableOpacity 
+              style={[styles.menuItem, styles.logoutItem]}
+              onPress={handleLogout}
+              disabled={isLoading}
+            >
+              <Ionicons name="log-out-outline" size={24} color={brandColors.semantic.error} />
+              <View style={styles.menuInfo}>
+                <Text style={[styles.menuTitle, styles.logoutText]}>로그아웃</Text>
+                <Text style={styles.menuDescription}>계정에서 로그아웃합니다</Text>
+              </View>
+              {isLoading && <Ionicons name="time-outline" size={20} color={colors.text.muted} />}
+            </TouchableOpacity>
+          </GlassCard>
 
-        {/* 하단 여백 */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+          {/* 하단 여백 */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#111811',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  headerTitle: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    color: '#9db89d',
-    fontSize: 16,
-  },
-  section: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  testButton: {
-    backgroundColor: '#293829',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  testButtonText: {
-    color: '#22c55e',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1c261c',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#3c533c',
-  },
-  userAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#293829',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  userEmail: {
-    color: '#9db89d',
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  userBirthdate: {
-    color: '#9db89d',
-    fontSize: 12,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1c261c',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#3c533c',
-  },
-  settingInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
-  settingTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  settingDescription: {
-    color: '#9db89d',
-    fontSize: 14,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1c261c',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#3c533c',
-  },
-  menuInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  menuTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  menuDescription: {
-    color: '#9db89d',
-    fontSize: 14,
-  },
-  logoutItem: {
-    borderColor: '#ef444420',
-  },
-  logoutText: {
-    color: '#ef4444',
-  },
-  bottomSpacing: {
-    height: 20,
-  },
-});
+
 
 export default ProfileScreen;

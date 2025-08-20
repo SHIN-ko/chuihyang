@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -7,8 +7,13 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   TextInput,
-  StatusBar 
+  StatusBar,
+  Animated,
+  Dimensions,
+  RefreshControl
 } from 'react-native';
+// import { BlurView } from 'expo-blur';
+// import { LinearGradient } from 'expo-linear-gradient';
 import { useProjectStore } from '@/src/stores/projectStore';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useEffect, useCallback } from 'react';
@@ -16,19 +21,308 @@ import { formatDate, calculateProgress } from '@/src/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '@/src/components/common/Button';
 import { Project, ProjectStatus } from '@/src/types';
+import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
+import { useTheme } from '@/src/contexts/ThemeContext';
+
+const { width } = Dimensions.get('window');
 
 type FilterType = 'all' | 'in_progress' | 'completed';
 
 export default function HomeScreen() {
   const { projects, fetchProjects, isLoading } = useProjectStore();
   const router = useRouter();
+  const { theme } = useTheme();
+  const { colors, brandColors } = useThemeValues();
   
   // State for search and filter
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    backgroundGradient: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+    },
+    content: {
+      flex: 1,
+    },
+    header: {
+      marginHorizontal: 20,
+      marginTop: 16,
+      marginBottom: 8,
+      borderRadius: 20,
+      backgroundColor: colors.background.glass,
+      borderWidth: 1,
+      borderColor: colors.border.glass,
+      overflow: 'hidden',
+      ...shadows.glass.light,
+    },
+    headerContent: {
+      padding: 24,
+    },
+    greeting: {
+      color: colors.text.primary,
+      fontSize: 32,
+      fontWeight: '700',
+      marginBottom: 4,
+      letterSpacing: -0.5,
+    },
+    brandSubtitle: {
+      color: brandColors.accent.primary,
+      fontSize: 14,
+      fontWeight: '500',
+      marginBottom: 8,
+      letterSpacing: 0.5,
+    },
+    subtitle: {
+      color: colors.text.secondary,
+      fontSize: 15,
+      fontWeight: '400',
+    },
+    // 검색 관련 스타일
+    searchContainer: {
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    searchInputContainer: {
+      borderRadius: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      borderWidth: 1,
+      borderColor: colors.border.glass,
+      backgroundColor: colors.background.glass,
+      overflow: 'hidden',
+      ...shadows.glass.light,
+    },
+    searchIcon: {
+      marginRight: 12,
+    },
+    searchInput: {
+      flex: 1,
+      color: colors.text.primary,
+      fontSize: 16,
+      paddingVertical: 16,
+      fontWeight: '400',
+    },
+    clearButton: {
+      padding: 6,
+      marginLeft: 8,
+      borderRadius: 12,
+    },
+    // 필터 탭 스타일
+    filterContainer: {
+      flexDirection: 'row',
+      paddingHorizontal: 20,
+      paddingBottom: 16,
+      gap: 12,
+    },
+    filterTab: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 16,
+      backgroundColor: colors.background.surface,
+      borderWidth: 1,
+      borderColor: colors.border.primary,
+      alignItems: 'center',
+      ...shadows.neumorphism.outset,
+    },
+    activeFilterTab: {
+      backgroundColor: brandColors.accent.primary,
+      borderColor: colors.border.accent,
+      ...shadows.neumorphism.pressed,
+    },
+    filterText: {
+      color: colors.text.secondary,
+      fontSize: 13,
+      fontWeight: '500',
+    },
+    activeFilterText: {
+      color: colors.text.primary,
+      fontWeight: '600',
+    },
+    // 스크롤뷰 및 프로젝트 목록
+    scrollView: {
+      flex: 1,
+    },
+    projectList: {
+      paddingHorizontal: 20,
+      paddingBottom: 120, // FAB 공간 확보 증가
+    },
+    // 프로젝트 카드 스타일
+    projectCard: {
+      backgroundColor: colors.background.glass,
+      borderRadius: 20,
+      padding: 24,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border.glass,
+      overflow: 'hidden',
+      ...shadows.glass.medium,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 16,
+    },
+    cardLeft: {
+      flex: 1,
+      marginRight: 16,
+    },
+    cardRight: {
+      alignItems: 'flex-end',
+    },
+    projectName: {
+      color: colors.text.primary,
+      fontSize: 20,
+      fontWeight: '700',
+      marginBottom: 6,
+      letterSpacing: -0.3,
+    },
+    projectSubtitle: {
+      color: brandColors.accent.secondary,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    progressPercentage: {
+      color: brandColors.accent.primary,
+      fontSize: 20,
+      fontWeight: '700',
+    },
+    completedBadge: {
+      backgroundColor: brandColors.semantic.success,
+      paddingHorizontal: 16,
+      paddingVertical: 6,
+      borderRadius: 16,
+      ...shadows.glass.light,
+    },
+    completedText: {
+      color: colors.text.primary,
+      fontSize: 12,
+      fontWeight: '600',
+      letterSpacing: 0.5,
+    },
+    cardContent: {
+      marginBottom: 16,
+    },
+    projectDates: {
+      color: colors.text.tertiary,
+      fontSize: 14,
+      marginBottom: 8,
+      fontWeight: '400',
+    },
+    projectNotes: {
+      color: colors.text.secondary,
+      fontSize: 15,
+      lineHeight: 22,
+      fontWeight: '400',
+    },
+    progressContainer: {
+      gap: 10,
+    },
+    progressBar: {
+      backgroundColor: colors.background.surface,
+      borderRadius: 8,
+      height: 8,
+      overflow: 'hidden',
+      ...shadows.neumorphism.inset,
+    },
+    progressFill: {
+      backgroundColor: brandColors.accent.primary,
+      borderRadius: 8,
+      height: 8,
+      shadowColor: brandColors.accent.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.5,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    progressLabel: {
+      color: colors.text.muted,
+      fontSize: 12,
+      textAlign: 'right',
+      fontWeight: '500',
+    },
+    // 빈 상태 스타일
+    emptyContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 80,
+      paddingHorizontal: 40,
+      marginHorizontal: 20,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border.glass,
+      overflow: 'hidden',
+      ...shadows.glass.light,
+    },
+    emptyTitle: {
+      color: colors.text.primary,
+      fontSize: 22,
+      fontWeight: '700',
+      marginTop: 20,
+      marginBottom: 12,
+      textAlign: 'center',
+      letterSpacing: -0.3,
+    },
+    emptySubtitle: {
+      color: colors.text.secondary,
+      fontSize: 16,
+      textAlign: 'center',
+      lineHeight: 24,
+      marginBottom: 32,
+      fontWeight: '400',
+    },
+    emptyButton: {
+      marginTop: 8,
+    },
+    // 플로팅 액션 버튼
+    fab: {
+      position: 'absolute',
+      bottom: 24,
+      right: 24,
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: brandColors.accent.primary,
+      borderWidth: 1,
+      borderColor: colors.border.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...shadows.glass.heavy,
+    },
+  }));
 
   useEffect(() => {
     fetchProjects();
+    
+    // 초기 애니메이션
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [fetchProjects]);
 
   // 화면에 포커스될 때마다 프로젝트 목록 새로고침 (프로젝트 생성 후 돌아올 때)
@@ -37,6 +331,13 @@ export default function HomeScreen() {
       fetchProjects();
     }, [fetchProjects])
   );
+
+  // Pull to refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchProjects();
+    setRefreshing(false);
+  }, [fetchProjects]);
   
   const handleCreateProject = () => {
     router.push('/project/create');
@@ -133,130 +434,187 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
       
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <Text style={styles.greeting}>취향 🍷</Text>
-        <Text style={styles.subtitle}>
-          총 {projects.length}개 프로젝트 • 진행중 {inProgressProjects.length}개
-        </Text>
-      </View>
-
-      {/* 검색 바 */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Ionicons name="search" size={20} color="#9db89d" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="프로젝트 검색..."
-            placeholderTextColor="#9db89d"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity 
-              onPress={() => setSearchQuery('')}
-              style={styles.clearButton}
-            >
-              <Ionicons name="close-circle" size={20} color="#9db89d" />
-            </TouchableOpacity>
-          )}
+      {/* 배경 그라디언트 - 임시로 View 사용 */}
+      <View style={styles.backgroundGradient} />
+      
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <Text style={styles.greeting}>취향</Text>
+            <Text style={styles.brandSubtitle}>전통과 현대의 융합</Text>
+            <Text style={styles.subtitle}>
+              총 {projects.length}개 프로젝트 • 진행중 {inProgressProjects.length}개
+            </Text>
+          </View>
         </View>
-      </View>
 
-      {/* 필터 탭 */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterTab, activeFilter === 'all' && styles.activeFilterTab]}
-          onPress={() => setActiveFilter('all')}
-        >
-          <Text style={[styles.filterText, activeFilter === 'all' && styles.activeFilterText]}>
-            전체 ({projects.length})
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.filterTab, activeFilter === 'in_progress' && styles.activeFilterTab]}
-          onPress={() => setActiveFilter('in_progress')}
-        >
-          <Text style={[styles.filterText, activeFilter === 'in_progress' && styles.activeFilterText]}>
-            진행중 ({inProgressProjects.length})
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.filterTab, activeFilter === 'completed' && styles.activeFilterTab]}
-          onPress={() => setActiveFilter('completed')}
-        >
-          <Text style={[styles.filterText, activeFilter === 'completed' && styles.activeFilterText]}>
-            완료 ({completedProjects.length})
-          </Text>
-        </TouchableOpacity>
-      </View>
+        {/* 검색 바 */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <Ionicons name="search" size={20} color={colors.text.muted} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="담금주 프로젝트 검색..."
+              placeholderTextColor={colors.text.muted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity 
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+              >
+                <Ionicons name="close-circle" size={20} color={colors.text.muted} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
 
-      {/* 프로젝트 목록 */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.projectList}>
-          {filteredProjects.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="flask-outline" size={64} color="#6b7280" />
-              <Text style={styles.emptyTitle}>
-                {searchQuery ? '검색 결과가 없습니다' : '프로젝트가 없습니다'}
-              </Text>
-              <Text style={styles.emptySubtitle}>
-                {searchQuery 
-                  ? '다른 검색어를 시도해보세요' 
-                  : '첫 번째 담금주 프로젝트를 시작해보세요'}
-              </Text>
-              {!searchQuery && (
-                <Button
-                  onPress={handleCreateProject}
-                  style={styles.emptyButton}
-                >
-                  프로젝트 만들기
-                </Button>
-              )}
-            </View>
+        {/* 필터 탭 */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={[styles.filterTab, activeFilter === 'all' && styles.activeFilterTab]}
+            onPress={() => setActiveFilter('all')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'all' && styles.activeFilterText]}>
+              전체 ({projects.length})
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.filterTab, activeFilter === 'in_progress' && styles.activeFilterTab]}
+            onPress={() => setActiveFilter('in_progress')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'in_progress' && styles.activeFilterText]}>
+              진행중 ({inProgressProjects.length})
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.filterTab, activeFilter === 'completed' && styles.activeFilterTab]}
+            onPress={() => setActiveFilter('completed')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'completed' && styles.activeFilterText]}>
+              완료 ({completedProjects.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 프로젝트 목록 */}
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={brandColors.accent.primary}
+              colors={[brandColors.accent.primary]}
+              progressBackgroundColor={colors.background.surface}
+            />
+          }
+        >
+          <View style={styles.projectList}>
+            {filteredProjects.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="flask-outline" size={64} color={colors.text.muted} />
+                <Text style={styles.emptyTitle}>
+                  {searchQuery ? '검색 결과가 없습니다' : '프로젝트가 없습니다'}
+                </Text>
+                <Text style={styles.emptySubtitle}>
+                  {searchQuery 
+                    ? '다른 검색어를 시도해보세요' 
+                    : '첫 번째 담금주 프로젝트를 시작해보세요'}
+                </Text>
+                {!searchQuery && (
+                  <Button
+                    onPress={handleCreateProject}
+                  >
+                    프로젝트 만들기
+                  </Button>
+                )}
+              </View>
           ) : (
             filteredProjects.map(renderProjectCard)
           )}
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
 
-      {/* 플로팅 액션 버튼 */}
-      <TouchableOpacity 
-        style={styles.fab}
-        onPress={handleCreateProject}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color="white" />
-      </TouchableOpacity>
+        {/* 플로팅 액션 버튼 */}
+        <TouchableOpacity 
+          style={styles.fab}
+          onPress={handleCreateProject}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={28} color={colors.text.primary} />
+        </TouchableOpacity>
+      </Animated.View>
     </SafeAreaView>
   );
 }
 
+/*
+// 기존 StyleSheet는 useThemedStyles로 이동됨
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111811',
+    backgroundColor: BRAND_COLORS.background.primary,
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  content: {
+    flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    borderRadius: 20,
+    backgroundColor: BRAND_COLORS.background.glass,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.border.glass,
+    overflow: 'hidden',
+    ...SHADOWS.glass.light,
+  },
+  headerContent: {
+    padding: 24,
   },
   greeting: {
-    color: 'white',
-    fontSize: 28,
-    fontWeight: 'bold',
+    color: BRAND_COLORS.text.primary,
+    fontSize: 32,
+    fontWeight: '700',
     marginBottom: 4,
+    letterSpacing: -0.5,
+  },
+  brandSubtitle: {
+    color: BRAND_COLORS.accent.primary,
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   subtitle: {
-    color: '#9db89d',
-    fontSize: 16,
+    color: BRAND_COLORS.text.secondary,
+    fontSize: 15,
+    fontWeight: '400',
   },
   // 검색 관련 스타일
   searchContainer: {
@@ -264,55 +622,61 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   searchInputContainer: {
-    backgroundColor: '#1c261c',
-    borderRadius: 12,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     borderWidth: 1,
-    borderColor: '#3c533c',
+    borderColor: BRAND_COLORS.border.glass,
+    backgroundColor: BRAND_COLORS.background.glass,
+    overflow: 'hidden',
+    ...SHADOWS.glass.light,
   },
   searchIcon: {
     marginRight: 12,
   },
   searchInput: {
     flex: 1,
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 16,
-    paddingVertical: 14,
+    paddingVertical: 16,
+    fontWeight: '400',
   },
   clearButton: {
-    padding: 4,
+    padding: 6,
     marginLeft: 8,
+    borderRadius: 12,
   },
   // 필터 탭 스타일
   filterContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingBottom: 16,
-    gap: 8,
+    gap: 12,
   },
   filterTab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: '#1c261c',
+    borderRadius: 16,
+    backgroundColor: BRAND_COLORS.background.surface,
     borderWidth: 1,
-    borderColor: '#3c533c',
+    borderColor: BRAND_COLORS.border.primary,
     alignItems: 'center',
+    ...SHADOWS.neumorphism.outset,
   },
   activeFilterTab: {
-    backgroundColor: '#22c55e',
-    borderColor: '#22c55e',
+    backgroundColor: BRAND_COLORS.accent.primary,
+    borderColor: BRAND_COLORS.border.accent,
+    ...SHADOWS.neumorphism.pressed,
   },
   filterText: {
-    color: '#9db89d',
-    fontSize: 14,
+    color: BRAND_COLORS.text.secondary,
+    fontSize: 13,
     fontWeight: '500',
   },
   activeFilterText: {
-    color: '#111811',
+    color: BRAND_COLORS.text.primary,
     fontWeight: '600',
   },
   // 스크롤뷰 및 프로젝트 목록
@@ -321,114 +685,132 @@ const styles = StyleSheet.create({
   },
   projectList: {
     paddingHorizontal: 20,
-    paddingBottom: 100, // FAB 공간 확보
+    paddingBottom: 120, // FAB 공간 확보 증가
   },
   // 프로젝트 카드 스타일
   projectCard: {
-    backgroundColor: '#1c261c',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: BRAND_COLORS.background.glass,
+    borderRadius: 20,
+    padding: 24,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#3c533c',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: BRAND_COLORS.border.glass,
+    overflow: 'hidden',
+    ...SHADOWS.glass.medium,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   cardLeft: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 16,
   },
   cardRight: {
     alignItems: 'flex-end',
   },
   projectName: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    color: BRAND_COLORS.text.primary,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 6,
+    letterSpacing: -0.3,
   },
   projectSubtitle: {
-    color: '#9db89d',
+    color: BRAND_COLORS.accent.secondary,
     fontSize: 14,
+    fontWeight: '500',
   },
   progressPercentage: {
-    color: '#22c55e',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: BRAND_COLORS.accent.primary,
+    fontSize: 20,
+    fontWeight: '700',
   },
   completedBadge: {
-    backgroundColor: '#22c55e',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: BRAND_COLORS.semantic.success,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
+    ...SHADOWS.glass.light,
   },
   completedText: {
-    color: '#111811',
+    color: BRAND_COLORS.text.primary,
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   cardContent: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   projectDates: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.tertiary,
     fontSize: 14,
-    marginBottom: 6,
+    marginBottom: 8,
+    fontWeight: '400',
   },
   projectNotes: {
-    color: '#d1d5db',
-    fontSize: 14,
-    lineHeight: 20,
+    color: BRAND_COLORS.text.secondary,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '400',
   },
   progressContainer: {
-    gap: 8,
+    gap: 10,
   },
   progressBar: {
-    backgroundColor: '#374151',
-    borderRadius: 6,
-    height: 6,
+    backgroundColor: BRAND_COLORS.background.surface,
+    borderRadius: 8,
+    height: 8,
     overflow: 'hidden',
+    ...SHADOWS.neumorphism.inset,
   },
   progressFill: {
-    backgroundColor: '#22c55e',
-    borderRadius: 6,
-    height: 6,
+    backgroundColor: BRAND_COLORS.accent.primary,
+    borderRadius: 8,
+    height: 8,
+    shadowColor: BRAND_COLORS.accent.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 2,
   },
   progressLabel: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.muted,
     fontSize: 12,
     textAlign: 'right',
+    fontWeight: '500',
   },
   // 빈 상태 스타일
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 80,
     paddingHorizontal: 40,
+    marginHorizontal: 20,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.border.glass,
+    overflow: 'hidden',
+    ...SHADOWS.glass.light,
   },
   emptyTitle: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
+    color: BRAND_COLORS.text.primary,
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: 20,
+    marginBottom: 12,
     textAlign: 'center',
+    letterSpacing: -0.3,
   },
   emptySubtitle: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 24,
+    marginBottom: 32,
+    fontWeight: '400',
   },
   emptyButton: {
     marginTop: 8,
@@ -438,16 +820,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#22c55e',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: BRAND_COLORS.accent.primary,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.border.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    ...SHADOWS.glass.heavy,
   },
 });
+*/

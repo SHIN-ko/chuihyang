@@ -1,5 +1,6 @@
-import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, View, StyleSheet } from 'react-native';
+import React, { useRef } from 'react';
+import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, Animated } from 'react-native';
+import { BRAND_COLORS, SHADOWS, ANIMATIONS } from '@/constants/Colors';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -22,6 +23,24 @@ const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
   className,
 }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: ANIMATIONS.scale.active,
+      duration: ANIMATIONS.duration.fast,
+      useNativeDriver: true,
+    }).start();
+  };
+  
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      duration: ANIMATIONS.duration.fast,
+      useNativeDriver: true,
+    }).start();
+  };
+  
   const getButtonStyle = () => {
     const baseStyle = [styles.base];
     
@@ -60,64 +79,91 @@ const Button: React.FC<ButtonProps> = ({
     return baseStyle;
   };
   
+  const getLoaderColor = () => {
+    switch (variant) {
+      case 'primary':
+        return BRAND_COLORS.text.primary;
+      case 'secondary':
+        return BRAND_COLORS.text.secondary;
+      case 'outline':
+      case 'ghost':
+        return BRAND_COLORS.accent.primary;
+      default:
+        return BRAND_COLORS.text.primary;
+    }
+  };
+  
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || loading}
-      style={getButtonStyle()}
-    >
-      {loading && (
-        <ActivityIndicator 
-          size="small" 
-          color={variant === 'outline' || variant === 'ghost' ? '#22c55e' : '#ffffff'} 
-          style={styles.loader}
-        />
-      )}
-      <Text style={getTextStyle()}>
-        {children}
-      </Text>
-    </TouchableOpacity>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled || loading}
+        style={getButtonStyle()}
+        activeOpacity={0.8}
+      >
+        {loading && (
+          <ActivityIndicator 
+            size="small" 
+            color={getLoaderColor()} 
+            style={styles.loader}
+          />
+        )}
+        <Text style={getTextStyle()}>
+          {children}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 8,
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   sm: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    minHeight: 36,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minHeight: 40,
   },
   md: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     paddingVertical: 12,
-    minHeight: 44,
+    minHeight: 48,
   },
   lg: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 32,
     paddingVertical: 16,
-    minHeight: 52,
+    minHeight: 56,
   },
   primary: {
-    backgroundColor: '#22c55e',
+    backgroundColor: BRAND_COLORS.accent.primary,
+    borderColor: BRAND_COLORS.border.accent,
+    ...SHADOWS.neumorphism.outset,
   },
   secondary: {
-    backgroundColor: '#4b5563',
+    backgroundColor: BRAND_COLORS.background.glass,
+    borderColor: BRAND_COLORS.border.glass,
+    ...SHADOWS.glass.light,
   },
   outline: {
-    borderWidth: 2,
-    borderColor: '#22c55e',
     backgroundColor: 'transparent',
+    borderColor: BRAND_COLORS.accent.primary,
+    borderWidth: 1.5,
   },
   ghost: {
     backgroundColor: 'transparent',
+    borderColor: 'transparent',
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.6,
+    backgroundColor: BRAND_COLORS.background.surface,
+    borderColor: BRAND_COLORS.border.secondary,
   },
   fullWidth: {
     width: '100%',
@@ -126,28 +172,34 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   textBase: {
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: 'System',
+    letterSpacing: 0.2,
   },
   textSm: {
-    fontSize: 14,
+    fontSize: 13,
   },
   textMd: {
-    fontSize: 16,
+    fontSize: 15,
   },
   textLg: {
-    fontSize: 18,
+    fontSize: 17,
   },
   textPrimary: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
+    fontWeight: '600',
   },
   textSecondary: {
-    color: 'white',
+    color: BRAND_COLORS.text.secondary,
+    fontWeight: '500',
   },
   textOutline: {
-    color: '#22c55e',
+    color: BRAND_COLORS.accent.primary,
+    fontWeight: '500',
   },
   textGhost: {
-    color: 'white',
+    color: BRAND_COLORS.accent.primary,
+    fontWeight: '500',
   },
 });
 

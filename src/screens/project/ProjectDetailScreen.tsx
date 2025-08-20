@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert,
   StyleSheet,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useProjectStore } from '@/src/stores/projectStore';
@@ -18,35 +19,507 @@ import { Project, ProgressLog } from '@/src/types';
 import { getRecipeById } from '@/src/data/presetRecipes';
 import { formatDate, calculateDetailedProgress } from '@/src/utils/date';
 import StarRating from '@/src/components/common/StarRating';
+import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
+import { useTheme } from '@/src/contexts/ThemeContext';
+import GlassCard from '@/src/components/common/GlassCard';
 
 const { width } = Dimensions.get('window');
 
 const ProjectDetailScreen: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { theme } = useTheme();
+  const { colors, brandColors } = useThemeValues();
   const { projects, updateProject, deleteProject, deleteProjectData, updateProjectStatus, updateProgressLog, deleteProgressLog, isLoading } = useProjectStore();
   
   const [project, setProject] = useState<Project | null>(null);
+
+  const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    backgroundGradient: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      backgroundColor: colors.background.secondary,
+      opacity: 0.3,
+    },
+    content: {
+      flex: 1,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    errorCard: {
+      alignItems: 'center',
+      padding: 32,
+    },
+    errorText: {
+      color: colors.text.primary,
+      fontSize: 18,
+      fontWeight: '600',
+      textAlign: 'center',
+      marginTop: 16,
+      marginBottom: 24,
+    },
+    backButton: {
+      backgroundColor: colors.background.surface,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 8,
+    },
+    backButtonText: {
+      color: colors.text.primary,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      margin: 20,
+      marginBottom: 0,
+    },
+    headerButton: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 22,
+      backgroundColor: colors.background.surface,
+      borderWidth: 1,
+      borderColor: colors.border.secondary,
+      ...shadows.neumorphism.outset,
+    },
+    headerTitle: {
+      color: colors.text.primary,
+      fontSize: 20,
+      fontWeight: '700',
+      flex: 1,
+      textAlign: 'center',
+      marginRight: 44,
+      letterSpacing: -0.3,
+    },
+    scrollView: {
+      flex: 1,
+      paddingHorizontal: 20,
+    },
+    mainInfoContainer: {
+      padding: 24,
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    projectImageContainer: {
+      marginBottom: 16,
+    },
+    projectImage: {
+      width: 128,
+      height: 128,
+      borderRadius: 8,
+    },
+    placeholderImage: {
+      width: 128,
+      height: 128,
+      borderRadius: 8,
+      backgroundColor: colors.background.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border.secondary,
+    },
+    projectInfo: {
+      alignItems: 'center',
+    },
+    projectName: {
+      color: colors.text.primary,
+      fontSize: 22,
+      fontWeight: 'bold',
+      marginBottom: 4,
+      textAlign: 'center',
+    },
+    projectSubtitle: {
+      color: colors.text.secondary,
+      fontSize: 16,
+      marginBottom: 4,
+      textAlign: 'center',
+    },
+    projectDates: {
+      color: colors.text.secondary,
+      fontSize: 16,
+      textAlign: 'center',
+    },
+    section: {
+      padding: 20,
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      color: colors.text.primary,
+      fontSize: 20,
+      fontWeight: '700',
+      marginBottom: 16,
+      letterSpacing: -0.3,
+    },
+    ingredientsContainer: {
+      backgroundColor: 'transparent',
+    },
+    ingredientRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border.secondary,
+    },
+    ingredientName: {
+      color: colors.text.secondary,
+      fontSize: 14,
+      flex: 1,
+    },
+    ingredientQuantity: {
+      color: colors.text.primary,
+      fontSize: 14,
+    },
+    statusContainer: {
+      backgroundColor: 'transparent',
+    },
+    statusHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    statusLabel: {
+      color: colors.text.primary,
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    statusPercentage: {
+      color: colors.text.primary,
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    progressContainer: {
+      gap: 8,
+    },
+    progressBarContainer: {
+      height: 8,
+      backgroundColor: colors.border.secondary,
+      borderRadius: 4,
+      overflow: 'hidden',
+    },
+    progressBar: {
+      height: '100%',
+      backgroundColor: brandColors.accent.primary,
+      borderRadius: 4,
+    },
+    progressText: {
+      color: colors.text.secondary,
+      fontSize: 14,
+    },
+    notesText: {
+      color: colors.text.primary,
+      fontSize: 16,
+      lineHeight: 24,
+    },
+    imageGrid: {
+      flexDirection: 'row',
+      height: 200,
+      gap: 4,
+      borderRadius: 8,
+      overflow: 'hidden',
+    },
+    imageGridItem: {
+      borderRadius: 8,
+      overflow: 'hidden',
+    },
+    mainImage: {
+      flex: 2,
+    },
+    subImage: {
+      flex: 1,
+    },
+    gridImage: {
+      width: '100%',
+      height: '100%',
+    },
+    noImagesContainer: {
+      backgroundColor: colors.background.surface,
+      borderRadius: 8,
+      paddingVertical: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border.secondary,
+    },
+    noImagesText: {
+      color: colors.text.secondary,
+      fontSize: 14,
+    },
+    actionButtonsContainer: {
+      flexDirection: 'row',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      gap: 12,
+      backgroundColor: colors.background.primary,
+    },
+    editButton: {
+      flex: 1,
+      backgroundColor: colors.background.surface,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border.accent,
+      ...shadows.neumorphism.outset,
+    },
+    editButtonText: {
+      color: brandColors.accent.primary,
+      fontSize: 15,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+    },
+    deleteButton: {
+      flex: 1,
+      backgroundColor: colors.background.surface,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: `${brandColors.semantic.error}40`,
+      ...shadows.neumorphism.outset,
+    },
+    deleteButtonText: {
+      color: brandColors.semantic.error,
+      fontSize: 15,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+    },
+    completeButton: {
+      flex: 1,
+      backgroundColor: brandColors.accent.primary,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: brandColors.accent.secondary,
+      ...shadows.glass.medium,
+    },
+    completeButtonText: {
+      color: colors.text.primary,
+      fontSize: 15,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+    },
+    bottomSpacing: {
+      height: 20,
+    },
+    // 진행 로그 관련 스타일
+    logsSectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    addLogButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: brandColors.accent.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      gap: 6,
+      borderWidth: 1,
+      borderColor: brandColors.accent.secondary,
+      ...shadows.glass.light,
+    },
+    addLogButtonText: {
+      color: colors.text.primary,
+      fontSize: 14,
+      fontWeight: '600',
+      letterSpacing: 0.2,
+    },
+    noLogsContainer: {
+      alignItems: 'center',
+      paddingVertical: 48,
+      backgroundColor: 'transparent',
+      borderRadius: 12,
+    },
+    noLogsText: {
+      color: colors.text.primary,
+      fontSize: 18,
+      fontWeight: '600',
+      marginTop: 16,
+      textAlign: 'center',
+    },
+    noLogsSubText: {
+      color: colors.text.secondary,
+      fontSize: 14,
+      marginTop: 6,
+      textAlign: 'center',
+    },
+    logsContainer: {
+      backgroundColor: colors.background.surface,
+      borderRadius: 8,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border.secondary,
+    },
+    logItem: {
+      flexDirection: 'row',
+      marginBottom: 24,
+    },
+    timelineContainer: {
+      alignItems: 'center',
+      marginRight: 16,
+      paddingTop: 4,
+    },
+    timelineCircle: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: brandColors.accent.primary,
+      zIndex: 1,
+    },
+    timelineLine: {
+      width: 2,
+      flex: 1,
+      backgroundColor: colors.border.secondary,
+      marginTop: 8,
+      marginBottom: -24,
+    },
+    logContent: {
+      flex: 1,
+    },
+    logHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 8,
+    },
+    logHeaderLeft: {
+      flex: 1,
+    },
+    logActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    logActionButton: {
+      padding: 8,
+      borderRadius: 8,
+      backgroundColor: colors.background.elevated,
+      borderWidth: 1,
+      borderColor: colors.border.secondary,
+    },
+    logTitle: {
+      color: colors.text.primary,
+      fontSize: 16,
+      fontWeight: '600',
+      flex: 1,
+      letterSpacing: 0.2,
+    },
+    logDate: {
+      color: colors.text.secondary,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    logDescription: {
+      color: colors.text.secondary,
+      fontSize: 14,
+      lineHeight: 20,
+      marginBottom: 16,
+    },
+    ratingsContainer: {
+      marginBottom: 12,
+    },
+    ratingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    ratingLabel: {
+      color: colors.text.secondary,
+      fontSize: 12,
+      width: 40,
+    },
+    colorInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+      gap: 6,
+    },
+    colorText: {
+      color: colors.text.primary,
+      fontSize: 14,
+    },
+    logImages: {
+      marginBottom: 12,
+    },
+    logImage: {
+      width: 60,
+      height: 60,
+      borderRadius: 6,
+      marginRight: 8,
+    },
+    logNotes: {
+      color: colors.text.secondary,
+      fontSize: 12,
+      fontStyle: 'italic',
+      marginTop: 8,
+    },
+  }));
+  
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     if (id) {
       const foundProject = projects.find(p => p.id === id);
       setProject(foundProject || null);
+      
+      // 프로젝트가 로드되면 애니메이션 시작
+      if (foundProject) {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 350,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
     }
   }, [id, projects]);
 
   if (!project) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#111811" />
+        <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
+        <View style={styles.backgroundGradient} />
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>프로젝트를 찾을 수 없습니다.</Text>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backButtonText}>돌아가기</Text>
-          </TouchableOpacity>
+          <GlassCard style={styles.errorCard} intensity="medium">
+            <Ionicons name="flask-outline" size={48} color={colors.text.muted} />
+            <Text style={styles.errorText}>프로젝트를 찾을 수 없습니다.</Text>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.backButtonText}>돌아가기</Text>
+            </TouchableOpacity>
+          </GlassCard>
         </View>
       </SafeAreaView>
     );
@@ -236,7 +709,7 @@ const ProjectDetailScreen: React.FC = () => {
     if (sortedLogs.length === 0) {
       return (
         <View style={styles.noLogsContainer}>
-          <Ionicons name="document-text-outline" size={32} color="#9db89d" />
+          <Ionicons name="document-text-outline" size={32} color={colors.text.muted} />
           <Text style={styles.noLogsText}>아직 진행 로그가 없습니다</Text>
           <Text style={styles.noLogsSubText}>첫 번째 로그를 추가해보세요!</Text>
         </View>
@@ -265,13 +738,13 @@ const ProjectDetailScreen: React.FC = () => {
                     style={styles.logActionButton}
                     onPress={() => handleEditLog(log.id)}
                   >
-                    <Ionicons name="create-outline" size={18} color="#9db89d" />
+                    <Ionicons name="create-outline" size={18} color={colors.text.secondary} />
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.logActionButton}
                     onPress={() => handleDeleteLog(log.id, log.title)}
                   >
-                    <Ionicons name="trash-outline" size={18} color="#dc2626" />
+                    <Ionicons name="trash-outline" size={18} color={brandColors.semantic.error} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -301,7 +774,7 @@ const ProjectDetailScreen: React.FC = () => {
               {/* 색깔 정보 */}
               {log.color && (
                 <View style={styles.colorInfo}>
-                  <Ionicons name="color-palette-outline" size={16} color="#9db89d" />
+                  <Ionicons name="color-palette-outline" size={16} color={colors.text.secondary} />
                   <Text style={styles.colorText}>{log.color}</Text>
                 </View>
               )}
@@ -337,19 +810,31 @@ const ProjectDetailScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
+      
+      {/* 배경 그라디언트 */}
+      <View style={styles.backgroundGradient} />
       
       {/* 헤더 */}
-      <View style={styles.header}>
+      <GlassCard style={styles.header} intensity="medium">
         <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>프로젝트 상세</Text>
-      </View>
+      </GlassCard>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* 프로젝트 메인 정보 */}
-        <View style={styles.mainInfoContainer}>
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* 프로젝트 메인 정보 */}
+          <GlassCard style={styles.mainInfoContainer} intensity="medium">
           <View style={styles.projectImageContainer}>
             {project.images && project.images.length > 0 ? (
               <Image 
@@ -359,7 +844,7 @@ const ProjectDetailScreen: React.FC = () => {
               />
             ) : (
               <View style={styles.placeholderImage}>
-                <Ionicons name="image-outline" size={48} color="#9db89d" />
+                <Ionicons name="image-outline" size={48} color={colors.text.muted} />
               </View>
             )}
           </View>
@@ -373,10 +858,9 @@ const ProjectDetailScreen: React.FC = () => {
               시작: {formatDate(project.startDate)} · 완료 예정: {formatDate(project.expectedEndDate)}
             </Text>
           </View>
-        </View>
 
-        {/* 재료 섹션 */}
-        <View style={styles.section}>
+          {/* 재료 섹션 */}
+          <View style={styles.section}>
           <Text style={styles.sectionTitle}>재료</Text>
           <View style={styles.ingredientsContainer}>
             {project.ingredients.map((ingredient, index) => (
@@ -388,10 +872,11 @@ const ProjectDetailScreen: React.FC = () => {
               </View>
             ))}
           </View>
-        </View>
+          </View>
+          </GlassCard>
 
-        {/* 진행 상황 섹션 */}
-        <View style={styles.section}>
+          {/* 진행 상황 섹션 */}
+          <GlassCard style={styles.section} intensity="light">
           <Text style={styles.sectionTitle}>진행 상황</Text>
           <View style={styles.statusContainer}>
             <View style={styles.statusHeader}>
@@ -400,24 +885,24 @@ const ProjectDetailScreen: React.FC = () => {
             </View>
             {renderProgressBar()}
           </View>
-        </View>
+          </GlassCard>
 
-        {/* 노트 섹션 */}
-        {project.notes && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>노트</Text>
-            <Text style={styles.notesText}>{project.notes}</Text>
-          </View>
-        )}
+          {/* 노트 섹션 */}
+          {project.notes && (
+            <GlassCard style={styles.section} intensity="light">
+              <Text style={styles.sectionTitle}>노트</Text>
+              <Text style={styles.notesText}>{project.notes}</Text>
+            </GlassCard>
+          )}
 
-        {/* 이미지 섹션 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>이미지</Text>
-          {renderImageGrid()}
-        </View>
+          {/* 이미지 섹션 */}
+          <GlassCard style={styles.section} intensity="light">
+            <Text style={styles.sectionTitle}>이미지</Text>
+            {renderImageGrid()}
+          </GlassCard>
 
-        {/* 진행 로그 섹션 */}
-        <View style={styles.section}>
+          {/* 진행 로그 섹션 */}
+          <GlassCard style={styles.section} intensity="medium">
           <View style={styles.logsSectionHeader}>
             <Text style={styles.sectionTitle}>
               진행 로그 ({project.progressLogs?.length || 0})
@@ -426,14 +911,14 @@ const ProjectDetailScreen: React.FC = () => {
               style={styles.addLogButton}
               onPress={handleAddLog}
             >
-              <Ionicons name="add" size={20} color="white" />
+              <Ionicons name="add" size={20} color={colors.text.primary} />
               <Text style={styles.addLogButtonText}>추가</Text>
             </TouchableOpacity>
           </View>
           {renderProgressLogs()}
-        </View>
+          </GlassCard>
 
-        {/* 하단 여백 */}
+          {/* 하단 여백 */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
@@ -464,402 +949,9 @@ const ProjectDetailScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
       </View>
+      </Animated.View>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#111811',
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  errorText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  backButton: {
-    backgroundColor: '#293829',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  backButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#111811',
-  },
-  headerButton: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-    marginRight: 48,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  mainInfoContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  projectImageContainer: {
-    marginBottom: 16,
-  },
-  projectImage: {
-    width: 128,
-    height: 128,
-    borderRadius: 8,
-  },
-  placeholderImage: {
-    width: 128,
-    height: 128,
-    borderRadius: 8,
-    backgroundColor: '#1c261c',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#3c533c',
-  },
-  projectInfo: {
-    alignItems: 'center',
-  },
-  projectName: {
-    color: 'white',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  projectSubtitle: {
-    color: '#9db89d',
-    fontSize: 16,
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  projectDates: {
-    color: '#9db89d',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  section: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  ingredientsContainer: {
-    backgroundColor: 'transparent',
-  },
-  ingredientRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#3c533c',
-  },
-  ingredientName: {
-    color: '#9db89d',
-    fontSize: 14,
-    flex: 1,
-  },
-  ingredientQuantity: {
-    color: 'white',
-    fontSize: 14,
-  },
-  statusContainer: {
-    backgroundColor: 'transparent',
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  statusLabel: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  statusPercentage: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  progressContainer: {
-    gap: 8,
-  },
-  progressBarContainer: {
-    height: 8,
-    backgroundColor: '#3c533c',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: 'white',
-    borderRadius: 4,
-  },
-  progressText: {
-    color: '#9db89d',
-    fontSize: 14,
-  },
-  notesText: {
-    color: 'white',
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  imageGrid: {
-    flexDirection: 'row',
-    height: 200,
-    gap: 4,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  imageGridItem: {
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  mainImage: {
-    flex: 2,
-  },
-  subImage: {
-    flex: 1,
-  },
-  gridImage: {
-    width: '100%',
-    height: '100%',
-  },
-  noImagesContainer: {
-    backgroundColor: '#1c261c',
-    borderRadius: 8,
-    paddingVertical: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#3c533c',
-  },
-  noImagesText: {
-    color: '#9db89d',
-    fontSize: 14,
-  },
-  actionButtonsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-    backgroundColor: '#111811',
-  },
-  editButton: {
-    flex: 1,
-    backgroundColor: '#293829',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  editButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  deleteButton: {
-    flex: 1,
-    backgroundColor: '#dc2626',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  completeButton: {
-    flex: 1,
-    backgroundColor: '#22c55e',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  completeButtonText: {
-    color: '#111811',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  bottomSpacing: {
-    height: 20,
-  },
-  // 진행 로그 관련 스타일
-  logsSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  addLogButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#293829',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  addLogButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  noLogsContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    backgroundColor: '#1c261c',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#3c533c',
-  },
-  noLogsText: {
-    color: 'white',
-    fontSize: 16,
-    marginTop: 12,
-  },
-  noLogsSubText: {
-    color: '#9db89d',
-    fontSize: 14,
-    marginTop: 4,
-  },
-  logsContainer: {
-    backgroundColor: '#1c261c',
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#3c533c',
-  },
-  logItem: {
-    flexDirection: 'row',
-    marginBottom: 24,
-  },
-  timelineContainer: {
-    alignItems: 'center',
-    marginRight: 16,
-    paddingTop: 4,
-  },
-  timelineCircle: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#22c55e',
-    zIndex: 1,
-  },
-  timelineLine: {
-    width: 2,
-    flex: 1,
-    backgroundColor: '#3c533c',
-    marginTop: 8,
-    marginBottom: -24,
-  },
-  logContent: {
-    flex: 1,
-  },
-  logHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  logHeaderLeft: {
-    flex: 1,
-  },
-  logActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  logActionButton: {
-    padding: 4,
-    borderRadius: 4,
-  },
-  logTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    flex: 1,
-  },
-  logDate: {
-    color: '#9db89d',
-    fontSize: 14,
-  },
-  logDescription: {
-    color: 'white',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  ratingsContainer: {
-    marginBottom: 12,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  ratingLabel: {
-    color: '#9db89d',
-    fontSize: 12,
-    width: 40,
-  },
-  colorInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 6,
-  },
-  colorText: {
-    color: 'white',
-    fontSize: 14,
-  },
-  logImages: {
-    marginBottom: 12,
-  },
-  logImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 6,
-    marginRight: 8,
-  },
-  logNotes: {
-    color: '#9db89d',
-    fontSize: 12,
-    fontStyle: 'italic',
-    marginTop: 8,
-  },
-});
 
 export default ProjectDetailScreen;

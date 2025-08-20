@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,16 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Animated,
+  Dimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/src/stores/authStore';
 import Button from '@/src/components/common/Button';
+import { BRAND_COLORS, SHADOWS, ANIMATIONS } from '@/constants/Colors';
+
+const { width } = Dimensions.get('window');
 
 const LoginScreen: React.FC = () => {
   const router = useRouter();
@@ -22,6 +28,37 @@ const LoginScreen: React.FC = () => {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const logoAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // 초기 애니메이션
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(logoAnim, {
+          toValue: 1,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -47,89 +84,146 @@ const LoginScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLORS.background.primary} />
+      
+      {/* 배경 그라디언트 */}
+      <View style={styles.backgroundGradient} />
       
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.content}>
-            {/* 헤더 */}
-            <View style={styles.header}>
-              <Text style={styles.title}>
-                취향
-              </Text>
+          <Animated.View 
+            style={[
+              styles.content,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
+          >
+            {/* 헤더 - 로고 영역 */}
+            <Animated.View 
+              style={[
+                styles.header,
+                {
+                  opacity: logoAnim,
+                  transform: [{
+                    scale: logoAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.8, 1],
+                    })
+                  }]
+                }
+              ]}
+            >
+              <View style={styles.logoContainer}>
+                <Text style={styles.logo}>취향</Text>
+                <Text style={styles.brandTagline}>CHUIHYANG</Text>
+              </View>
               <Text style={styles.subtitle}>
-                나만의 담금주 프로젝트를 관리하세요
+                전통과 현대가 만나는 담금주 여정
               </Text>
-            </View>
+            </Animated.View>
 
             {/* 로그인 폼 */}
             <View style={styles.form}>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  이메일
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="이메일을 입력하세요"
-                  placeholderTextColor="#9CA3AF"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
+                <Text style={styles.label}>이메일</Text>
+                <View style={[
+                  styles.inputContainer,
+                  emailFocused && styles.inputContainerFocused
+                ]}>
+                  <Ionicons 
+                    name="mail-outline" 
+                    size={20} 
+                    color={emailFocused ? BRAND_COLORS.accent.primary : BRAND_COLORS.text.muted} 
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="이메일을 입력하세요"
+                    placeholderTextColor={BRAND_COLORS.text.muted}
+                    value={email}
+                    onChangeText={setEmail}
+                    onFocus={() => setEmailFocused(true)}
+                    onBlur={() => setEmailFocused(false)}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  비밀번호
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="비밀번호를 입력하세요"
-                  placeholderTextColor="#9CA3AF"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
+                <Text style={styles.label}>비밀번호</Text>
+                <View style={[
+                  styles.inputContainer,
+                  passwordFocused && styles.inputContainerFocused
+                ]}>
+                  <Ionicons 
+                    name="lock-closed-outline" 
+                    size={20} 
+                    color={passwordFocused ? BRAND_COLORS.accent.primary : BRAND_COLORS.text.muted} 
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="비밀번호를 입력하세요"
+                    placeholderTextColor={BRAND_COLORS.text.muted}
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeButton}
+                  >
+                    <Ionicons 
+                      name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                      size={20} 
+                      color={BRAND_COLORS.text.muted}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
 
-            {/* 비밀번호 찾기 */}
-            <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>
-                비밀번호를 잊으셨나요?
-              </Text>
-            </TouchableOpacity>
-
-            {/* 로그인 버튼 */}
-            <Button
-              onPress={handleLogin}
-              loading={isLoading}
-              disabled={isLoading}
-              fullWidth
-              style={styles.loginButton}
-            >
-              로그인
-            </Button>
-
-            {/* 회원가입 링크 */}
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>
-                계정이 없으신가요?
-              </Text>
-              <TouchableOpacity onPress={handleSignUp}>
-                <Text style={styles.signupLink}>
-                  회원가입
+              {/* 비밀번호 찾기 */}
+              <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPassword}>
+                <Text style={styles.forgotPasswordText}>
+                  비밀번호를 잊으셨나요?
                 </Text>
               </TouchableOpacity>
+
+              {/* 로그인 버튼 */}
+              <Button
+                onPress={handleLogin}
+                loading={isLoading}
+                disabled={isLoading}
+                fullWidth
+                variant="primary"
+              >
+                로그인
+              </Button>
+
+              {/* 회원가입 링크 */}
+              <View style={styles.signupContainer}>
+                <Text style={styles.signupText}>
+                  계정이 없으신가요?
+                </Text>
+                <TouchableOpacity onPress={handleSignUp} style={styles.signupButton}>
+                  <Text style={styles.signupLink}>
+                    회원가입
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -139,7 +233,16 @@ const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111811',
+    backgroundColor: BRAND_COLORS.background.primary,
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: BRAND_COLORS.background.secondary,
+    opacity: 0.5,
   },
   keyboardView: {
     flex: 1,
@@ -151,68 +254,107 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingVertical: 40,
+    minHeight: '100%',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 48,
   },
-  title: {
-    color: 'white',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  logo: {
+    color: BRAND_COLORS.text.primary,
+    fontSize: 48,
+    fontWeight: '800',
+    letterSpacing: -1,
+    marginBottom: 4,
+  },
+  brandTagline: {
+    color: BRAND_COLORS.accent.primary,
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: 3,
+    textTransform: 'uppercase',
   },
   subtitle: {
-    color: 'white',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 16,
-    opacity: 0.7,
+    textAlign: 'center',
+    lineHeight: 24,
+    fontWeight: '400',
   },
   form: {
-    marginBottom: 24,
+    marginBottom: 32,
   },
   inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#374151',
-    color: 'white',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  forgotPassword: {
     marginBottom: 24,
   },
-  forgotPasswordText: {
-    color: '#22c55e',
-    textAlign: 'right',
+  label: {
+    color: BRAND_COLORS.text.primary,
     fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    letterSpacing: 0.3,
   },
-  loginButton: {
-    marginBottom: 16,
+  inputContainer: {
+    backgroundColor: BRAND_COLORS.background.glass,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.border.secondary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    ...SHADOWS.neumorphism.inset,
+  },
+  inputContainerFocused: {
+    borderColor: BRAND_COLORS.accent.primary,
+    ...SHADOWS.glass.light,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    color: BRAND_COLORS.text.primary,
+    paddingVertical: 16,
+    fontSize: 16,
+    fontWeight: '400',
+  },
+  eyeButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  forgotPassword: {
+    marginBottom: 32,
+    alignSelf: 'flex-end',
+  },
+  forgotPasswordText: {
+    color: BRAND_COLORS.accent.primary,
+    fontSize: 14,
+    fontWeight: '500',
   },
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 24,
   },
   signupText: {
-    color: 'white',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 16,
-    marginRight: 4,
+    marginRight: 8,
+    fontWeight: '400',
+  },
+  signupButton: {
+    padding: 4,
   },
   signupLink: {
-    color: '#22c55e',
+    color: BRAND_COLORS.accent.primary,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
 

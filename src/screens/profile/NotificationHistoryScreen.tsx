@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   StyleSheet,
   StatusBar,
   RefreshControl,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
+import { BRAND_COLORS, SHADOWS, ANIMATIONS } from '@/constants/Colors';
+import GlassCard from '@/src/components/common/GlassCard';
 
 interface NotificationHistory {
   id: string;
@@ -25,6 +28,10 @@ const NotificationHistoryScreen: React.FC = () => {
   const router = useRouter();
   const [notifications, setNotifications] = useState<NotificationHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   const loadNotificationHistory = async () => {
     setIsLoading(true);
@@ -73,6 +80,20 @@ const NotificationHistoryScreen: React.FC = () => {
 
   useEffect(() => {
     loadNotificationHistory();
+    
+    // 초기 애니메이션
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const formatDate = (date: Date) => {
@@ -129,7 +150,11 @@ const NotificationHistoryScreen: React.FC = () => {
 
   const renderNotificationItem = (item: NotificationHistory, index: number) => {
     return (
-      <View key={item.id} style={[styles.notificationItem, index === notifications.length - 1 && styles.lastItem]}>
+      <GlassCard 
+        key={item.id} 
+        style={styles.notificationCard}
+        intensity="light"
+      >
         <View style={styles.notificationIcon}>
           <Text style={styles.iconText}>{getNotificationIcon(item.data)}</Text>
         </View>
@@ -143,73 +168,86 @@ const NotificationHistoryScreen: React.FC = () => {
             </Text>
           </View>
         </View>
-      </View>
+      </GlassCard>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLORS.background.primary} />
+      
+      {/* 배경 그라디언트 */}
+      <View style={styles.backgroundGradient} />
       
       {/* 헤더 */}
-      <View style={styles.header}>
+      <GlassCard style={styles.header} intensity="medium">
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={BRAND_COLORS.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>알림 히스토리</Text>
         <TouchableOpacity onPress={loadNotificationHistory} style={styles.refreshButton}>
-          <Ionicons name="refresh" size={24} color="#9db89d" />
+          <Ionicons name="refresh" size={24} color={BRAND_COLORS.accent.primary} />
         </TouchableOpacity>
-      </View>
+      </GlassCard>
 
-      <ScrollView 
-        style={styles.scrollView} 
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={loadNotificationHistory}
-            tintColor="#22c55e"
-            colors={['#22c55e']}
-          />
-        }
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
       >
-        {/* 설명 */}
-        <View style={styles.descriptionContainer}>
-          <View style={styles.descriptionHeader}>
-            <Ionicons name="time" size={20} color="#22c55e" />
-            <Text style={styles.descriptionTitle}>예약된 알림</Text>
-          </View>
-          <Text style={styles.descriptionText}>
-            현재 예약되어 있는 프로젝트 알림들을 확인할 수 있습니다.
-          </Text>
-        </View>
-
-        {/* 알림 목록 */}
-        <View style={styles.notificationsContainer}>
-          {notifications.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="notifications-off-outline" size={48} color="#9db89d" />
-              <Text style={styles.emptyTitle}>예약된 알림이 없습니다</Text>
-              <Text style={styles.emptySubtitle}>
-                프로젝트를 생성하면 자동으로 알림이 설정됩니다
-              </Text>
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={loadNotificationHistory}
+              tintColor={BRAND_COLORS.accent.primary}
+              colors={[BRAND_COLORS.accent.primary]}
+            />
+          }
+        >
+          {/* 설명 */}
+          <GlassCard style={styles.descriptionContainer} intensity="light">
+            <View style={styles.descriptionHeader}>
+              <Ionicons name="time" size={20} color={BRAND_COLORS.accent.primary} />
+              <Text style={styles.descriptionTitle}>예약된 알림</Text>
             </View>
-          ) : (
-            <>
-              <Text style={styles.sectionTitle}>
-                총 {notifications.length}개의 알림
-              </Text>
-              <View style={styles.notificationsList}>
-                {notifications.map(renderNotificationItem)}
-              </View>
-            </>
-          )}
-        </View>
+            <Text style={styles.descriptionText}>
+              현재 예약되어 있는 프로젝트 알림들을 확인할 수 있습니다.
+            </Text>
+          </GlassCard>
 
-        {/* 하단 여백 */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+          {/* 알림 목록 */}
+          <View style={styles.notificationsContainer}>
+            {notifications.length === 0 ? (
+              <GlassCard style={styles.emptyContainer} intensity="light">
+                <Ionicons name="notifications-off-outline" size={48} color={BRAND_COLORS.text.muted} />
+                <Text style={styles.emptyTitle}>예약된 알림이 없습니다</Text>
+                <Text style={styles.emptySubtitle}>
+                  프로젝트를 생성하면 자동으로 알림이 설정됩니다
+                </Text>
+              </GlassCard>
+            ) : (
+              <>
+                <Text style={styles.sectionTitle}>
+                  총 {notifications.length}개의 알림
+                </Text>
+                <View style={styles.notificationsList}>
+                  {notifications.map(renderNotificationItem)}
+                </View>
+              </>
+            )}
+          </View>
+
+          {/* 하단 여백 */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 };
@@ -217,46 +255,66 @@ const NotificationHistoryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111811',
+    backgroundColor: BRAND_COLORS.background.primary,
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: BRAND_COLORS.background.secondary,
+    opacity: 0.3,
+  },
+  content: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3c533c',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    margin: 20,
+    marginBottom: 0,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: BRAND_COLORS.background.surface,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.border.secondary,
+    ...SHADOWS.neumorphism.outset,
   },
   headerTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: BRAND_COLORS.text.primary,
+    fontSize: 20,
+    fontWeight: '700',
     flex: 1,
     textAlign: 'center',
+    letterSpacing: -0.3,
   },
   refreshButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: BRAND_COLORS.background.surface,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.border.accent,
+    ...SHADOWS.neumorphism.outset,
   },
   scrollView: {
     flex: 1,
+    paddingHorizontal: 20,
   },
   descriptionContainer: {
-    margin: 16,
-    padding: 16,
-    backgroundColor: '#1c261c',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#3c533c',
+    marginBottom: 20,
+    padding: 20,
   },
   descriptionHeader: {
     flexDirection: 'row',
@@ -264,13 +322,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   descriptionTitle: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
   },
   descriptionText: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -278,34 +336,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 16,
   },
   notificationsList: {
-    backgroundColor: '#1c261c',
+    backgroundColor: BRAND_COLORS.background.surface,
     borderRadius: 12,
     overflow: 'hidden',
   },
-  notificationItem: {
+  notificationCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3c533c',
+    padding: 20,
+    marginBottom: 12,
   },
   lastItem: {
     borderBottomWidth: 0,
   },
   notificationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#293829',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: BRAND_COLORS.background.elevated,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: BRAND_COLORS.border.secondary,
+    ...SHADOWS.neumorphism.inset,
   },
   iconText: {
     fontSize: 18,
@@ -314,13 +374,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notificationTitle: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
   },
   notificationBody: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 8,
@@ -336,18 +396,18 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: 60,
-    backgroundColor: '#1c261c',
+    backgroundColor: BRAND_COLORS.background.surface,
     borderRadius: 12,
   },
   emptyTitle: {
-    color: 'white',
+    color: BRAND_COLORS.text.primary,
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtitle: {
-    color: '#9db89d',
+    color: BRAND_COLORS.text.secondary,
     fontSize: 14,
     textAlign: 'center',
     paddingHorizontal: 32,
