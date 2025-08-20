@@ -62,6 +62,39 @@ export class SupabaseService {
     }
   }
 
+  static async resetPassword(email: string) {
+    try {
+      // 앱에서 작동하도록 설정
+      const redirectTo = 'myapp://auth/reset-password';
+
+      console.log('비밀번호 재설정 redirect URL:', redirectTo);
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      });
+      
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('비밀번호 재설정 오류:', error);
+      throw error;
+    }
+  }
+
+  static async updatePassword(newPassword: string) {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('비밀번호 업데이트 오류:', error);
+      throw error;
+    }
+  }
+
   static async getCurrentUser() {
     try {
       const { data: { user } } = await supabase.auth.getUser();

@@ -23,7 +23,7 @@ import {
   generateCalendarMarkings,
   getEventsForDate,
   getTodayString,
-  calendarTheme,
+  createCalendarTheme,
   CalendarEvent,
   getProjectColor,
 } from '@/src/utils/calendar';
@@ -220,24 +220,7 @@ const CalendarScreen: React.FC = () => {
   }));
 
   // 동적 캘린더 테마 생성
-  const dynamicCalendarTheme = {
-    backgroundColor: 'transparent',
-    calendarBackground: 'transparent',
-    textSectionTitleColor: colors.text.secondary,
-    selectedDayBackgroundColor: brandColors.accent.primary,
-    selectedDayTextColor: colors.text.primary,
-    todayTextColor: brandColors.accent.primary,
-    dayTextColor: colors.text.primary,
-    textDisabledColor: colors.text.muted,
-    dotColor: brandColors.accent.primary,
-    selectedDotColor: colors.text.primary,
-    arrowColor: colors.text.primary,
-    monthTextColor: colors.text.primary,
-    indicatorColor: brandColors.accent.primary,
-    textDayFontWeight: '400' as any,
-    textMonthFontWeight: '600' as any,
-    textDayHeaderFontWeight: '500' as any,
-  };
+  const dynamicCalendarTheme = createCalendarTheme(theme, colors, brandColors);
 
   useEffect(() => {
     fetchProjects();
@@ -362,10 +345,27 @@ const CalendarScreen: React.FC = () => {
           {/* 캘린더 */}
           <GlassCard style={styles.calendarContainer} intensity="medium">
             <Calendar
+              key={`calendar-${theme}`} // 테마가 바뀔 때마다 강제 리렌더링
               current={selectedDate}
               onDayPress={handleDateSelect}
               markedDates={markedDates}
-              theme={dynamicCalendarTheme}
+              theme={{
+                ...dynamicCalendarTheme,
+                // 강제 오버라이드
+                dayTextColor: theme === 'dark' ? '#FFFFFF' : '#000000',
+                textSectionTitleColor: theme === 'dark' ? '#CCCCCC' : '#666666',
+                monthTextColor: theme === 'dark' ? '#FFFFFF' : '#000000',
+                arrowColor: theme === 'dark' ? '#FFFFFF' : '#000000',
+                textDayFontSize: 16,
+                textMonthFontSize: 16,
+                textDayHeaderFontSize: 13,
+                textDayFontWeight: '400',
+                textMonthFontWeight: '600',
+                textDayHeaderFontWeight: '600',
+              } as any}
+              style={{
+                backgroundColor: 'transparent',
+              }}
               hideExtraDays={true}
               firstDay={0} // 일요일부터 시작
               enableSwipeMonths={true}

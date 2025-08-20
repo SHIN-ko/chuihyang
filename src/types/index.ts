@@ -11,7 +11,7 @@ export interface User {
 
 // 프로젝트(담금주) 관련 타입
 export type ProjectStatus = 'planning' | 'in_progress' | 'completed' | 'paused';
-export type ProjectType = 'whiskey' | 'gin' | 'rum' | 'fruit_wine' | 'vodka' | 'other';
+export type ProjectType = 'damgeumSoju25' | 'damgeumSoju30' | 'vodka';
 
 // 미리 정의된 담금주 레시피
 export interface PresetRecipe {

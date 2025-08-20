@@ -36,7 +36,7 @@ export const generateCalendarMarkings = (projects: Project[]): { [key: string]: 
       }
       markings[startDate].dots!.push({
         color: getProjectColor(project.type),
-        selectedDotColor: '#ffffff',
+        selectedDotColor: 'rgba(255, 255, 255, 0.9)',
       });
     }
 
@@ -48,7 +48,7 @@ export const generateCalendarMarkings = (projects: Project[]): { [key: string]: 
       }
       markings[completionDate].dots!.push({
         color: project.status === 'completed' ? '#22c55e' : '#f59e0b',
-        selectedDotColor: '#ffffff',
+        selectedDotColor: 'rgba(255, 255, 255, 0.9)',
       });
     }
 
@@ -60,7 +60,7 @@ export const generateCalendarMarkings = (projects: Project[]): { [key: string]: 
         }
         markings[log.date].dots!.push({
           color: '#6366f1',
-          selectedDotColor: '#ffffff',
+          selectedDotColor: 'rgba(255, 255, 255, 0.9)',
         });
       }
     });
@@ -136,28 +136,155 @@ export const getTodayString = (): string => {
   return new Date().toISOString().split('T')[0];
 };
 
-// 캘린더 테마 설정
-export const calendarTheme = {
-  backgroundColor: '#111811',
-  calendarBackground: '#111811',
-  textSectionTitleColor: '#9db89d',
-  selectedDayBackgroundColor: '#22c55e',
-  selectedDayTextColor: '#111811',
-  todayTextColor: '#22c55e',
-  dayTextColor: '#ffffff',
-  textDisabledColor: '#6b7280',
-  dotColor: '#22c55e',
-  selectedDotColor: '#111811',
-  arrowColor: '#22c55e',
-  monthTextColor: '#ffffff',
+// 캘린더 테마 설정 (동적 생성 함수)
+export const createCalendarTheme = (theme: 'light' | 'dark', colors: any, brandColors: any) => ({
+  backgroundColor: 'transparent',
+  calendarBackground: 'transparent',
+  
+  // 헤더 (요일) 텍스트
+  textSectionTitleColor: theme === 'dark' ? '#C4C6C4' : '#4A4C4A',
+  textDayHeaderFontSize: 13,
+  textDayHeaderFontWeight: '600',
+  
+  // 월/년도 텍스트  
+  monthTextColor: theme === 'dark' ? '#FAFAFA' : '#1A1B1A',
+  textMonthFontSize: 16,
+  textMonthFontWeight: '600',
+  
+  // 일반 날짜 텍스트
+  dayTextColor: theme === 'dark' ? '#FAFAFA' : '#1A1B1A',
   textDayFontSize: 16,
-  textMonthFontSize: 18,
-  textDayHeaderFontSize: 14,
+  textDayFontWeight: '400',
+  
+  // 오늘 날짜
+  todayTextColor: brandColors.accent.primary,
+  todayBackgroundColor: 'transparent',
+  
+  // 선택된 날짜
+  selectedDayBackgroundColor: brandColors.accent.primary,
+  selectedDayTextColor: theme === 'dark' ? '#0A0B0A' : '#FFFFFF',
+  
+  // 비활성화된 날짜 (이전/다음 달)
+  textDisabledColor: theme === 'dark' ? '#6B6D6B' : '#8B8D8B',
+  
+  // 점 표시 (마킹)
+  dotColor: brandColors.accent.primary,
+  selectedDotColor: theme === 'dark' ? '#0A0B0A' : '#FFFFFF',
+  
+  // 화살표
+  arrowColor: theme === 'dark' ? '#FAFAFA' : '#1A1B1A',
+  disabledArrowColor: theme === 'dark' ? '#6B6D6B' : '#8B8D8B',
+  
+  // 인디케이터
+  indicatorColor: brandColors.accent.primary,
+  
+  // 추가 스타일 오버라이드 - 더 강력하게!
   'stylesheet.calendar.header': {
     week: {
-      marginTop: 5,
+      marginTop: 7,
+      marginHorizontal: 12,
       flexDirection: 'row',
       justifyContent: 'space-between',
     },
+    dayHeader: {
+      marginTop: 2,
+      marginBottom: 7,
+      width: 32,
+      textAlign: 'center',
+      color: theme === 'dark' ? '#C4C6C4' : '#4A4C4A',
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    monthText: {
+      color: theme === 'dark' ? '#FAFAFA' : '#1A1B1A',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    arrow: {
+      padding: 10,
+    },
+    arrowImage: {
+      tintColor: theme === 'dark' ? '#FAFAFA' : '#1A1B1A',
+    },
   },
-};
+  'stylesheet.day.basic': {
+    base: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    text: {
+      marginTop: 4,
+      fontSize: 16,
+      fontFamily: 'SF Pro Display',
+      fontWeight: '400',
+      color: theme === 'dark' ? '#FAFAFA' : '#1A1B1A',
+    },
+    today: {
+      backgroundColor: 'transparent',
+    },
+    todayText: {
+      color: brandColors.accent.primary,
+      fontWeight: '600',
+    },
+    selected: {
+      backgroundColor: brandColors.accent.primary,
+      borderRadius: 16,
+    },
+    selectedText: {
+      color: theme === 'dark' ? '#0A0B0A' : '#FFFFFF',
+      fontWeight: '600',
+    },
+    disabled: {
+      backgroundColor: 'transparent',
+    },
+    disabledText: {
+      color: theme === 'dark' ? '#6B6D6B' : '#8B8D8B',
+    },
+  },
+  'stylesheet.calendar.main': {
+    calendar: {
+      paddingLeft: 0,
+      paddingRight: 0,
+    },
+    header: {
+      backgroundColor: 'transparent',
+    },
+  },
+  // 추가 강제 스타일 오버라이드
+  'stylesheet.day.period': {
+    base: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    text: {
+      color: theme === 'dark' ? '#FAFAFA' : '#1A1B1A',
+      fontSize: 16,
+      fontWeight: '400',
+    },
+  },
+  'stylesheet.day.multiDot': {
+    base: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    text: {
+      color: theme === 'dark' ? '#FAFAFA' : '#1A1B1A',
+      fontSize: 16,
+      fontWeight: '400',
+    },
+    selectedText: {
+      color: theme === 'dark' ? '#0A0B0A' : '#FFFFFF',
+      fontWeight: '600',
+    },
+    todayText: {
+      color: brandColors.accent.primary,
+      fontWeight: '600',
+    },
+  },
+});

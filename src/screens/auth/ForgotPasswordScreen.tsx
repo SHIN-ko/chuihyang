@@ -14,6 +14,8 @@ import {
 import { useRouter } from 'expo-router';
 import Button from '@/src/components/common/Button';
 import { Ionicons } from '@expo/vector-icons';
+import { SupabaseService } from '@/src/services/supabaseService';
+import { emailSchema } from '@/src/utils/validation';
 
 const ForgotPasswordScreen: React.FC = () => {
   const router = useRouter();
@@ -21,18 +23,28 @@ const ForgotPasswordScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleResetPassword = async () => {
-    if (!email) {
+    if (!email.trim()) {
       Alert.alert('오류', '이메일을 입력해주세요.');
       return;
     }
 
+    // 이메일 형식 검증
+    try {
+      emailSchema.parse(email.trim());
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || '올바른 이메일 주소를 입력해주세요.';
+      Alert.alert('입력 오류', errorMessage);
+      return;
+    }
+
     setIsLoading(true);
-    // TODO: 비밀번호 재설정 API 호출
-    setTimeout(() => {
-      setIsLoading(false);
+    
+    try {
+      await SupabaseService.resetPassword(email.trim());
+      
       Alert.alert(
         '이메일 전송 완료',
-        '비밀번호 재설정 링크가 이메일로 전송되었습니다.',
+        '비밀번호 재설정 링크가 이메일로 전송되었습니다.\n\n이메일을 확인하시고 링크를 클릭하여 새 비밀번호를 설정해주세요.',
         [
           {
             text: '확인',
@@ -40,12 +52,33 @@ const ForgotPasswordScreen: React.FC = () => {
           },
         ]
       );
-    }, 1500);
+    } catch (error: any) {
+      console.error('비밀번호 재설정 오류:', error);
+      
+      // Supabase 에러 메시지 처리
+      let errorMessage = '비밀번호 재설정 요청 중 오류가 발생했습니다.';
+      
+      if (error.message) {
+        if (error.message.includes('User not found')) {
+          errorMessage = '등록되지 않은 이메일 주소입니다.';
+        } else if (error.message.includes('Email rate limit')) {
+          errorMessage = '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.';
+        } else if (error.message.includes('Invalid email')) {
+          errorMessage = '올바른 이메일 주소를 입력해주세요.';
+        }
+      }
+      
+      Alert.alert('오류', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoBack = () => {
     router.back();
   };
+
+
 
   return (
     <SafeAreaView style={styles.container}>

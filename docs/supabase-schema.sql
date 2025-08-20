@@ -3,7 +3,7 @@ ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
 
 -- Create custom types
 CREATE TYPE project_status AS ENUM ('planning', 'in_progress', 'completed', 'paused');
-CREATE TYPE project_type AS ENUM ('whiskey', 'gin', 'rum', 'fruit_wine', 'vodka', 'other');
+CREATE TYPE project_type AS ENUM ('damgeumSoju25', 'damgeumSoju30', 'vodka');
 
 -- Create profiles table (extends auth.users)
 CREATE TABLE IF NOT EXISTS public.profiles (
