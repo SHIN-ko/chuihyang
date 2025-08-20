@@ -60,6 +60,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       if (success) {
         const { settings } = get();
         NotificationService.setEnabled(settings.enabled);
+        NotificationService.setQuietHours(settings.quietHours);
       }
 
       set({ isInitialized: success, isLoading: false });
@@ -80,6 +81,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
       // 알림 활성화 상태 업데이트
       NotificationService.setEnabled(newSettings.enabled);
+      
+      // 조용한 시간 설정 업데이트
+      NotificationService.setQuietHours(newSettings.quietHours);
 
       // 설정 저장
       await SecureStore.setItemAsync('notification-settings', JSON.stringify(newSettings));

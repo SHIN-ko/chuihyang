@@ -3,6 +3,9 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { Project } from '@/src/types';
+import { generateCustomNotificationMessage } from '@/src/utils/recipeNotifications';
+
+const IS_DEV = __DEV__;
 
 // 알림 핸들러 설정
 Notifications.setNotificationHandler({
@@ -29,6 +32,15 @@ class NotificationService {
   private static instance: NotificationService;
   private pushToken: string | null = null;
   private isEnabled: boolean = true;
+  private quietHours: {
+    enabled: boolean;
+    startTime: string;
+    endTime: string;
+  } = {
+    enabled: false,
+    startTime: '22:00',
+    endTime: '08:00'
+  };
 
   private constructor() {}
 
@@ -105,6 +117,54 @@ class NotificationService {
     }
   }
 
+  // 조용한 시간 설정
+  setQuietHours(quietHours: { enabled: boolean; startTime: string; endTime: string }): void {
+    this.quietHours = quietHours;
+    console.log('조용한 시간 설정 업데이트:', quietHours);
+  }
+
+  // 조용한 시간 체크
+  private isInQuietHours(scheduledDate: Date): boolean {
+    if (!this.quietHours.enabled) return false;
+
+    const [startHour, startMinute] = this.quietHours.startTime.split(':').map(Number);
+    const [endHour, endMinute] = this.quietHours.endTime.split(':').map(Number);
+
+    const scheduledHour = scheduledDate.getHours();
+    const scheduledMinute = scheduledDate.getMinutes();
+    const scheduledTime = scheduledHour * 60 + scheduledMinute;
+    const startTime = startHour * 60 + startMinute;
+    const endTime = endHour * 60 + endMinute;
+
+    // 자정을 넘나드는 경우 처리 (예: 22:00 - 08:00)
+    if (startTime > endTime) {
+      return scheduledTime >= startTime || scheduledTime <= endTime;
+    } else {
+      return scheduledTime >= startTime && scheduledTime <= endTime;
+    }
+  }
+
+  // 조용한 시간을 피해서 알림 시간 조정
+  private adjustTimeForQuietHours(originalDate: Date): Date {
+    if (!this.isInQuietHours(originalDate)) {
+      return originalDate;
+    }
+
+    const adjustedDate = new Date(originalDate);
+    const [endHour, endMinute] = this.quietHours.endTime.split(':').map(Number);
+    
+    // 조용한 시간 종료 시간으로 조정
+    adjustedDate.setHours(endHour, endMinute, 0, 0);
+    
+    // 만약 조정된 시간이 원래 시간보다 이전이라면 다음날로 설정
+    if (adjustedDate <= originalDate) {
+      adjustedDate.setDate(adjustedDate.getDate() + 1);
+    }
+
+    console.log(`조용한 시간으로 인해 알림 시간 조정: ${originalDate.toLocaleString()} → ${adjustedDate.toLocaleString()}`);
+    return adjustedDate;
+  }
+
   // 알림 활성화 상태 확인
   isNotificationEnabled(): boolean {
     return this.isEnabled;
@@ -124,22 +184,30 @@ class NotificationService {
       // 기존 알림 취소
       await this.cancelProjectNotifications(project.id);
 
+      const now = new Date();
       const notifications: NotificationSchedule[] = [];
-      const startDate = new Date(project.startDate);
-      const endDate = new Date(project.expectedEndDate);
+      
+      // 날짜 문자열을 로컬 시간대로 파싱 (YYYY-MM-DD 형식을 로컬 시간으로)
+      const startDate = new Date(project.startDate + 'T00:00:00');
+      const endDate = new Date(project.expectedEndDate + 'T23:59:59');
       const projectName = project.name;
 
-      console.log(`=== ${projectName} 프로젝트 알림 설정 ===`);
-      console.log(`시작일: ${startDate.toLocaleString('ko-KR')}`);
-      console.log(`완성일: ${endDate.toLocaleString('ko-KR')}`);
-      console.log(`현재시간: ${new Date().toLocaleString('ko-KR')}`);
+      // 날짜 파싱 검증
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        console.error('❌ 날짜 파싱 실패!');
+        return;
+      }
+
+      // 프로젝트가 이미 완료되었는지 확인
+      if (endDate <= now) {
+        console.log('⚠️ 프로젝트 완료일이 이미 지났습니다. 알림을 설정하지 않습니다.');
+        return;
+      }
 
       // 완료 3일 전 알림
       const threeDaysBefore = new Date(endDate.getTime());
       threeDaysBefore.setDate(threeDaysBefore.getDate() - 3);
       threeDaysBefore.setHours(10, 0, 0, 0); // 오전 10시
-
-      const now = new Date();
       
       // 날짜 비교를 위해 오늘 날짜를 정확히 구하기
       const today = new Date();
@@ -148,27 +216,22 @@ class NotificationService {
       const endDateOnly = new Date(endDate.getTime());
       endDateOnly.setHours(0, 0, 0, 0);
       
-      console.log(`오늘 날짜: ${today.toLocaleString('ko-KR')}`);
-      console.log(`완성일 날짜: ${endDateOnly.toLocaleString('ko-KR')}`);
       const daysUntilCompletion = Math.ceil((endDateOnly.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      console.log(`완성까지 남은 날짜: ${daysUntilCompletion}일`);
       
-      console.log(`3일 전 알림 시간: ${threeDaysBefore.toLocaleString('ko-KR')}`);
-      console.log(`3일 전 알림 조건: ${threeDaysBefore > now} (${daysUntilCompletion} >= 3)`);
-      
+      // 3일 전 알림: 완료까지 3일 이상 남았고, 3일 전 시간이 아직 미래인 경우
       if (threeDaysBefore > now && daysUntilCompletion >= 3) {
+        const customMessage = generateCustomNotificationMessage(project, 'threeDaysBeforeCompletion');
+        const adjustedDate = this.adjustTimeForQuietHours(threeDaysBefore);
+        
         notifications.push({
           id: `${project.id}-3days`,
           projectId: project.id,
           type: 'completion_reminder',
-          title: '🥃 곧 완성이에요!',
-          body: `${projectName}이(가) 3일 후 완성 예정입니다. 준비해주세요!`,
-          scheduledDate: threeDaysBefore,
+          title: customMessage.title,
+          body: customMessage.body,
+          scheduledDate: adjustedDate,
           data: { projectId: project.id, type: 'completion_reminder' },
         });
-        console.log('✓ 3일 전 알림 추가됨');
-      } else {
-        console.log('✗ 3일 전 알림 스킵 (이미 지난 시간)');
       }
 
       // 완료 1일 전 알림
@@ -176,76 +239,97 @@ class NotificationService {
       oneDayBefore.setDate(oneDayBefore.getDate() - 1);
       oneDayBefore.setHours(18, 0, 0, 0); // 오후 6시
 
-      console.log(`1일 전 알림 시간: ${oneDayBefore.toLocaleString('ko-KR')}`);
-      console.log(`1일 전 알림 조건: ${oneDayBefore > now} (${daysUntilCompletion} === 2)`);
-      
-      if (oneDayBefore > now && daysUntilCompletion === 2) {
+      // 1일 전 알림: 완료까지 1일 이상 남았고, 1일 전 시간이 아직 미래인 경우
+      if (oneDayBefore > now && daysUntilCompletion >= 1) {
+        const customMessage = generateCustomNotificationMessage(project, 'oneDayBeforeCompletion');
+        const adjustedDate = this.adjustTimeForQuietHours(oneDayBefore);
+        
         notifications.push({
           id: `${project.id}-1day`,
           projectId: project.id,
           type: 'completion_reminder',
-          title: '🎉 내일이면 완성!',
-          body: `${projectName}이(가) 내일 완성됩니다. 시음 준비 되셨나요?`,
-          scheduledDate: oneDayBefore,
+          title: customMessage.title,
+          body: customMessage.body,
+          scheduledDate: adjustedDate,
           data: { projectId: project.id, type: 'completion_reminder' },
         });
-        console.log('✓ 1일 전 알림 추가됨');
-      } else {
-        console.log('✗ 1일 전 알림 스킵 (이미 지난 시간)');
       }
 
       // 완료일 당일 알림
       const completionDay = new Date(endDate.getTime());
       completionDay.setHours(12, 0, 0, 0); // 오후 12시
 
-      console.log(`완료일 당일 알림 시간: ${completionDay.toLocaleString('ko-KR')}`);
-      console.log(`완료일 당일 알림 조건: ${completionDay > now} (완성일이 오늘인 경우만)`);
-      
-      // 완료일 당일 알림은 완성일 당일에만 설정 (오늘이 완성일인 경우)
-      if (completionDay > now && daysUntilCompletion === 0) {
+      // 완료일 당일 알림: 완료일 시간이 아직 미래인 경우 (오늘이거나 미래)
+      if (completionDay > now && daysUntilCompletion >= 0) {
+        const customMessage = generateCustomNotificationMessage(project, 'completionDay');
+        const adjustedDate = this.adjustTimeForQuietHours(completionDay);
+        
         notifications.push({
           id: `${project.id}-completion`,
           projectId: project.id,
           type: 'completion_due',
-          title: '🍻 완성되었습니다!',
-          body: `${projectName}이(가) 오늘 완성되었습니다! 이제 시음해보세요.`,
-          scheduledDate: completionDay,
+          title: customMessage.title,
+          body: customMessage.body,
+          scheduledDate: adjustedDate,
           data: { projectId: project.id, type: 'completion_due' },
         });
-        console.log('✓ 완료일 당일 알림 추가됨');
-      } else {
-        console.log('✗ 완료일 당일 알림 스킵 (이미 지난 시간)');
       }
 
       // 중간 점검 알림 (전체 기간의 50% 지점)
-      const midPoint = new Date(startDate);
       const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       const halfDays = Math.floor(totalDays / 2);
-      midPoint.setDate(startDate.getDate() + halfDays);
+      
+      // 안전한 날짜 계산 (밀리초 단위로 계산)
+      const midPoint = new Date(startDate.getTime() + (halfDays * 24 * 60 * 60 * 1000));
       midPoint.setHours(15, 0, 0, 0); // 오후 3시
 
       if (midPoint > now && midPoint < endDate) {
+        const customMessage = generateCustomNotificationMessage(project, 'midpointCheck');
+        const adjustedDate = this.adjustTimeForQuietHours(midPoint);
+        
         notifications.push({
           id: `${project.id}-midcheck`,
           projectId: project.id,
           type: 'progress_check',
-          title: '📊 중간 점검 시간!',
-          body: `${projectName} 진행 상황을 확인하고 기록해보세요!`,
-          scheduledDate: midPoint,
+          title: customMessage.title,
+          body: customMessage.body,
+          scheduledDate: adjustedDate,
           data: { projectId: project.id, type: 'progress_check' },
         });
+      }
+
+
+
+      // 단기간 프로젝트를 위한 추가 알림 (7일 이내 완료)
+      if (daysUntilCompletion <= 7 && daysUntilCompletion > 0) {
+        // 매일 체크 알림 (단기간 프로젝트용)
+        for (let i = 1; i <= Math.min(daysUntilCompletion, 3); i++) {
+          const dailyCheckDate = new Date(now.getTime());
+          dailyCheckDate.setDate(now.getDate() + i);
+          dailyCheckDate.setHours(9, 0, 0, 0); // 오전 9시
+
+          if (dailyCheckDate < endDate) {
+            const customMessage = generateCustomNotificationMessage(project, 'weeklyCheck');
+            const adjustedDate = this.adjustTimeForQuietHours(dailyCheckDate);
+            
+            notifications.push({
+              id: `${project.id}-daily-${i}`,
+              projectId: project.id,
+              type: 'progress_check',
+              title: `📅 ${i}일 후 완성!`,
+              body: `${projectName}이(가) ${i}일 후 완성됩니다. 상태를 확인해보세요!`,
+              scheduledDate: adjustedDate,
+              data: { projectId: project.id, type: 'progress_check' },
+            });
+
+          }
+        }
       }
 
       // 모든 알림 스케줄링
       for (const notification of notifications) {
         await this.scheduleNotification(notification);
       }
-
-      console.log(`${project.name} 프로젝트에 ${notifications.length}개 알림 설정`);
-      console.log('설정된 알림 목록:');
-      notifications.forEach((notif, index) => {
-        console.log(`${index + 1}. ${notif.title} - ${notif.scheduledDate.toLocaleString('ko-KR')}`);
-      });
     } catch (error) {
       console.error('프로젝트 알림 설정 실패:', error);
     }
@@ -254,6 +338,13 @@ class NotificationService {
   // 개별 알림 스케줄링
   private async scheduleNotification(notification: NotificationSchedule): Promise<void> {
     try {
+      const now = new Date();
+      
+      // 과거 시간 체크 (5분 여유를 둠)
+      if (notification.scheduledDate.getTime() <= now.getTime() + (5 * 60 * 1000)) {
+        return;
+      }
+
       await Notifications.scheduleNotificationAsync({
         identifier: notification.id,
         content: {
@@ -267,7 +358,7 @@ class NotificationService {
         } as Notifications.DateTriggerInput,
       });
     } catch (error) {
-      console.error('알림 스케줄링 실패:', error);
+      console.error('❌ 알림 스케줄링 실패:', error);
     }
   }
 
@@ -334,4 +425,6 @@ class NotificationService {
   }
 }
 
-export default NotificationService.getInstance();
+// 싱글톤 인스턴스를 export
+const notificationService = NotificationService.getInstance();
+export default notificationService;

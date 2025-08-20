@@ -157,7 +157,10 @@ const ProfileScreen: React.FC = () => {
               )}
 
               {/* 조용한 시간 설정 */}
-              <View style={styles.settingRow}>
+              <TouchableOpacity 
+                style={styles.settingRow}
+                onPress={() => router.push('/profile/quiet-hours' as any)}
+              >
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingTitle}>방해 금지 시간</Text>
                   <Text style={styles.settingDescription}>
@@ -167,19 +170,39 @@ const ProfileScreen: React.FC = () => {
                     }
                   </Text>
                 </View>
-                <Switch
-                  value={notificationSettings.quietHours.enabled}
-                  onValueChange={(value) =>
-                    updateNotificationSettings({
-                      quietHours: { ...notificationSettings.quietHours, enabled: value }
-                    })
-                  }
-                  trackColor={{ false: '#3c533c', true: '#22c55e' }}
-                  thumbColor="#ffffff"
-                />
-              </View>
+                <Ionicons name="chevron-forward" size={20} color="#9db89d" />
+              </TouchableOpacity>
             </>
           )}
+        </View>
+
+        {/* 앱 정보 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>알림 관리</Text>
+          
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => router.push('/profile/notification-history' as any)}
+          >
+            <Ionicons name="time-outline" size={24} color="#9db89d" />
+            <View style={styles.menuInfo}>
+              <Text style={styles.menuTitle}>알림 히스토리</Text>
+              <Text style={styles.menuDescription}>예약된 알림 목록을 확인합니다</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9db89d" />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => router.push('/profile/notification-debug' as any)}
+          >
+            <Ionicons name="bug-outline" size={24} color="#f59e0b" />
+            <View style={styles.menuInfo}>
+              <Text style={styles.menuTitle}>알림 디버그</Text>
+              <Text style={styles.menuDescription}>알림 시스템 진단 및 문제 해결</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9db89d" />
+          </TouchableOpacity>
         </View>
 
         {/* 앱 정보 */}

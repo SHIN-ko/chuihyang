@@ -29,6 +29,9 @@ interface ProjectState {
   updateProgressLog: (logId: string, updates: Partial<ProgressLog>) => Promise<boolean>;
   deleteProgressLog: (projectId: string, logId: string) => Promise<boolean>;
   
+  // Notification actions
+  rescheduleAllNotifications: () => Promise<boolean>;
+  
   // Computed values
   getProjectsByStatus: (status: ProjectStatus) => Project[];
   getInProgressProjects: () => Project[];
@@ -63,6 +66,36 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       projects: state.projects.filter((project) => project.id !== id),
       selectedProject: state.selectedProject?.id === id ? null : state.selectedProject,
     }));
+  },
+
+  // 모든 프로젝트의 알림 재설정
+  rescheduleAllNotifications: async () => {
+    try {
+      set({ isLoading: true });
+      const { projects } = get();
+      
+      // 진행 중인 프로젝트들만 필터링
+      const inProgressProjects = projects.filter(p => p.status === 'in_progress');
+      
+      console.log(`${inProgressProjects.length}개의 진행 중인 프로젝트 알림 재설정 시작`);
+      
+      for (const project of inProgressProjects) {
+        try {
+          console.log(`=== ${project.name} 프로젝트 알림 재설정 ===`);
+          await NotificationService.scheduleProjectNotifications(project);
+        } catch (error) {
+          console.error(`${project.name} 프로젝트 알림 설정 실패:`, error);
+        }
+      }
+      
+      console.log('모든 프로젝트 알림 재설정 완료');
+      set({ isLoading: false });
+      return true;
+    } catch (error) {
+      console.error('알림 재설정 실패:', error);
+      set({ isLoading: false });
+      return false;
+    }
   },
 
   setSelectedProject: (project: Project | null) => {
