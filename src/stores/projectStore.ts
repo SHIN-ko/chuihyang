@@ -20,6 +20,7 @@ interface ProjectState {
   // Async actions
   fetchProjects: () => Promise<void>;
   createProject: (projectData: Omit<Project, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<boolean>;
+  updateProjectData: (id: string, updates: Partial<Project>) => Promise<boolean>;
   updateProjectStatus: (id: string, status: ProjectStatus) => Promise<boolean>;
   
   // Progress Log actions
@@ -108,6 +109,22 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       return true;
     } catch (error) {
       console.error('프로젝트 생성 실패:', error);
+      set({ isLoading: false });
+      return false;
+    }
+  },
+
+  updateProjectData: async (id: string, updates: Partial<Project>) => {
+    try {
+      set({ isLoading: true });
+      
+      await SupabaseService.updateProject(id, updates);
+      get().updateProject(id, updates);
+      
+      set({ isLoading: false });
+      return true;
+    } catch (error) {
+      console.error('프로젝트 업데이트 실패:', error);
       set({ isLoading: false });
       return false;
     }

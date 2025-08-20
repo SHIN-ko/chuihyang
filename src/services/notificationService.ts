@@ -114,6 +114,12 @@ class NotificationService {
   async scheduleProjectNotifications(project: Project): Promise<void> {
     if (!this.isEnabled) return;
 
+    // 이미 완료된 프로젝트는 알림 설정하지 않음
+    if (project.status === 'completed') {
+      console.log(`${project.name} 프로젝트는 이미 완료되어 알림을 설정하지 않습니다.`);
+      return;
+    }
+
     try {
       // 기존 알림 취소
       await this.cancelProjectNotifications(project.id);
@@ -123,12 +129,34 @@ class NotificationService {
       const endDate = new Date(project.expectedEndDate);
       const projectName = project.name;
 
+      console.log(`=== ${projectName} 프로젝트 알림 설정 ===`);
+      console.log(`시작일: ${startDate.toLocaleString('ko-KR')}`);
+      console.log(`완성일: ${endDate.toLocaleString('ko-KR')}`);
+      console.log(`현재시간: ${new Date().toLocaleString('ko-KR')}`);
+
       // 완료 3일 전 알림
-      const threeDaysBefore = new Date(endDate);
-      threeDaysBefore.setDate(endDate.getDate() - 3);
+      const threeDaysBefore = new Date(endDate.getTime());
+      threeDaysBefore.setDate(threeDaysBefore.getDate() - 3);
       threeDaysBefore.setHours(10, 0, 0, 0); // 오전 10시
 
-      if (threeDaysBefore > new Date()) {
+      const now = new Date();
+      
+      // 날짜 비교를 위해 오늘 날짜를 정확히 구하기
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const endDateOnly = new Date(endDate.getTime());
+      endDateOnly.setHours(0, 0, 0, 0);
+      
+      console.log(`오늘 날짜: ${today.toLocaleString('ko-KR')}`);
+      console.log(`완성일 날짜: ${endDateOnly.toLocaleString('ko-KR')}`);
+      const daysUntilCompletion = Math.ceil((endDateOnly.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      console.log(`완성까지 남은 날짜: ${daysUntilCompletion}일`);
+      
+      console.log(`3일 전 알림 시간: ${threeDaysBefore.toLocaleString('ko-KR')}`);
+      console.log(`3일 전 알림 조건: ${threeDaysBefore > now} (${daysUntilCompletion} >= 3)`);
+      
+      if (threeDaysBefore > now && daysUntilCompletion >= 3) {
         notifications.push({
           id: `${project.id}-3days`,
           projectId: project.id,
@@ -138,14 +166,20 @@ class NotificationService {
           scheduledDate: threeDaysBefore,
           data: { projectId: project.id, type: 'completion_reminder' },
         });
+        console.log('✓ 3일 전 알림 추가됨');
+      } else {
+        console.log('✗ 3일 전 알림 스킵 (이미 지난 시간)');
       }
 
       // 완료 1일 전 알림
-      const oneDayBefore = new Date(endDate);
-      oneDayBefore.setDate(endDate.getDate() - 1);
+      const oneDayBefore = new Date(endDate.getTime());
+      oneDayBefore.setDate(oneDayBefore.getDate() - 1);
       oneDayBefore.setHours(18, 0, 0, 0); // 오후 6시
 
-      if (oneDayBefore > new Date()) {
+      console.log(`1일 전 알림 시간: ${oneDayBefore.toLocaleString('ko-KR')}`);
+      console.log(`1일 전 알림 조건: ${oneDayBefore > now} (${daysUntilCompletion} === 2)`);
+      
+      if (oneDayBefore > now && daysUntilCompletion === 2) {
         notifications.push({
           id: `${project.id}-1day`,
           projectId: project.id,
@@ -155,13 +189,20 @@ class NotificationService {
           scheduledDate: oneDayBefore,
           data: { projectId: project.id, type: 'completion_reminder' },
         });
+        console.log('✓ 1일 전 알림 추가됨');
+      } else {
+        console.log('✗ 1일 전 알림 스킵 (이미 지난 시간)');
       }
 
       // 완료일 당일 알림
-      const completionDay = new Date(endDate);
+      const completionDay = new Date(endDate.getTime());
       completionDay.setHours(12, 0, 0, 0); // 오후 12시
 
-      if (completionDay > new Date()) {
+      console.log(`완료일 당일 알림 시간: ${completionDay.toLocaleString('ko-KR')}`);
+      console.log(`완료일 당일 알림 조건: ${completionDay > now} (완성일이 오늘인 경우만)`);
+      
+      // 완료일 당일 알림은 완성일 당일에만 설정 (오늘이 완성일인 경우)
+      if (completionDay > now && daysUntilCompletion === 0) {
         notifications.push({
           id: `${project.id}-completion`,
           projectId: project.id,
@@ -171,6 +212,9 @@ class NotificationService {
           scheduledDate: completionDay,
           data: { projectId: project.id, type: 'completion_due' },
         });
+        console.log('✓ 완료일 당일 알림 추가됨');
+      } else {
+        console.log('✗ 완료일 당일 알림 스킵 (이미 지난 시간)');
       }
 
       // 중간 점검 알림 (전체 기간의 50% 지점)
@@ -180,7 +224,7 @@ class NotificationService {
       midPoint.setDate(startDate.getDate() + halfDays);
       midPoint.setHours(15, 0, 0, 0); // 오후 3시
 
-      if (midPoint > new Date() && midPoint < endDate) {
+      if (midPoint > now && midPoint < endDate) {
         notifications.push({
           id: `${project.id}-midcheck`,
           projectId: project.id,
@@ -198,6 +242,10 @@ class NotificationService {
       }
 
       console.log(`${project.name} 프로젝트에 ${notifications.length}개 알림 설정`);
+      console.log('설정된 알림 목록:');
+      notifications.forEach((notif, index) => {
+        console.log(`${index + 1}. ${notif.title} - ${notif.scheduledDate.toLocaleString('ko-KR')}`);
+      });
     } catch (error) {
       console.error('프로젝트 알림 설정 실패:', error);
     }

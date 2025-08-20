@@ -114,7 +114,7 @@ export class SupabaseService {
       if (error) throw error;
       if (!projectsData) return [];
 
-      return projectsData.map(this.transformProjectRowToProject);
+      return projectsData.map(SupabaseService.transformProjectRowToProject);
     } catch (error) {
       console.error('프로젝트 조회 오류:', error);
       throw error;
@@ -179,7 +179,7 @@ export class SupabaseService {
       if (fetchError) throw fetchError;
       if (!fullProject) throw new Error('프로젝트 조회 실패');
 
-      return this.transformProjectRowToProject(fullProject);
+      return SupabaseService.transformProjectRowToProject(fullProject);
     } catch (error) {
       console.error('프로젝트 생성 오류:', error);
       throw error;
@@ -245,7 +245,7 @@ export class SupabaseService {
       if (error) throw error;
       if (!log) throw new Error('진행 로그 생성 실패');
 
-      return this.transformProgressLogRowToProgressLog(log);
+      return SupabaseService.transformProgressLogRowToProgressLog(log);
     } catch (error) {
       console.error('진행 로그 추가 오류:', error);
       throw error;
@@ -336,8 +336,8 @@ export class SupabaseService {
       status: projectRow.status,
       notes: projectRow.notes,
       images: projectRow.images || [],
-      ingredients: projectRow.ingredients ? projectRow.ingredients.map(this.transformIngredientRowToIngredient) : [],
-      progressLogs: projectRow.progress_logs ? projectRow.progress_logs.map(this.transformProgressLogRowToProgressLog) : [],
+      ingredients: projectRow.ingredients ? projectRow.ingredients.map(SupabaseService.transformIngredientRowToIngredient) : [],
+      progressLogs: projectRow.progress_logs ? projectRow.progress_logs.map(SupabaseService.transformProgressLogRowToProgressLog) : [],
       createdAt: projectRow.created_at,
       updatedAt: projectRow.updated_at,
     };
