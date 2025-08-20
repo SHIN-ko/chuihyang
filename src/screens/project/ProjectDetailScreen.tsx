@@ -24,7 +24,7 @@ const { width } = Dimensions.get('window');
 const ProjectDetailScreen: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { projects, updateProject, deleteProject, updateProjectStatus, isLoading } = useProjectStore();
+  const { projects, updateProject, deleteProject, deleteProjectData, updateProjectStatus, isLoading } = useProjectStore();
   
   const [project, setProject] = useState<Project | null>(null);
 
@@ -95,6 +95,37 @@ const ProjectDetailScreen: React.FC = () => {
               ]);
             } else {
               Alert.alert('오류', '프로젝트 완료 처리에 실패했습니다.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      '⚠️ 프로젝트 삭제',
+      `"${project.name}" 프로젝트를 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 모든 진행 로그와 데이터가 영구적으로 삭제됩니다.`,
+      [
+        {
+          text: '취소',
+          style: 'cancel',
+        },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await deleteProjectData(project.id);
+            
+            if (success) {
+              Alert.alert('삭제 완료', '프로젝트가 삭제되었습니다.', [
+                {
+                  text: '확인',
+                  onPress: () => router.replace('/(tabs)'),
+                },
+              ]);
+            } else {
+              Alert.alert('오류', '프로젝트 삭제에 실패했습니다.');
             }
           },
         },
@@ -370,9 +401,17 @@ const ProjectDetailScreen: React.FC = () => {
         </TouchableOpacity>
         
         <TouchableOpacity 
+          style={styles.deleteButton}
+          onPress={handleDelete}
+          disabled={isLoading}
+        >
+          <Text style={styles.deleteButtonText}>삭제</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
           style={styles.completeButton}
           onPress={handleComplete}
-          disabled={project.status === 'completed'}
+          disabled={project.status === 'completed' || isLoading}
         >
           <Text style={styles.completeButtonText}>
             {project.status === 'completed' ? '완료됨' : '완료 처리'}
@@ -600,6 +639,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  deleteButton: {
+    flex: 1,
+    backgroundColor: '#dc2626',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  deleteButtonText: {
     color: 'white',
     fontSize: 14,
     fontWeight: 'bold',

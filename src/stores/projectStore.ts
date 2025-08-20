@@ -22,6 +22,7 @@ interface ProjectState {
   createProject: (projectData: Omit<Project, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<boolean>;
   updateProjectData: (id: string, updates: Partial<Project>) => Promise<boolean>;
   updateProjectStatus: (id: string, status: ProjectStatus) => Promise<boolean>;
+  deleteProjectData: (id: string) => Promise<boolean>;
   
   // Progress Log actions
   addProgressLog: (logData: Omit<ProgressLog, 'id' | 'createdAt' | 'updatedAt'>) => Promise<boolean>;
@@ -148,6 +149,28 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       return true;
     } catch (error) {
       console.error('프로젝트 상태 업데이트 실패:', error);
+      return false;
+    }
+  },
+
+  deleteProjectData: async (id: string) => {
+    try {
+      set({ isLoading: true });
+      
+      // 백엔드에서 프로젝트 삭제
+      await SupabaseService.deleteProject(id);
+      
+      // 관련 알림 취소
+      await NotificationService.cancelProjectNotifications(id);
+      
+      // 로컬 상태에서 프로젝트 제거
+      get().deleteProject(id);
+      
+      set({ isLoading: false });
+      return true;
+    } catch (error) {
+      console.error('프로젝트 삭제 실패:', error);
+      set({ isLoading: false });
       return false;
     }
   },
