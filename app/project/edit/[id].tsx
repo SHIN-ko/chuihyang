@@ -86,7 +86,9 @@ const EditProjectScreen: React.FC = () => {
     }
   };
 
-  const getRecipeName = (recipeId: string) => {
+  const getRecipeName = (recipeId: string | undefined) => {
+    if (!recipeId) return '알 수 없는 레시피';
+    
     switch (recipeId) {
       case 'yareyare': return '야레야레 (위스키, 60일)';
       case 'blabla': return '블라블라 (진, 30일)';
