@@ -131,6 +131,35 @@ export class SupabaseService {
     }
   }
 
+  static async updateProfile(userId: string, updates: { profileImage?: string; nickname?: string; birthdate?: string }): Promise<void> {
+    try {
+      const updateData: any = {};
+      
+      if (updates.profileImage !== undefined) {
+        updateData.profile_image_url = updates.profileImage;
+      }
+      if (updates.nickname !== undefined) {
+        updateData.nickname = updates.nickname;
+      }
+      if (updates.birthdate !== undefined) {
+        updateData.birthdate = updates.birthdate;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('프로필 업데이트 오류:', error);
+      throw error;
+    }
+  }
+
   // 프로젝트 관련
   static async getProjects(userId: string): Promise<Project[]> {
     try {
@@ -323,8 +352,22 @@ export class SupabaseService {
   }
 
   // 이미지 업로드
+  // 빈 이미지 파일 체크 유틸리티
+  static async checkImageSize(url: string): Promise<boolean> {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      const contentLength = response.headers.get('content-length');
+      return contentLength !== null && parseInt(contentLength) > 0;
+    } catch (error) {
+      console.error('이미지 크기 체크 실패:', error);
+      return false;
+    }
+  }
+
   static async uploadImage(bucket: string, path: string, file: Blob): Promise<string> {
     try {
+      console.log('업로드 시작:', { bucket, path, fileSize: file.size });
+      
       const { data, error } = await supabase.storage
         .from(bucket)
         .upload(path, file);
@@ -332,9 +375,18 @@ export class SupabaseService {
       if (error) throw error;
       if (!data) throw new Error('이미지 업로드 실패');
 
+      console.log('업로드 완료 데이터:', data);
+
       const { data: { publicUrl } } = supabase.storage
         .from(bucket)
         .getPublicUrl(data.path);
+
+      console.log('생성된 Public URL:', publicUrl);
+
+      // URL 검증
+      if (!publicUrl || !publicUrl.startsWith('http')) {
+        throw new Error(`잘못된 public URL: ${publicUrl}`);
+      }
 
       return publicUrl;
     } catch (error) {
@@ -357,6 +409,21 @@ export class SupabaseService {
   }
 
   private static transformProjectRowToProject(projectRow: any): Project {
+    // 빈 이미지 필터링 (content-length가 0인 이미지들 제거)
+    const filteredImages = (projectRow.images || []).filter((imageUrl: string) => {
+      // 새로운 이미지 형식인지 체크 (최근 업로드된 것들)
+      const isNewFormat = imageUrl.includes('/logs/') || imageUrl.includes('/progress-images/');
+      // 기존 project-images는 임시로 제외 (빈 파일 문제 있음)
+      const isOldProjectImage = imageUrl.includes('/project-images/projects/');
+      
+      if (isOldProjectImage) {
+        console.warn('빈 파일 가능성 있는 이미지 제외:', imageUrl);
+        return false;
+      }
+      
+      return true;
+    });
+
     return {
       id: projectRow.id,
       userId: projectRow.user_id,
@@ -368,7 +435,7 @@ export class SupabaseService {
       actualEndDate: projectRow.actual_end_date,
       status: projectRow.status,
       notes: projectRow.notes,
-      images: projectRow.images || [],
+      images: filteredImages,
       ingredients: projectRow.ingredients ? projectRow.ingredients.map(SupabaseService.transformIngredientRowToIngredient) : [],
       progressLogs: projectRow.progress_logs ? projectRow.progress_logs.map(SupabaseService.transformProgressLogRowToProgressLog) : [],
       createdAt: projectRow.created_at,

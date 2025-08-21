@@ -113,22 +113,25 @@ const ProjectDetailScreen: React.FC = () => {
       paddingHorizontal: 20,
     },
     mainInfoContainer: {
-      padding: 24,
+      paddingHorizontal: 20,
+      paddingVertical: 20,
       alignItems: 'center',
       marginBottom: 16,
     },
     projectImageContainer: {
       marginBottom: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     projectImage: {
-      width: 128,
-      height: 128,
-      borderRadius: 8,
+      width: 160,
+      height: 160,
+      borderRadius: 12,
     },
     placeholderImage: {
-      width: 128,
-      height: 128,
-      borderRadius: 8,
+      width: 160,
+      height: 160,
+      borderRadius: 12,
       backgroundColor: colors.background.surface,
       alignItems: 'center',
       justifyContent: 'center',
@@ -137,55 +140,87 @@ const ProjectDetailScreen: React.FC = () => {
     },
     projectInfo: {
       alignItems: 'center',
+      gap: 8,
     },
     projectName: {
       color: colors.text.primary,
-      fontSize: 22,
+      fontSize: 26,
       fontWeight: 'bold',
       marginBottom: 4,
       textAlign: 'center',
     },
     projectSubtitle: {
       color: colors.text.secondary,
-      fontSize: 16,
+      fontSize: 18,
       marginBottom: 4,
+      textAlign: 'center',
+    },
+    projectDescription: {
+      color: colors.text.tertiary,
+      fontSize: 16,
+      fontWeight: '400',
+      marginBottom: 8,
+      lineHeight: 22,
+      letterSpacing: -0.1,
       textAlign: 'center',
     },
     projectDates: {
       color: colors.text.secondary,
-      fontSize: 16,
+      fontSize: 17,
       textAlign: 'center',
     },
     section: {
-      padding: 20,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
       marginBottom: 16,
+      alignItems: 'center',
     },
     sectionTitle: {
       color: colors.text.primary,
-      fontSize: 20,
+      fontSize: 22,
       fontWeight: '700',
-      marginBottom: 16,
+      marginBottom: 8,
       letterSpacing: -0.3,
+      textAlign: 'center',
+      alignSelf: 'stretch',
+      width: '100%',
     },
     ingredientsContainer: {
       backgroundColor: 'transparent',
     },
     ingredientRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingVertical: 12,
+      paddingVertical: 8,
       borderTopWidth: 1,
       borderTopColor: colors.border.secondary,
     },
     ingredientName: {
-      color: colors.text.secondary,
-      fontSize: 14,
-      flex: 1,
-    },
-    ingredientQuantity: {
       color: colors.text.primary,
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    ingredientsList: {
+      color: colors.text.primary,
+      fontSize: 15,
+      fontWeight: '400',
+      lineHeight: 22,
+      textAlign: 'center',
+      alignSelf: 'stretch',
+      width: '100%',
+      marginTop: 0,
+    },
+
+    noIngredientsContainer: {
+      alignItems: 'center',
+      paddingVertical: 24,
+      backgroundColor: colors.background.secondary,
+      borderRadius: 8,
+    },
+    noIngredientsText: {
+      color: colors.text.muted,
       fontSize: 14,
+      fontStyle: 'italic',
+      textAlign: 'center',
+      marginTop: 0,
     },
     statusContainer: {
       backgroundColor: 'transparent',
@@ -207,7 +242,8 @@ const ProjectDetailScreen: React.FC = () => {
       fontWeight: 'bold',
     },
     progressContainer: {
-      gap: 8,
+      gap: 12,
+      paddingVertical: 8,
     },
     progressBarContainer: {
       height: 8,
@@ -231,9 +267,9 @@ const ProjectDetailScreen: React.FC = () => {
     },
     imageGrid: {
       flexDirection: 'row',
-      height: 200,
-      gap: 4,
-      borderRadius: 8,
+      height: 260,
+      gap: 6,
+      borderRadius: 16,
       overflow: 'hidden',
     },
     imageGridItem: {
@@ -326,24 +362,38 @@ const ProjectDetailScreen: React.FC = () => {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 12,
+      marginBottom: 16,
+      paddingBottom: 4,
+      minHeight: 50, // 버튼 높이 보장
+      width: '100%', // 전체 너비 사용
     },
     addLogButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: brandColors.accent.primary,
-      paddingHorizontal: 16,
+      backgroundColor: '#7C9885', // 더 뚜렷한 색상으로 임시 변경
+      paddingHorizontal: 14,
       paddingVertical: 8,
-      borderRadius: 20,
-      gap: 6,
-      borderWidth: 1,
-      borderColor: brandColors.accent.secondary,
-      ...shadows.glass.light,
+      borderRadius: 18,
+      gap: 4,
+      borderWidth: 2,
+      borderColor: '#6B8F71',
+      minWidth: 80, // 최소 너비 보장
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 3,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 6,
+      elevation: 6,
+      // 디버깅을 위한 임시 스타일
+      position: 'relative',
+      zIndex: 999,
     },
     addLogButtonText: {
-      color: colors.text.primary,
+      color: '#FFFFFF', // 흰색으로 명확하게
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: '700',
       letterSpacing: 0.2,
     },
     noLogsContainer: {
@@ -366,43 +416,31 @@ const ProjectDetailScreen: React.FC = () => {
       textAlign: 'center',
     },
     logsContainer: {
-      backgroundColor: colors.background.surface,
-      borderRadius: 8,
-      padding: 16,
+      // 개별 카드의 marginBottom으로 간격 처리
+    },
+
+    logContent: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: 20,
+      paddingHorizontal: 20,
+      paddingVertical: 20,
       borderWidth: 1,
       borderColor: colors.border.secondary,
-    },
-    logItem: {
-      flexDirection: 'row',
-      marginBottom: 24,
-    },
-    timelineContainer: {
-      alignItems: 'center',
-      marginRight: 16,
-      paddingTop: 4,
-    },
-    timelineCircle: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      backgroundColor: brandColors.accent.primary,
-      zIndex: 1,
-    },
-    timelineLine: {
-      width: 2,
-      flex: 1,
-      backgroundColor: colors.border.secondary,
-      marginTop: 8,
-      marginBottom: -24,
-    },
-    logContent: {
-      flex: 1,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      marginBottom: 16, // 개별 카드 간 간격
     },
     logHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: 8,
+      marginBottom: 12,
     },
     logHeaderLeft: {
       flex: 1,
@@ -421,24 +459,24 @@ const ProjectDetailScreen: React.FC = () => {
     },
     logTitle: {
       color: colors.text.primary,
-      fontSize: 16,
+      fontSize: 18,
       fontWeight: '600',
       flex: 1,
       letterSpacing: 0.2,
     },
     logDate: {
       color: colors.text.secondary,
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: '500',
     },
     logDescription: {
       color: colors.text.secondary,
-      fontSize: 14,
-      lineHeight: 20,
-      marginBottom: 16,
+      fontSize: 16,
+      lineHeight: 22,
+      marginBottom: 12,
     },
     ratingsContainer: {
-      marginBottom: 12,
+      marginBottom: 16,
     },
     ratingRow: {
       flexDirection: 'row',
@@ -453,21 +491,21 @@ const ProjectDetailScreen: React.FC = () => {
     colorInfo: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 12,
-      gap: 6,
+      marginBottom: 16,
+      gap: 8,
     },
     colorText: {
       color: colors.text.primary,
       fontSize: 14,
     },
     logImages: {
-      marginBottom: 12,
+      marginBottom: 16,
     },
     logImage: {
-      width: 60,
-      height: 60,
-      borderRadius: 6,
-      marginRight: 8,
+      width: 100,
+      height: 100,
+      borderRadius: 12,
+      marginRight: 12,
     },
     logNotes: {
       color: colors.text.secondary,
@@ -638,12 +676,14 @@ const ProjectDetailScreen: React.FC = () => {
 
   const getProjectTypeLabel = (type: string) => {
     switch (type) {
+      case 'damgeumSoju25': return '담금소주 25도';
+      case 'damgeumSoju30': return '담금소주 30도';
+      case 'vodka': return '보드카';
       case 'whiskey': return '위스키';
       case 'gin': return '진';
       case 'rum': return '럼';
       case 'fruit_wine': return '과실주';
-      case 'vodka': return '보드카';
-      default: return '기타';
+      default: return '알 수 없는 타입';
     }
   };
 
@@ -675,6 +715,7 @@ const ProjectDetailScreen: React.FC = () => {
       );
     }
 
+    console.log('프로젝트 이미지 배열:', project.images);
     const images = project.images.slice(0, 3); // 최대 3개
 
     return (
@@ -691,6 +732,18 @@ const ProjectDetailScreen: React.FC = () => {
               source={{ uri: imageUri }} 
               style={styles.gridImage}
               resizeMode="cover"
+              onError={(error) => {
+                console.error(`프로젝트 이미지 로드 실패 [${index}]:`, imageUri, error.nativeEvent.error);
+              }}
+              onLoad={(event) => {
+                // 이미지 크기가 0이면 에러로 처리
+                const { width, height } = event.nativeEvent.source;
+                if (width === 0 || height === 0) {
+                  console.error(`프로젝트 이미지 크기 오류 [${index}]:`, imageUri, 'width:', width, 'height:', height);
+                } else {
+                  console.log(`프로젝트 이미지 로드 성공 [${index}]:`, imageUri, 'size:', width, 'x', height);
+                }
+              }}
             />
           </TouchableOpacity>
         ))}
@@ -700,6 +753,13 @@ const ProjectDetailScreen: React.FC = () => {
 
   const renderProgressLogs = () => {
     const logs = project.progressLogs || [];
+    
+    console.log('진행 로그 렌더링:', {
+      projectId: project.id,
+      projectName: project.name,
+      logsCount: logs.length,
+      logs: logs.map(log => ({ id: log.id, title: log.title, date: log.date }))
+    });
     
     // 날짜순으로 정렬 (최신 순)
     const sortedLogs = [...logs].sort((a, b) => 
@@ -719,19 +779,17 @@ const ProjectDetailScreen: React.FC = () => {
     return (
       <View style={styles.logsContainer}>
         {sortedLogs.map((log, index) => (
-          <View key={log.id} style={styles.logItem}>
-            {/* 타임라인 라인 */}
-            <View style={styles.timelineContainer}>
-              <View style={styles.timelineCircle} />
-              {index < sortedLogs.length - 1 && <View style={styles.timelineLine} />}
-            </View>
-            
-            {/* 로그 내용 */}
-            <View style={styles.logContent}>
+          <View 
+            key={log.id} 
+            style={[
+              styles.logContent,
+              index === sortedLogs.length - 1 && { marginBottom: 0 } // 마지막 카드는 여백 없음
+            ]}
+          >
               <View style={styles.logHeader}>
                 <View style={styles.logHeaderLeft}>
                   <Text style={styles.logTitle}>{log.title}</Text>
-                  <Text style={styles.logDate}>{formatDate(log.date, 'MM.dd')}</Text>
+                  <Text style={styles.logDate}>{formatDate(log.date, 'YYYY.MM.DD')}</Text>
                 </View>
                 <View style={styles.logActions}>
                   <TouchableOpacity 
@@ -801,7 +859,6 @@ const ProjectDetailScreen: React.FC = () => {
               {log.notes && (
                 <Text style={styles.logNotes}>{log.notes}</Text>
               )}
-            </View>
           </View>
         ))}
       </View>
@@ -815,12 +872,11 @@ const ProjectDetailScreen: React.FC = () => {
       {/* 배경 그라디언트 */}
       <View style={styles.backgroundGradient} />
       
-      {/* 헤더 */}
+      {/* 헤더 - 뒤로 가기 버튼 */}
       <GlassCard style={styles.header} intensity="medium">
         <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>프로젝트 상세</Text>
       </GlassCard>
 
       <Animated.View 
@@ -851,32 +907,42 @@ const ProjectDetailScreen: React.FC = () => {
           
           <View style={styles.projectInfo}>
             <Text style={styles.projectName}>{project.name}</Text>
-            <Text style={styles.projectSubtitle}>
-              {recipe ? recipe.name : getProjectTypeLabel(project.type)}
+            <Text style={styles.projectSubtitle} numberOfLines={1}>
+              {recipe ? `${recipe.name} (${getProjectTypeLabel(project.type)})` : getProjectTypeLabel(project.type)}
             </Text>
+            {recipe?.description && (
+              <Text style={styles.projectDescription} numberOfLines={2}>
+                {recipe.description}
+              </Text>
+            )}
             <Text style={styles.projectDates}>
-              시작: {formatDate(project.startDate)} · 완료 예정: {formatDate(project.expectedEndDate)}
+              {formatDate(project.startDate, 'YYYY.MM.DD')} - {formatDate(project.expectedEndDate, 'YYYY.MM.DD')}
             </Text>
+            {project.actualEndDate && (
+              <Text style={[styles.projectDates, { color: brandColors.semantic.success, fontWeight: '600' }]}>
+                실제 완료: {formatDate(project.actualEndDate, 'YYYY.MM.DD')}
+              </Text>
+            )}
           </View>
 
           {/* 재료 섹션 */}
           <View style={styles.section}>
-          <Text style={styles.sectionTitle}>재료</Text>
-          <View style={styles.ingredientsContainer}>
-            {project.ingredients.map((ingredient, index) => (
-              <View key={ingredient.id} style={styles.ingredientRow}>
-                <Text style={styles.ingredientName}>{ingredient.name}</Text>
-                <Text style={styles.ingredientQuantity}>
-                  {ingredient.quantity || '적당량'} {ingredient.unit || ''}
-                </Text>
-              </View>
-            ))}
-          </View>
+            <Text style={styles.sectionTitle}>재료</Text>
+            {project.ingredients && project.ingredients.length > 0 ? (
+              <Text style={styles.ingredientsList}>
+                {project.ingredients
+                  .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+                  .map(ingredient => ingredient.name)
+                  .join(', ')}
+              </Text>
+            ) : (
+              <Text style={styles.noIngredientsText}>등록된 재료가 없습니다</Text>
+            )}
           </View>
           </GlassCard>
 
           {/* 진행 상황 섹션 */}
-          <GlassCard style={styles.section} intensity="light">
+          <GlassCard style={{...styles.section, alignItems: 'stretch'}} intensity="light">
           <Text style={styles.sectionTitle}>진행 상황</Text>
           <View style={styles.statusContainer}>
             <View style={styles.statusHeader}>
@@ -889,29 +955,29 @@ const ProjectDetailScreen: React.FC = () => {
 
           {/* 노트 섹션 */}
           {project.notes && (
-            <GlassCard style={styles.section} intensity="light">
+            <GlassCard style={{...styles.section, alignItems: 'stretch'}} intensity="light">
               <Text style={styles.sectionTitle}>노트</Text>
               <Text style={styles.notesText}>{project.notes}</Text>
             </GlassCard>
           )}
 
           {/* 이미지 섹션 */}
-          <GlassCard style={styles.section} intensity="light">
+          <GlassCard style={{...styles.section, alignItems: 'stretch'}} intensity="light">
             <Text style={styles.sectionTitle}>이미지</Text>
             {renderImageGrid()}
           </GlassCard>
 
           {/* 진행 로그 섹션 */}
-          <GlassCard style={styles.section} intensity="medium">
+          <GlassCard style={{...styles.section, alignItems: 'stretch'}} intensity="medium">
           <View style={styles.logsSectionHeader}>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { flex: 1, marginRight: 8, textAlign: 'left' }]}>
               진행 로그 ({project.progressLogs?.length || 0})
             </Text>
             <TouchableOpacity 
               style={styles.addLogButton}
               onPress={handleAddLog}
             >
-              <Ionicons name="add" size={20} color={colors.text.primary} />
+              <Ionicons name="add" size={20} color="#FFFFFF" />
               <Text style={styles.addLogButtonText}>추가</Text>
             </TouchableOpacity>
           </View>

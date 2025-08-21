@@ -19,9 +19,10 @@ import { useRouter } from 'expo-router';
 import { useProjectStore } from '@/src/stores/projectStore';
 import Button from '@/src/components/common/Button';
 import GlassCard from '@/src/components/common/GlassCard';
+import DatePicker from '@/src/components/common/DatePicker';
 import { Ionicons } from '@expo/vector-icons';
 import { ProjectType, PresetRecipe } from '@/src/types';
-import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
+import ImageUpload from '@/src/components/common/ImageUpload';
 import { 
   PRESET_RECIPES, 
   getRecipeById, 
@@ -44,7 +45,11 @@ const CreateProjectScreen: React.FC = () => {
   const [name, setName] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<PresetRecipe | null>(null);
   const [selectedType, setSelectedType] = useState<ProjectType | null>(null);
-  const [startDate, setStartDate] = useState('');
+  const [startDate, setStartDate] = useState(() => {
+    // 오늘 날짜를 YYYY-MM-DD 형식으로 설정
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   const [expectedEndDate, setExpectedEndDate] = useState('');
   const [notes, setNotes] = useState('');
   const [images, setImages] = useState<string[]>([]);
@@ -138,30 +143,8 @@ const CreateProjectScreen: React.FC = () => {
     }
   };
 
-  const handleSelectImages = () => {
-    const options = {
-      mediaType: 'photo',
-      quality: 0.8,
-      selectionLimit: 5, // 최대 5개
-    } as any;
-
-    launchImageLibrary(options, (response: ImagePickerResponse) => {
-      if (response.didCancel || response.errorMessage) {
-        return;
-      }
-
-      if (response.assets) {
-        const newImages = response.assets
-          .map(asset => asset.uri)
-          .filter(uri => uri) as string[];
-        
-        setImages(prev => [...prev, ...newImages].slice(0, 5)); // 최대 5개까지
-      }
-    });
-  };
-
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+  const handleImagesChange = (newImages: string[]) => {
+    setImages(newImages);
   };
 
   const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
@@ -328,79 +311,12 @@ const CreateProjectScreen: React.FC = () => {
       lineHeight: 18,
       fontStyle: 'italic',
     },
-    imageSection: {
-      marginTop: 8,
-    },
+
     sectionCard: {
       padding: 20,
       paddingTop: 16, // 상단 여백을 조금 줄여서 제목과의 간격 조정
     },
-    imageUploadArea: {
-      borderWidth: 2,
-      borderColor: colors.border.accent,
-      borderStyle: 'dashed',
-      borderRadius: 16,
-      paddingHorizontal: 24,
-      paddingVertical: 40,
-      alignItems: 'center',
-      gap: 20,
-      backgroundColor: colors.background.glass,
-    },
-    imageUploadContent: {
-      alignItems: 'center',
-      gap: 8,
-    },
-    imageUploadIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: brandColors.accent.primary + '20',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 8,
-    },
-    imageUploadTitle: {
-      color: colors.text.primary,
-      fontSize: 18,
-      fontWeight: '600',
-      letterSpacing: 0.2,
-    },
-    imageUploadSubtitle: {
-      color: colors.text.secondary,
-      fontSize: 14,
-      textAlign: 'center',
-      lineHeight: 18,
-    },
-    imagePreviewContainer: {
-      marginTop: 20,
-    },
-    imagePreviewScroll: {
-      paddingVertical: 4,
-    },
-    imagePreview: {
-      position: 'relative',
-      marginRight: 12,
-      borderRadius: 12,
-      overflow: 'hidden',
-      ...shadows.glass.light,
-    },
-    previewImage: {
-      width: 80,
-      height: 80,
-      borderRadius: 12,
-    },
-    removeImageButton: {
-      position: 'absolute',
-      top: -6,
-      right: -6,
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: colors.background.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...shadows.glass.light,
-    },
+
     bottomContainer: {
       paddingHorizontal: 20,
       paddingTop: 20,
@@ -472,10 +388,13 @@ const CreateProjectScreen: React.FC = () => {
                         onPress={() => {
                           setSelectedRecipe(recipe);
                           setShowRecipePicker(false);
-                          // 완료 예정일을 자동으로 설정
+                          // 완료 예정일을 자동으로 설정 (선택된 타입이 있으면 함께 고려)
                           if (startDate) {
                             const start = new Date(startDate);
-                            start.setDate(start.getDate() + recipe.defaultDuration);
+                            const duration = selectedType 
+                              ? calculateFinalDuration(recipe.id, selectedType)
+                              : recipe.defaultDuration;
+                            start.setDate(start.getDate() + duration);
                             setExpectedEndDate(start.toISOString().split('T')[0]);
                           }
                         }}
@@ -535,9 +454,9 @@ const CreateProjectScreen: React.FC = () => {
                             setSelectedType(type);
                             setShowTypePicker(false);
                             // 타입 선택시 완료 예정일을 자동으로 설정
-                            if (startDate) {
+                            if (startDate && selectedRecipe) {
                               const start = new Date(startDate);
-                              const duration = getDurationByType(type);
+                              const duration = calculateFinalDuration(selectedRecipe.id, type);
                               start.setDate(start.getDate() + duration);
                               setExpectedEndDate(start.toISOString().split('T')[0]);
                             }
@@ -554,7 +473,7 @@ const CreateProjectScreen: React.FC = () => {
                               styles.dropdownSubText,
                               selectedType === type && styles.dropdownTextSelected
                             ]}>
-                              기본 숙성 기간: {getDurationByType(type)}일
+                              기본 숙성 기간: {selectedRecipe ? calculateFinalDuration(selectedRecipe.id, type) : getDurationByType(type)}일
                             </Text>
                           </View>
                         </TouchableOpacity>
@@ -571,7 +490,7 @@ const CreateProjectScreen: React.FC = () => {
                 <Text style={styles.recipeInfoTitle}>선택된 구성</Text>
                 <Text style={styles.recipeInfoText}>📝 레시피: {selectedRecipe.name}</Text>
                 <Text style={styles.recipeInfoText}>🍶 타입: {getTypeDisplayName(selectedType)}</Text>
-                <Text style={styles.recipeInfoText}>⏱️ 예상 숙성 기간: {getDurationByType(selectedType)}일</Text>
+                <Text style={styles.recipeInfoText}>⏱️ 예상 숙성 기간: {calculateFinalDuration(selectedRecipe.id, selectedType)}일</Text>
                 <Text style={styles.recipeInfoText}>🧪 재료: {selectedRecipe.ingredients.join(', ')}</Text>
               </GlassCard>
             )}
@@ -581,34 +500,33 @@ const CreateProjectScreen: React.FC = () => {
               <Text style={styles.sectionTitle}>일정 정보</Text>
               <GlassCard style={styles.sectionCard} intensity="medium">
                 <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="시작일 (YYYY-MM-DD)"
-                    placeholderTextColor={colors.text.muted}
+                  <DatePicker
                     value={startDate}
-                    onChangeText={setStartDate}
-                    keyboardType="numbers-and-punctuation"
-                    maxLength={10}
+                    onDateChange={(date) => {
+                      setStartDate(date);
+                      // 시작일 선택시 완료 예정일 자동 계산
+                      if (date && selectedRecipe && selectedType) {
+                        const start = new Date(date);
+                        const duration = calculateFinalDuration(selectedRecipe.id, selectedType);
+                        start.setDate(start.getDate() + duration);
+                        setExpectedEndDate(start.toISOString().split('T')[0]);
+                      }
+                    }}
+                    placeholder="시작일 선택"
                   />
                 </View>
 
                 <View style={styles.inputContainer}>
-                  <TextInput
-                    style={[
-                      styles.input, 
-                      !selectedType && { opacity: 0.5 }
-                    ]}
-                    placeholder="완료 예정일 (YYYY-MM-DD) - 타입 선택 시 자동 설정"
-                    placeholderTextColor={colors.text.muted}
+                  <DatePicker
                     value={expectedEndDate}
-                    onChangeText={setExpectedEndDate}
-                    keyboardType="numbers-and-punctuation"
-                    maxLength={10}
-                    editable={!!selectedType}
+                    onDateChange={setExpectedEndDate}
+                    placeholder="완료 예정일 선택 (자동 설정됨)"
+                    minimumDate={startDate || new Date().toISOString().split('T')[0]}
+                    disabled={!selectedType}
                   />
                   {selectedType && (
                     <Text style={styles.helpText}>
-                      💡 {getTypeDisplayName(selectedType)}의 권장 숙성 기간은 {getDurationByType(selectedType)}일입니다
+                      💡 {getTypeDisplayName(selectedType)}의 권장 숙성 기간은 {selectedRecipe ? calculateFinalDuration(selectedRecipe.id, selectedType) : getDurationByType(selectedType)}일입니다
                     </Text>
                   )}
                 </View>
@@ -636,38 +554,15 @@ const CreateProjectScreen: React.FC = () => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>프로젝트 이미지</Text>
               <GlassCard style={styles.sectionCard} intensity="medium">
-                <TouchableOpacity style={styles.imageUploadArea} onPress={handleSelectImages}>
-                  <View style={styles.imageUploadIcon}>
-                    <Ionicons name="camera" size={24} color={brandColors.accent.primary} />
-                  </View>
-                  <View style={styles.imageUploadContent}>
-                    <Text style={styles.imageUploadTitle}>이미지 추가</Text>
-                    <Text style={styles.imageUploadSubtitle}>프로젝트 관련 사진을 추가하세요 (최대 5장)</Text>
-                  </View>
-                </TouchableOpacity>
-
-                {/* 선택된 이미지들 */}
-                {images.length > 0 && (
-                  <View style={styles.imagePreviewContainer}>
-                    <ScrollView 
-                      horizontal 
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.imagePreviewScroll}
-                    >
-                      {images.map((imageUri, index) => (
-                        <View key={index} style={styles.imagePreview}>
-                          <Image source={{ uri: imageUri }} style={styles.previewImage} />
-                          <TouchableOpacity 
-                            style={styles.removeImageButton}
-                            onPress={() => removeImage(index)}
-                          >
-                            <Ionicons name="close" size={16} color={colors.text.primary} />
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
+                <ImageUpload
+                  images={images}
+                  onImagesChange={handleImagesChange}
+                  maxImages={5}
+                  title="이미지 추가"
+                  subtitle="프로젝트 관련 사진을 추가하세요"
+                  bucket="project-images"
+                  uploadPath="projects"
+                />
               </GlassCard>
             </View>
           </View>

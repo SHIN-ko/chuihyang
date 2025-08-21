@@ -26,6 +26,11 @@ import {
   createCalendarTheme,
   CalendarEvent,
   getProjectColor,
+  calculateProjectStats,
+  ProjectStats,
+  calculateDDay,
+  calculateProjectProgress,
+  getEventStatusInfo,
 } from '@/src/utils/calendar';
 
 const CalendarScreen: React.FC = () => {
@@ -36,6 +41,14 @@ const CalendarScreen: React.FC = () => {
   
   const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([]);
+  const [projectStats, setProjectStats] = useState<ProjectStats>({
+    totalProjects: 0,
+    inProgressProjects: 0,
+    completedProjects: 0,
+    upcomingDeadlines: 0,
+    recentLogs: 0,
+    completionRate: 0,
+  });
   
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -63,7 +76,7 @@ const CalendarScreen: React.FC = () => {
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 20,
-      paddingVertical: 12,
+      paddingVertical: 16,
       margin: 20,
       marginBottom: 0,
     },
@@ -72,40 +85,47 @@ const CalendarScreen: React.FC = () => {
       fontSize: 24,
       fontWeight: 'bold',
       letterSpacing: -0.5,
+      flex: 1,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    actionButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.background.elevated,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...shadows.glass.light,
+    },
+    actionButtonPrimary: {
+      backgroundColor: brandColors.accent.primary,
+    },
+    summaryContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      margin: 20,
+      marginTop: 12,
+      marginBottom: 16,
+    },
+    summaryContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    summaryText: {
+      color: colors.text.primary,
+      fontSize: 14,
+      fontWeight: '500',
     },
     calendarContainer: {
       margin: 20,
       marginBottom: 16,
     },
-    legendContainer: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      marginHorizontal: 20,
-      marginBottom: 16,
-    },
-    legendTitle: {
-      color: colors.text.primary,
-      fontSize: 16,
-      fontWeight: '600',
-      marginBottom: 12,
-      letterSpacing: 0.2,
-    },
-    legendRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    legendDot: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      marginRight: 8,
-      ...shadows.glass.light,
-    },
-    legendText: {
-      color: colors.text.secondary,
-      fontSize: 14,
-    },
+
     eventsContainer: {
       paddingHorizontal: 20,
       paddingVertical: 16,
@@ -122,13 +142,14 @@ const CalendarScreen: React.FC = () => {
     eventItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: 8,
-      paddingHorizontal: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
       backgroundColor: colors.background.elevated,
-      borderRadius: 8,
-      marginBottom: 8,
+      borderRadius: 12,
+      marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.border.secondary,
+      ...shadows.glass.light,
     },
     eventDot: {
       width: 8,
@@ -172,16 +193,7 @@ const CalendarScreen: React.FC = () => {
       fontSize: 16,
       fontWeight: '400',
     },
-    legendGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 16,
-    },
-    legendItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      minWidth: '45%',
-    },
+
     eventsList: {
       gap: 8,
     },
@@ -193,6 +205,59 @@ const CalendarScreen: React.FC = () => {
     },
     eventContent: {
       flex: 1,
+    },
+    eventHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 6,
+    },
+    eventBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      marginLeft: 8,
+    },
+    eventBadgeText: {
+      fontSize: 10,
+      fontWeight: '600',
+      letterSpacing: 0.5,
+    },
+    dDayContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4,
+      gap: 8,
+    },
+    dDayBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+      backgroundColor: colors.background.secondary,
+    },
+    dDayText: {
+      color: colors.text.secondary,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    progressContainer: {
+      marginTop: 6,
+    },
+    progressBar: {
+      height: 4,
+      backgroundColor: colors.background.secondary,
+      borderRadius: 2,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 2,
+    },
+    progressText: {
+      color: colors.text.muted,
+      fontSize: 11,
+      marginTop: 3,
+      textAlign: 'right',
     },
     eventTitle: {
       color: colors.text.primary,
@@ -246,6 +311,12 @@ const CalendarScreen: React.FC = () => {
     setEventsForSelectedDate(events);
   }, [selectedDate, projects]);
 
+  // 프로젝트가 변경될 때마다 통계 업데이트
+  useEffect(() => {
+    const stats = calculateProjectStats(projects);
+    setProjectStats(stats);
+  }, [projects]);
+
   const calendarMarkings = generateCalendarMarkings(projects);
 
   // 선택된 날짜에 선택 표시 추가
@@ -260,6 +331,14 @@ const CalendarScreen: React.FC = () => {
 
   const handleDateSelect = (date: any) => {
     setSelectedDate(date.dateString);
+  };
+
+  const handleGoToToday = () => {
+    setSelectedDate(getTodayString());
+  };
+
+  const handleAddProject = () => {
+    router.push('/project/create');
   };
 
   const handleEventPress = (event: CalendarEvent) => {
@@ -283,42 +362,93 @@ const CalendarScreen: React.FC = () => {
     }
   };
 
-  const renderEvent = (event: CalendarEvent) => (
-    <TouchableOpacity
-      key={event.id}
-      style={styles.eventItem}
-      onPress={() => handleEventPress(event)}
-    >
-      <View style={styles.eventIndicator}>
-        <View 
-          style={[
-            styles.eventDot, 
-            { backgroundColor: getProjectColor(event.project.type) }
-          ]} 
-        />
-        <Ionicons 
-          name={getEventIcon(event.type) as any} 
-          size={16} 
-          color={brandColors.accent.primary} 
-          style={styles.eventIcon}
-        />
-      </View>
-      
-      <View style={styles.eventContent}>
-        <Text style={styles.eventTitle}>{event.title}</Text>
-        <View style={styles.eventMeta}>
-          <Text style={styles.eventProjectName}>{event.project.name}</Text>
-          {event.log && (
-            <Text style={styles.eventDescription} numberOfLines={1}>
-              {event.log.description}
-            </Text>
+  const renderEvent = (event: CalendarEvent) => {
+    const statusInfo = getEventStatusInfo(event);
+    const dDayInfo = (event.type === 'project_end' || event.type === 'project_start') 
+      ? calculateDDay(event.date) 
+      : null;
+    const progress = event.type === 'project_end' || event.type === 'project_start' 
+      ? calculateProjectProgress(event.project) 
+      : null;
+
+    return (
+      <TouchableOpacity
+        key={event.id}
+        style={styles.eventItem}
+        onPress={() => handleEventPress(event)}
+      >
+        <View style={styles.eventIndicator}>
+          <View 
+            style={[
+              styles.eventDot, 
+              { backgroundColor: getProjectColor(event.project.type) }
+            ]} 
+          />
+          <Ionicons 
+            name={getEventIcon(event.type) as any} 
+            size={16} 
+            color={brandColors.accent.primary} 
+            style={styles.eventIcon}
+          />
+        </View>
+        
+        <View style={styles.eventContent}>
+          <View style={styles.eventHeader}>
+            <Text style={styles.eventTitle}>{event.title}</Text>
+            <View style={[styles.eventBadge, { backgroundColor: statusInfo.color }]}>
+              <Text style={[styles.eventBadgeText, { color: statusInfo.textColor }]}>
+                {statusInfo.status}
+              </Text>
+            </View>
+          </View>
+          
+          <View style={styles.eventMeta}>
+            <Text style={styles.eventProjectName}>{event.project.name}</Text>
+            {event.log && (
+              <Text style={styles.eventDescription} numberOfLines={1}>
+                {event.log.description}
+              </Text>
+            )}
+          </View>
+
+          {/* D-Day 및 진행률 표시 */}
+          {(dDayInfo || progress !== null) && (
+            <View style={styles.dDayContainer}>
+              {dDayInfo && (
+                <View style={styles.dDayBadge}>
+                  <Text style={styles.dDayText}>{dDayInfo.label}</Text>
+                </View>
+              )}
+              {progress !== null && event.type === 'project_end' && event.project.status !== 'completed' && (
+                <Text style={styles.dDayText}>진행률 {progress}%</Text>
+              )}
+            </View>
+          )}
+
+          {/* 진행률 바 (프로젝트 완료 이벤트에만) */}
+          {progress !== null && event.type === 'project_end' && event.project.status !== 'completed' && (
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { 
+                      width: `${progress}%`,
+                      backgroundColor: brandColors.accent.primary 
+                    }
+                  ]} 
+                />
+              </View>
+            </View>
           )}
         </View>
-      </View>
-      
-      <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-    </TouchableOpacity>
-  );
+        
+        <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+      </TouchableOpacity>
+    );
+  };
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -336,12 +466,19 @@ const CalendarScreen: React.FC = () => {
           }
         ]}
       >
-        {/* 헤더 */}
-        <GlassCard style={styles.header} intensity="medium">
-          <Text style={styles.headerTitle}>캘린더</Text>
-        </GlassCard>
-
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* 간단한 요약 */}
+          {projectStats.inProgressProjects > 0 && (
+            <GlassCard style={styles.summaryContainer} intensity="light">
+              <View style={styles.summaryContent}>
+                <Ionicons name="flask" size={20} color={brandColors.accent.primary} />
+                <Text style={styles.summaryText}>
+                  현재 진행 중인 프로젝트 {projectStats.inProgressProjects}개
+                </Text>
+              </View>
+            </GlassCard>
+          )}
+
           {/* 캘린더 */}
           <GlassCard style={styles.calendarContainer} intensity="medium">
             <Calendar
@@ -373,36 +510,7 @@ const CalendarScreen: React.FC = () => {
             />
           </GlassCard>
 
-          {/* 범례 */}
-          <GlassCard style={styles.legendContainer} intensity="light">
-            <Text style={styles.legendTitle}>범례</Text>
-            <View style={styles.legendGrid}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: getProjectColor('whiskey') }]} />
-                <Text style={styles.legendText}>위스키</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: getProjectColor('gin') }]} />
-                <Text style={styles.legendText}>진</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: getProjectColor('rum') }]} />
-                <Text style={styles.legendText}>럼</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: getProjectColor('fruit_wine') }]} />
-                <Text style={styles.legendText}>과실주</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: getProjectColor('vodka') }]} />
-                <Text style={styles.legendText}>보드카</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: brandColors.accent.amber }]} />
-                <Text style={styles.legendText}>진행 로그</Text>
-              </View>
-            </View>
-          </GlassCard>
+
 
           {/* 선택된 날짜의 이벤트 */}
           <GlassCard style={styles.eventsContainer} intensity="medium">

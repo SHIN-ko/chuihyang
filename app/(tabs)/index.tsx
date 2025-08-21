@@ -20,9 +20,11 @@ import { useEffect, useCallback } from 'react';
 import { formatDate, calculateProgress } from '@/src/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '@/src/components/common/Button';
+import GlassCard from '@/src/components/common/GlassCard';
 import { Project, ProjectStatus } from '@/src/types';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 import { useTheme } from '@/src/contexts/ThemeContext';
+import { calculateProjectStats, ProjectStats } from '@/src/utils/calendar';
 
 const { width } = Dimensions.get('window');
 
@@ -38,6 +40,14 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [projectStats, setProjectStats] = useState<ProjectStats>({
+    totalProjects: 0,
+    inProgressProjects: 0,
+    completedProjects: 0,
+    upcomingDeadlines: 0,
+    recentLogs: 0,
+    completionRate: 0,
+  });
   
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -121,6 +131,41 @@ export default function HomeScreen() {
       padding: 6,
       marginLeft: 8,
       borderRadius: 12,
+    },
+    // 간소화된 통계 카드 스타일
+    statsContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      margin: 20,
+      marginTop: 8,
+      marginBottom: 12,
+    },
+    compactStatsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    compactStatItem: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    compactStatNumber: {
+      color: brandColors.accent.primary,
+      fontSize: 18,
+      fontWeight: '700',
+    },
+    compactStatLabel: {
+      color: colors.text.secondary,
+      fontSize: 11,
+      fontWeight: '500',
+      marginTop: 2,
+      textAlign: 'center',
+    },
+    statsDivider: {
+      width: 1,
+      height: 24,
+      backgroundColor: colors.border.secondary,
+      marginHorizontal: 8,
     },
     // 필터 탭 스타일
     filterContainer: {
@@ -332,6 +377,12 @@ export default function HomeScreen() {
     }, [fetchProjects])
   );
 
+  // 프로젝트가 변경될 때마다 통계 업데이트
+  useEffect(() => {
+    const stats = calculateProjectStats(projects);
+    setProjectStats(stats);
+  }, [projects]);
+
   // Pull to refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -432,6 +483,38 @@ export default function HomeScreen() {
     }
   };
 
+  const renderCompactStats = () => (
+    <GlassCard style={styles.statsContainer} intensity="light">
+      <View style={styles.compactStatsRow}>
+        <View style={styles.compactStatItem}>
+          <Text style={styles.compactStatNumber}>{projectStats.inProgressProjects}</Text>
+          <Text style={styles.compactStatLabel}>진행중</Text>
+        </View>
+        
+        <View style={styles.statsDivider} />
+        
+        <View style={styles.compactStatItem}>
+          <Text style={styles.compactStatNumber}>{projectStats.upcomingDeadlines}</Text>
+          <Text style={styles.compactStatLabel}>완료예정</Text>
+        </View>
+        
+        <View style={styles.statsDivider} />
+        
+        <View style={styles.compactStatItem}>
+          <Text style={styles.compactStatNumber}>{projectStats.completedProjects}</Text>
+          <Text style={styles.compactStatLabel}>완료</Text>
+        </View>
+        
+        <View style={styles.statsDivider} />
+        
+        <View style={styles.compactStatItem}>
+          <Text style={styles.compactStatNumber}>{projectStats.completionRate}%</Text>
+          <Text style={styles.compactStatLabel}>완료율</Text>
+        </View>
+      </View>
+    </GlassCard>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
@@ -448,16 +531,8 @@ export default function HomeScreen() {
           }
         ]}
       >
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <Text style={styles.greeting}>취향</Text>
-            <Text style={styles.brandSubtitle}>전통과 현대의 융합</Text>
-            <Text style={styles.subtitle}>
-              총 {projects.length}개 프로젝트 • 진행중 {inProgressProjects.length}개
-            </Text>
-          </View>
-        </View>
+        {/* 간소화된 통계 */}
+        {projects.length > 0 && renderCompactStats()}
 
         {/* 검색 바 */}
         <View style={styles.searchContainer}>

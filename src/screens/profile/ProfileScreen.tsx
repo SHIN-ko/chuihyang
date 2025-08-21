@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Animated,
   StatusBar,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/src/stores/authStore';
@@ -17,7 +18,9 @@ import { useNotificationStore } from '@/src/stores/notificationStore';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import GlassCard from '@/src/components/common/GlassCard';
+import { SupabaseService } from '@/src/services/supabaseService';
 
 const ProfileScreen: React.FC = () => {
   const router = useRouter();
@@ -33,6 +36,7 @@ const ProfileScreen: React.FC = () => {
   } = useNotificationStore();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadingProfileImage, setUploadingProfileImage] = useState(false);
   
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -89,6 +93,68 @@ const ProfileScreen: React.FC = () => {
       Alert.alert('테스트 완료', '테스트 알림을 발송했습니다!');
     } catch (error) {
       Alert.alert('오류', '테스트 알림 발송에 실패했습니다.');
+    }
+  };
+
+  const handleChangeProfileImage = async () => {
+    if (uploadingProfileImage) return;
+
+    try {
+      // 권한 요청
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('권한 필요', '갤러리 접근 권한이 필요합니다.');
+        return;
+      }
+
+      // 이미지 선택
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      if (result.assets && result.assets[0]) {
+        setUploadingProfileImage(true);
+        
+        try {
+          const asset = result.assets[0];
+          if (asset.uri) {
+            // 파일을 Blob으로 변환
+            const imageResponse = await fetch(asset.uri);
+            const blob = await imageResponse.blob();
+            
+            // 고유한 파일명 생성
+            const fileName = `profile-images/${user?.id}_${Date.now()}.jpg`;
+            
+            // Supabase Storage에 업로드
+            const publicUrl = await SupabaseService.uploadImage('profile-images', fileName, blob);
+            
+            // 프로필 이미지 URL 업데이트
+            await SupabaseService.updateProfile(user!.id, { 
+              profileImage: publicUrl 
+            });
+            
+            // 로컬 상태 업데이트 (authStore에서 사용자 정보 다시 로드하거나 업데이트)
+            Alert.alert('성공', '프로필 이미지가 변경되었습니다.');
+            
+          }
+        } catch (error) {
+          console.error('프로필 이미지 업로드 실패:', error);
+          Alert.alert('오류', '프로필 이미지 업로드에 실패했습니다.');
+        } finally {
+          setUploadingProfileImage(false);
+        }
+      }
+    } catch (error) {
+      console.error('프로필 이미지 선택 오류:', error);
+      Alert.alert('오류', '이미지 선택 중 오류가 발생했습니다.');
     }
   };
 
@@ -294,6 +360,38 @@ const ProfileScreen: React.FC = () => {
     bottomSpacing: {
       height: 20,
     },
+    avatarImage: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+    },
+    uploadingOverlay: {
+      position: 'absolute',
+      bottom: -2,
+      right: -2,
+      backgroundColor: brandColors.accent.primary,
+      borderRadius: 12,
+      width: 24,
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: colors.background.elevated,
+    },
+    changeImageButton: {
+      marginTop: 8,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
+      backgroundColor: colors.background.glass,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.border.accent,
+    },
+    changeImageText: {
+      fontSize: 12,
+      color: brandColors.accent.primary,
+      fontWeight: '500',
+    },
   }));
 
   return (
@@ -313,27 +411,46 @@ const ProfileScreen: React.FC = () => {
         ]}
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {/* 헤더 */}
-          <GlassCard style={styles.header} intensity="medium">
-            <Text style={styles.headerTitle}>프로필</Text>
-            <Text style={styles.headerSubtitle}>계정 및 앱 설정을 관리하세요</Text>
-          </GlassCard>
-
           {/* 사용자 정보 */}
           <GlassCard style={styles.section} intensity="light">
             <Text style={styles.sectionTitle}>계정 정보</Text>
             <View style={styles.userInfoContainer}>
-              <View style={styles.userAvatar}>
-                <Ionicons name="person" size={32} color={brandColors.accent.primary} />
+              <TouchableOpacity 
+                style={styles.userAvatar}
+                onPress={handleChangeProfileImage}
+                disabled={uploadingProfileImage}
+              >
+                {user?.profileImage ? (
+                  <Image 
+                    source={{ uri: user.profileImage }} 
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <Ionicons name="person" size={32} color={brandColors.accent.primary} />
+                )}
+                {uploadingProfileImage && (
+                  <View style={styles.uploadingOverlay}>
+                    <Ionicons name="camera" size={16} color={colors.text.primary} />
+                  </View>
+                )}
+              </TouchableOpacity>
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>{user?.nickname || '사용자'}</Text>
+                <Text style={styles.userEmail}>{user?.email || 'email@example.com'}</Text>
+                {user?.birthdate && (
+                  <Text style={styles.userBirthdate}>생년월일: {user.birthdate}</Text>
+                )}
+                <TouchableOpacity 
+                  style={styles.changeImageButton}
+                  onPress={handleChangeProfileImage}
+                  disabled={uploadingProfileImage}
+                >
+                  <Text style={styles.changeImageText}>
+                    {uploadingProfileImage ? '업로드 중...' : '프로필 사진 변경'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>{user?.nickname || '사용자'}</Text>
-              <Text style={styles.userEmail}>{user?.email || 'email@example.com'}</Text>
-              {user?.birthdate && (
-                <Text style={styles.userBirthdate}>생년월일: {user.birthdate}</Text>
-              )}
-            </View>
-          </View>
           </GlassCard>
 
           {/* 테마 설정 */}

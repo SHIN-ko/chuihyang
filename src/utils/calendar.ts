@@ -136,6 +136,122 @@ export const getTodayString = (): string => {
   return new Date().toISOString().split('T')[0];
 };
 
+// D-Day 계산 함수
+export const calculateDDay = (targetDate: string): { dDay: number; label: string } => {
+  const today = new Date();
+  const target = new Date(targetDate);
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  
+  const diffTime = target.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return { dDay: 0, label: 'D-Day' };
+  if (diffDays > 0) return { dDay: diffDays, label: `D-${diffDays}` };
+  return { dDay: diffDays, label: `D+${Math.abs(diffDays)}` };
+};
+
+// 프로젝트 진행률 계산 함수
+export const calculateProjectProgress = (project: Project): number => {
+  if (project.status === 'completed') return 100;
+  
+  const today = new Date();
+  const start = new Date(project.startDate);
+  const end = new Date(project.expectedEndDate || project.actualEndDate || project.startDate);
+  
+  if (today < start) return 0;
+  if (today > end) return 100;
+  
+  const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  const passedDays = Math.ceil((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  
+  return Math.min(Math.max(Math.round((passedDays / totalDays) * 100), 0), 100);
+};
+
+// 이벤트 상태 배지 정보
+export const getEventStatusInfo = (event: CalendarEvent): { status: string; color: string; textColor: string } => {
+  const today = getTodayString();
+  
+  switch (event.type) {
+    case 'project_start':
+      if (event.date === today) {
+        return { status: '시작', color: '#22c55e', textColor: '#ffffff' };
+      } else if (event.date > today) {
+        return { status: '예정', color: '#3b82f6', textColor: '#ffffff' };
+      }
+      return { status: '시작됨', color: '#6b7280', textColor: '#ffffff' };
+      
+    case 'project_end':
+      if (event.project.status === 'completed') {
+        return { status: '완료', color: '#22c55e', textColor: '#ffffff' };
+      } else if (event.date === today) {
+        return { status: '마감', color: '#ef4444', textColor: '#ffffff' };
+      } else if (event.date > today) {
+        const { dDay } = calculateDDay(event.date);
+        if (dDay <= 3) {
+          return { status: '임박', color: '#f59e0b', textColor: '#ffffff' };
+        }
+        return { status: '예정', color: '#3b82f6', textColor: '#ffffff' };
+      }
+      return { status: '지연', color: '#ef4444', textColor: '#ffffff' };
+      
+    case 'progress_log':
+      return { status: '로그', color: '#8b5cf6', textColor: '#ffffff' };
+      
+    default:
+      return { status: '기타', color: '#6b7280', textColor: '#ffffff' };
+  }
+};
+
+// 프로젝트 통계 계산
+export interface ProjectStats {
+  totalProjects: number;
+  inProgressProjects: number;
+  completedProjects: number;
+  upcomingDeadlines: number;
+  recentLogs: number;
+  completionRate: number;
+}
+
+export const calculateProjectStats = (projects: Project[]): ProjectStats => {
+  const today = getTodayString();
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  const nextWeekString = nextWeek.toISOString().split('T')[0];
+
+  const totalProjects = projects.length;
+  const inProgressProjects = projects.filter(p => p.status === 'in_progress').length;
+  const completedProjects = projects.filter(p => p.status === 'completed').length;
+  
+  // 일주일 내 완료 예정인 프로젝트
+  const upcomingDeadlines = projects.filter(p => {
+    const deadline = p.actualEndDate || p.expectedEndDate;
+    return deadline && deadline >= today && deadline <= nextWeekString && p.status !== 'completed';
+  }).length;
+
+  // 최근 일주일 내 진행 로그
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const oneWeekAgoString = oneWeekAgo.toISOString().split('T')[0];
+  
+  const recentLogs = projects.reduce((count, project) => {
+    return count + (project.progressLogs?.filter(log => 
+      log.date && log.date >= oneWeekAgoString && log.date <= today
+    ).length || 0);
+  }, 0);
+
+  const completionRate = totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0;
+
+  return {
+    totalProjects,
+    inProgressProjects,
+    completedProjects,
+    upcomingDeadlines,
+    recentLogs,
+    completionRate,
+  };
+};
+
 // 캘린더 테마 설정 (동적 생성 함수)
 export const createCalendarTheme = (theme: 'light' | 'dark', colors: any, brandColors: any) => ({
   backgroundColor: 'transparent',

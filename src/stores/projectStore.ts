@@ -111,11 +111,23 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       const authState = useAuthStore.getState();
       if (!authState.user) {
+        console.log('사용자 정보 없음 - 프로젝트 조회 중단');
         set({ projects: [], isLoading: false });
         return;
       }
 
+      console.log('프로젝트 목록 조회 시작:', authState.user.id);
       const projects = await SupabaseService.getProjects(authState.user.id);
+      
+      console.log('프로젝트 목록 조회 완료:', {
+        projectCount: projects.length,
+        projects: projects.map(p => ({ 
+          id: p.id, 
+          name: p.name, 
+          logsCount: p.progressLogs?.length || 0 
+        }))
+      });
+      
       set({ projects, isLoading: false });
     } catch (error) {
       console.error('프로젝트 조회 실패:', error);
@@ -233,7 +245,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return false;
       }
 
+      console.log('진행 로그 추가 시작:', {
+        projectId: logData.projectId,
+        projectName: projects[projectIndex].name,
+        currentLogsCount: projects[projectIndex].progressLogs.length
+      });
+
       const newLog = await SupabaseService.addProgressLog(logData);
+      console.log('Supabase에서 생성된 로그:', newLog);
 
       const updatedProjects = [...projects];
       updatedProjects[projectIndex] = {
@@ -242,7 +261,23 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         updatedAt: new Date().toISOString(),
       };
       
+      console.log('로컬 상태 업데이트 완료:', {
+        projectId: logData.projectId,
+        newLogsCount: updatedProjects[projectIndex].progressLogs.length,
+        updatedProject: updatedProjects[projectIndex].name
+      });
+      
       set({ projects: updatedProjects });
+      
+      // 추가: 서버에서 최신 데이터를 다시 가져와서 동기화
+      console.log('서버에서 최신 프로젝트 데이터 동기화 시작...');
+      try {
+        await get().fetchProjects();
+        console.log('프로젝트 데이터 동기화 완료');
+      } catch (syncError) {
+        console.error('프로젝트 동기화 실패:', syncError);
+        // 동기화 실패해도 로컬 업데이트는 유지
+      }
       
       return true;
     } catch (error) {

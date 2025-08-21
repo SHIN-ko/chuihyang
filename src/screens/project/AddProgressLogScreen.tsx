@@ -19,7 +19,7 @@ import Button from '@/src/components/common/Button';
 import StarRating from '@/src/components/common/StarRating';
 import { Ionicons } from '@expo/vector-icons';
 import { ProgressLog } from '@/src/types';
-import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
+import ImageUpload from '@/src/components/common/ImageUpload';
 
 const AddProgressLogScreen: React.FC = () => {
   const router = useRouter();
@@ -71,7 +71,11 @@ const AddProgressLogScreen: React.FC = () => {
       },
     };
 
+    console.log('진행 로그 추가 요청:', logData);
+
     const success = await addProgressLog(logData);
+    
+    console.log('진행 로그 추가 결과:', success);
     
     if (success) {
       Alert.alert(
@@ -80,7 +84,10 @@ const AddProgressLogScreen: React.FC = () => {
         [
           {
             text: '확인',
-            onPress: () => router.back(),
+            onPress: () => {
+              console.log('진행 로그 추가 후 화면 뒤로가기');
+              router.back();
+            },
           },
         ]
       );
@@ -89,30 +96,8 @@ const AddProgressLogScreen: React.FC = () => {
     }
   };
 
-  const handleSelectImages = () => {
-    const options = {
-      mediaType: 'photo',
-      quality: 0.8,
-      selectionLimit: 5, // 최대 5개
-    } as any;
-
-    launchImageLibrary(options, (response: ImagePickerResponse) => {
-      if (response.didCancel || response.errorMessage) {
-        return;
-      }
-
-      if (response.assets) {
-        const newImages = response.assets
-          .map(asset => asset.uri)
-          .filter(uri => uri) as string[];
-        
-        setImages(prev => [...prev, ...newImages].slice(0, 5)); // 최대 5개까지
-      }
-    });
-  };
-
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+  const handleImagesChange = (newImages: string[]) => {
+    setImages(newImages);
   };
 
   return (
@@ -242,32 +227,15 @@ const AddProgressLogScreen: React.FC = () => {
             {/* 이미지 업로드 */}
             <View style={styles.imageSection}>
               <Text style={styles.label}>사진</Text>
-              <TouchableOpacity style={styles.imageUploadArea} onPress={handleSelectImages}>
-                <View style={styles.imageUploadContent}>
-                  <Ionicons name="camera-outline" size={32} color="#9db89d" />
-                  <Text style={styles.imageUploadTitle}>사진 추가</Text>
-                  <Text style={styles.imageUploadSubtitle}>현재 상태를 사진으로 기록하세요</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* 선택된 이미지들 */}
-              {images.length > 0 && (
-                <View style={styles.imagePreviewContainer}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {images.map((imageUri, index) => (
-                      <View key={index} style={styles.imagePreview}>
-                        <Image source={{ uri: imageUri }} style={styles.previewImage} />
-                        <TouchableOpacity 
-                          style={styles.removeImageButton}
-                          onPress={() => removeImage(index)}
-                        >
-                          <Ionicons name="close-circle" size={20} color="#ef4444" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
+              <ImageUpload
+                images={images}
+                onImagesChange={handleImagesChange}
+                maxImages={5}
+                title="사진 추가"
+                subtitle="현재 상태를 사진으로 기록하세요"
+                bucket="progress-images"
+                uploadPath="logs"
+              />
             </View>
           </View>
         </ScrollView>

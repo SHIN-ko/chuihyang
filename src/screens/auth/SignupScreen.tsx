@@ -18,7 +18,7 @@ import { useAuthStore } from '@/src/stores/authStore';
 import Button from '@/src/components/common/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { signupSchema, SignupFormData } from '@/src/utils/validation';
-import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
+import * as ImagePicker from 'expo-image-picker';
 
 const SignupScreen: React.FC = () => {
   const router = useRouter();
@@ -90,28 +90,35 @@ const SignupScreen: React.FC = () => {
     router.back();
   };
 
-  const handleSelectProfileImage = () => {
-    const options = {
-      mediaType: 'photo',
-      quality: 0.7,
-      maxWidth: 500,
-      maxHeight: 500,
-    } as any; // 타입 에러 임시 해결
-
-    launchImageLibrary(options, (response: ImagePickerResponse) => {
-      if (response.didCancel) {
-        return;
-      }
+  const handleSelectProfileImage = async () => {
+    try {
+      // 권한 요청
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
-      if (response.errorMessage) {
-        Alert.alert('오류', '이미지 선택 중 오류가 발생했습니다.');
+      if (permissionResult.granted === false) {
+        Alert.alert('권한 필요', '갤러리 접근 권한이 필요합니다.');
         return;
       }
 
-      if (response.assets && response.assets[0]) {
-        setProfileImage(response.assets[0].uri || null);
+      // 이미지 선택
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (result.canceled) {
+        return;
       }
-    });
+
+      if (result.assets && result.assets[0]) {
+        setProfileImage(result.assets[0].uri || null);
+      }
+    } catch (error) {
+      console.error('프로필 이미지 선택 오류:', error);
+      Alert.alert('오류', '이미지 선택 중 오류가 발생했습니다.');
+    }
   };
 
   return (

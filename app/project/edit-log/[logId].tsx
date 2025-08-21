@@ -19,7 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Button from '@/src/components/common/Button';
 import StarRating from '@/src/components/common/StarRating';
 import { ProgressLog } from '@/src/types';
-import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
+import ImageUpload from '@/src/components/common/ImageUpload';
 
 const EditProgressLogScreen: React.FC = () => {
   const router = useRouter();
@@ -115,35 +115,10 @@ const EditProgressLogScreen: React.FC = () => {
     }
   };
 
-  const handleSelectImages = () => {
-    const options = {
-      mediaType: 'photo',
-      quality: 0.8,
-      selectionLimit: 5,
-    } as any;
-
-    launchImageLibrary(options, (response: ImagePickerResponse) => {
-      if (response.didCancel || response.errorMessage) {
-        return;
-      }
-
-      if (response.assets) {
-        const newImages = response.assets
-          .map(asset => asset.uri)
-          .filter(uri => uri) as string[];
-        
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, ...newImages].slice(0, 5)
-        }));
-      }
-    });
-  };
-
-  const removeImage = (index: number) => {
+  const handleImagesChange = (newImages: string[]) => {
     setFormData(prev => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      images: newImages
     }));
   };
 
@@ -315,29 +290,15 @@ const EditProgressLogScreen: React.FC = () => {
             {/* 이미지 섹션 */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>이미지</Text>
-              
-              <TouchableOpacity style={styles.imageUploadArea} onPress={handleSelectImages}>
-                <Ionicons name="camera-outline" size={32} color="#9db89d" />
-                <Text style={styles.imageUploadText}>이미지 추가</Text>
-              </TouchableOpacity>
-
-              {formData.images.length > 0 && (
-                <View style={styles.imagePreviewContainer}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {formData.images.map((imageUri, index) => (
-                      <View key={index} style={styles.imagePreview}>
-                        <Image source={{ uri: imageUri }} style={styles.previewImage} />
-                        <TouchableOpacity 
-                          style={styles.removeImageButton}
-                          onPress={() => removeImage(index)}
-                        >
-                          <Ionicons name="close-circle" size={20} color="#ef4444" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
+              <ImageUpload
+                images={formData.images}
+                onImagesChange={handleImagesChange}
+                maxImages={5}
+                title="이미지 추가"
+                subtitle="현재 상태를 사진으로 기록하세요"
+                bucket="progress-images"
+                uploadPath="logs"
+              />
             </View>
           </View>
         </ScrollView>
