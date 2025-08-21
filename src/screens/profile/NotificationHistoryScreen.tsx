@@ -13,8 +13,9 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-import { BRAND_COLORS, SHADOWS, ANIMATIONS } from '@/constants/Colors';
 import GlassCard from '@/src/components/common/GlassCard';
+import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
+import { useTheme } from '@/src/contexts/ThemeContext';
 
 interface NotificationHistory {
   id: string;
@@ -26,6 +27,8 @@ interface NotificationHistory {
 
 const NotificationHistoryScreen: React.FC = () => {
   const router = useRouter();
+  const { theme } = useTheme();
+  const { colors, brandColors } = useThemeValues();
   const [notifications, setNotifications] = useState<NotificationHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -172,9 +175,171 @@ const NotificationHistoryScreen: React.FC = () => {
     );
   };
 
+  const styles = useThemedStyles(() => ({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    backgroundGradient: {
+      position: 'absolute' as const,
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      backgroundColor: colors.background.secondary,
+      opacity: 0.3,
+    },
+    content: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      margin: 20,
+      marginBottom: 0,
+    },
+    backButton: {
+      width: 44,
+      height: 44,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      borderRadius: 22,
+      backgroundColor: colors.background.surface,
+      borderWidth: 1,
+      borderColor: colors.border.secondary,
+    },
+    headerTitle: {
+      color: colors.text.primary,
+      fontSize: 20,
+      fontWeight: '700' as const,
+      flex: 1,
+      textAlign: 'center' as const,
+      letterSpacing: -0.3,
+    },
+    refreshButton: {
+      width: 44,
+      height: 44,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      borderRadius: 22,
+      backgroundColor: colors.background.surface,
+      borderWidth: 1,
+      borderColor: colors.border.accent,
+    },
+    scrollView: {
+      flex: 1,
+      paddingHorizontal: 20,
+    },
+    descriptionContainer: {
+      marginBottom: 20,
+      padding: 20,
+    },
+    descriptionHeader: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      marginBottom: 8,
+    },
+    descriptionTitle: {
+      color: colors.text.primary,
+      fontSize: 16,
+      fontWeight: 'bold' as const,
+      marginLeft: 8,
+    },
+    descriptionText: {
+      color: colors.text.secondary,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    notificationsContainer: {
+      paddingHorizontal: 16,
+    },
+    sectionTitle: {
+      color: colors.text.primary,
+      fontSize: 16,
+      fontWeight: 'bold' as const,
+      marginBottom: 16,
+    },
+    notificationsList: {
+      backgroundColor: colors.background.surface,
+      borderRadius: 12,
+      overflow: 'hidden' as const,
+    },
+    notificationCard: {
+      flexDirection: 'row' as const,
+      alignItems: 'flex-start' as const,
+      padding: 20,
+      marginBottom: 12,
+    },
+    lastItem: {
+      borderBottomWidth: 0,
+    },
+    notificationIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.background.elevated,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      marginRight: 16,
+      borderWidth: 1,
+      borderColor: colors.border.secondary,
+    },
+    iconText: {
+      fontSize: 18,
+    },
+    notificationContent: {
+      flex: 1,
+    },
+    notificationTitle: {
+      color: colors.text.primary,
+      fontSize: 16,
+      fontWeight: '600' as const,
+      marginBottom: 4,
+    },
+    notificationBody: {
+      color: colors.text.secondary,
+      fontSize: 14,
+      lineHeight: 20,
+      marginBottom: 8,
+    },
+    notificationMeta: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+    },
+    notificationDate: {
+      color: colors.text.muted,
+      fontSize: 12,
+    },
+    emptyContainer: {
+      alignItems: 'center' as const,
+      paddingVertical: 60,
+      backgroundColor: colors.background.surface,
+      borderRadius: 12,
+    },
+    emptyTitle: {
+      color: colors.text.primary,
+      fontSize: 18,
+      fontWeight: 'bold' as const,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    emptySubtitle: {
+      color: colors.text.secondary,
+      fontSize: 14,
+      textAlign: 'center' as const,
+      paddingHorizontal: 32,
+    },
+    bottomSpacing: {
+      height: 32,
+    },
+  }));
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLORS.background.primary} />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
       
       {/* 배경 그라디언트 */}
       <View style={styles.backgroundGradient} />
@@ -182,11 +347,11 @@ const NotificationHistoryScreen: React.FC = () => {
       {/* 헤더 */}
       <GlassCard style={styles.header} intensity="medium">
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={BRAND_COLORS.text.primary} />
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>알림 히스토리</Text>
         <TouchableOpacity onPress={loadNotificationHistory} style={styles.refreshButton}>
-          <Ionicons name="refresh" size={24} color={BRAND_COLORS.accent.primary} />
+          <Ionicons name="refresh" size={24} color={brandColors.accent.primary} />
         </TouchableOpacity>
       </GlassCard>
 
@@ -206,15 +371,15 @@ const NotificationHistoryScreen: React.FC = () => {
             <RefreshControl
               refreshing={isLoading}
               onRefresh={loadNotificationHistory}
-              tintColor={BRAND_COLORS.accent.primary}
-              colors={[BRAND_COLORS.accent.primary]}
+              tintColor={brandColors.accent.primary}
+              colors={[brandColors.accent.primary]}
             />
           }
         >
           {/* 설명 */}
           <GlassCard style={styles.descriptionContainer} intensity="light">
             <View style={styles.descriptionHeader}>
-              <Ionicons name="time" size={20} color={BRAND_COLORS.accent.primary} />
+              <Ionicons name="time" size={20} color={brandColors.accent.primary} />
               <Text style={styles.descriptionTitle}>예약된 알림</Text>
             </View>
             <Text style={styles.descriptionText}>
@@ -226,7 +391,7 @@ const NotificationHistoryScreen: React.FC = () => {
           <View style={styles.notificationsContainer}>
             {notifications.length === 0 ? (
               <GlassCard style={styles.emptyContainer} intensity="light">
-                <Ionicons name="notifications-off-outline" size={48} color={BRAND_COLORS.text.muted} />
+                <Ionicons name="notifications-off-outline" size={48} color={colors.text.muted} />
                 <Text style={styles.emptyTitle}>예약된 알림이 없습니다</Text>
                 <Text style={styles.emptySubtitle}>
                   프로젝트를 생성하면 자동으로 알림이 설정됩니다
@@ -251,170 +416,5 @@ const NotificationHistoryScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: BRAND_COLORS.background.primary,
-  },
-  backgroundGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: BRAND_COLORS.background.secondary,
-    opacity: 0.3,
-  },
-  content: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    margin: 20,
-    marginBottom: 0,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 22,
-    backgroundColor: BRAND_COLORS.background.surface,
-    borderWidth: 1,
-    borderColor: BRAND_COLORS.border.secondary,
-    ...SHADOWS.neumorphism.outset,
-  },
-  headerTitle: {
-    color: BRAND_COLORS.text.primary,
-    fontSize: 20,
-    fontWeight: '700',
-    flex: 1,
-    textAlign: 'center',
-    letterSpacing: -0.3,
-  },
-  refreshButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 22,
-    backgroundColor: BRAND_COLORS.background.surface,
-    borderWidth: 1,
-    borderColor: BRAND_COLORS.border.accent,
-    ...SHADOWS.neumorphism.outset,
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  descriptionContainer: {
-    marginBottom: 20,
-    padding: 20,
-  },
-  descriptionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  descriptionTitle: {
-    color: BRAND_COLORS.text.primary,
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  descriptionText: {
-    color: BRAND_COLORS.text.secondary,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  notificationsContainer: {
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    color: BRAND_COLORS.text.primary,
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  notificationsList: {
-    backgroundColor: BRAND_COLORS.background.surface,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  notificationCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: 20,
-    marginBottom: 12,
-  },
-  lastItem: {
-    borderBottomWidth: 0,
-  },
-  notificationIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: BRAND_COLORS.background.elevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-    borderWidth: 1,
-    borderColor: BRAND_COLORS.border.secondary,
-    ...SHADOWS.neumorphism.inset,
-  },
-  iconText: {
-    fontSize: 18,
-  },
-  notificationContent: {
-    flex: 1,
-  },
-  notificationTitle: {
-    color: BRAND_COLORS.text.primary,
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  notificationBody: {
-    color: BRAND_COLORS.text.secondary,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  notificationMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  notificationDate: {
-    color: '#666',
-    fontSize: 12,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 60,
-    backgroundColor: BRAND_COLORS.background.surface,
-    borderRadius: 12,
-  },
-  emptyTitle: {
-    color: BRAND_COLORS.text.primary,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    color: BRAND_COLORS.text.secondary,
-    fontSize: 14,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-  bottomSpacing: {
-    height: 32,
-  },
-});
 
 export default NotificationHistoryScreen;

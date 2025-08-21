@@ -17,6 +17,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   setOnboardingCompleted: () => void;
   checkAuthState: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string, birthdate?: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -84,6 +85,18 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('인증 상태 확인 실패:', error);
           set({ user: null, isAuthenticated: false, isLoading: false });
+        }
+      },
+
+      refreshUser: async () => {
+        try {
+          const user = await SupabaseService.getCurrentUser();
+          
+          if (user) {
+            set({ user: user as User });
+          }
+        } catch (error) {
+          console.error('사용자 정보 새로고침 실패:', error);
         }
       },
 

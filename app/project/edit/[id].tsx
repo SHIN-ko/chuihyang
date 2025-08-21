@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,16 +11,22 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useProjectStore } from '@/src/stores/projectStore';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '@/src/components/common/Button';
+import GlassCard from '@/src/components/common/GlassCard';
+import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
+import { useTheme } from '@/src/contexts/ThemeContext';
 
 const EditProjectScreen: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { projects, updateProjectData, isLoading } = useProjectStore();
+  const { theme } = useTheme();
+  const { colors, brandColors } = useThemeValues();
   
   const project = projects.find(p => p.id === id);
   
@@ -28,6 +34,10 @@ const EditProjectScreen: React.FC = () => {
     name: '',
     notes: '',
   });
+
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     if (project) {
@@ -37,6 +47,181 @@ const EditProjectScreen: React.FC = () => {
       });
     }
   }, [project]);
+
+  useEffect(() => {
+    // 화면 진입 애니메이션
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const styles = useThemedStyles(() => ({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    backgroundGradient: {
+      position: 'absolute' as const,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: colors.background.primary,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: colors.background.glass,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.secondary,
+      borderRadius: 16,
+      marginHorizontal: 20,
+      marginTop: 8,
+      marginBottom: 16,
+    },
+    closeButton: {
+      width: 44,
+      height: 44,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      borderRadius: 12,
+      backgroundColor: colors.background.elevated,
+      borderWidth: 1,
+      borderColor: colors.border.secondary,
+    },
+    headerTitle: {
+      color: colors.text.primary,
+      fontSize: 20,
+      fontWeight: '700' as const,
+      flex: 1,
+      textAlign: 'center' as const,
+      letterSpacing: -0.3,
+    },
+    placeholderView: {
+      width: 44,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 20,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: 20,
+    },
+    section: {
+      paddingHorizontal: 20,
+      paddingVertical: 20,
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      color: colors.text.primary,
+      fontSize: 18,
+      fontWeight: '600' as const,
+      marginBottom: 16,
+      letterSpacing: -0.2,
+    },
+    recipeInfo: {
+      backgroundColor: colors.background.elevated,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border.accent,
+      borderLeftWidth: 4,
+      borderLeftColor: brandColors.accent.primary,
+    },
+    recipeInfoTitle: {
+      color: brandColors.accent.primary,
+      fontSize: 16,
+      fontWeight: '600' as const,
+      marginBottom: 12,
+      letterSpacing: -0.1,
+    },
+    recipeInfoText: {
+      color: colors.text.secondary,
+      fontSize: 14,
+      lineHeight: 20,
+      marginBottom: 6,
+    },
+    inputContainer: {
+      marginBottom: 20,
+    },
+    inputLabel: {
+      color: colors.text.primary,
+      fontSize: 14,
+      fontWeight: '500' as const,
+      marginBottom: 8,
+      letterSpacing: -0.1,
+    },
+    input: {
+      backgroundColor: colors.background.glass,
+      color: colors.text.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      borderRadius: 12,
+      fontSize: 16,
+      minHeight: 56,
+      borderWidth: 1,
+      borderColor: colors.border.secondary,
+      backdropFilter: 'blur(8px)',
+    },
+    inputFocused: {
+      borderColor: brandColors.accent.primary,
+      shadowColor: brandColors.accent.primary,
+      shadowOffset: {
+        width: 0,
+        height: 0,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    textArea: {
+      minHeight: 120,
+      paddingTop: 16,
+      textAlignVertical: 'top' as const,
+    },
+    helpText: {
+      color: colors.text.muted,
+      fontSize: 12,
+      marginTop: 8,
+      textAlign: 'right' as const,
+      letterSpacing: 0.2,
+    },
+    bottomContainer: {
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+      backgroundColor: colors.background.primary,
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+      padding: 20,
+    },
+    errorText: {
+      fontSize: 16,
+      color: colors.text.muted,
+      textAlign: 'center' as const,
+    },
+  }));
 
   const handleClose = () => {
     router.back();
@@ -102,14 +287,17 @@ const EditProjectScreen: React.FC = () => {
   if (!project) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#111811" />
-        <View style={styles.header}>
+        <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
+        <View style={styles.backgroundGradient} />
+        
+        <GlassCard style={styles.header} intensity="medium">
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="white" />
+            <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>프로젝트 수정</Text>
           <View style={styles.placeholderView} />
-        </View>
+        </GlassCard>
+        
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>프로젝트를 찾을 수 없습니다.</Text>
         </View>
@@ -119,67 +307,98 @@ const EditProjectScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
       
+      {/* 배경 그라디언트 */}
+      <View style={styles.backgroundGradient} />
+      
+      {/* 헤더 */}
+      <GlassCard style={styles.header} intensity="medium">
+        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+          <Ionicons name="close" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>프로젝트 수정</Text>
+        <View style={styles.placeholderView} />
+      </GlassCard>
+
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="white" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>프로젝트 수정</Text>
-          <View style={styles.placeholderView} />
-        </View>
+        <Animated.View 
+          style={[
+            styles.content,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }]
+            }
+          ]}
+        >
+          <ScrollView 
+            style={styles.scrollView} 
+            showsVerticalScrollIndicator={false} 
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* 수정 불가능한 정보 표시 */}
+            <GlassCard style={styles.section} intensity="light">
+              <View style={styles.recipeInfo}>
+                <Text style={styles.recipeInfoTitle}>기본 정보 (수정 불가)</Text>
+                <Text style={styles.recipeInfoText}>🧪 레시피: {getRecipeName(project.recipeId)}</Text>
+                <Text style={styles.recipeInfoText}>
+                  📅 시작일: {new Date(project.startDate).toLocaleDateString('ko-KR')}
+                </Text>
+                <Text style={styles.recipeInfoText}>
+                  🏁 완료 예정일: {new Date(project.expectedEndDate).toLocaleDateString('ko-KR')}
+                </Text>
+                <Text style={styles.recipeInfoText}>
+                  📊 상태: {project.status === 'completed' ? '✅ 완료됨' : '🔄 진행 중'}
+                </Text>
+              </View>
+            </GlassCard>
 
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-          {/* 수정 불가능한 정보 표시 */}
-          <View style={styles.recipeInfo}>
-            <Text style={styles.recipeInfoTitle}>기본 정보 (수정 불가)</Text>
-            <Text style={styles.recipeInfoText}>🧪 레시피: {getRecipeName(project.recipeId)}</Text>
-            <Text style={styles.recipeInfoText}>
-              📅 시작일: {new Date(project.startDate).toLocaleDateString('ko-KR')}
-            </Text>
-            <Text style={styles.recipeInfoText}>
-              🏁 완료 예정일: {new Date(project.expectedEndDate).toLocaleDateString('ko-KR')}
-            </Text>
-            <Text style={styles.recipeInfoText}>
-              📊 상태: {project.status === 'completed' ? '✅ 완료됨' : '🔄 진행 중'}
-            </Text>
-          </View>
+            {/* 수정 가능한 정보 */}
+            <GlassCard style={styles.section} intensity="light">
+              <Text style={styles.sectionTitle}>수정 가능한 정보</Text>
+              
+              {/* 프로젝트 이름 */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>프로젝트 이름</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="프로젝트 이름을 입력하세요"
+                  placeholderTextColor={colors.text.muted}
+                  value={formData.name}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+                  maxLength={50}
+                />
+              </View>
 
-          {/* 프로젝트 이름 */}
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="프로젝트 이름"
-              placeholderTextColor="#9db89d"
-              value={formData.name}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
-              maxLength={50}
-            />
-          </View>
+              {/* 메모/목적 */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>프로젝트 노트</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder={`프로젝트의 목적이나 특별한 의미를 적어보세요.
 
-          {/* 메모/목적 */}
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="프로젝트 노트&#10;&#10;예시:&#10;• 2024년 크리스마스에 가족들과 함께 마시고 싶어요&#10;• 친구 생일선물용으로 특별히 제조&#10;• 회사 동료들과 신년회에서 시음 예정"
-              placeholderTextColor="#9db89d"
-              value={formData.notes}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
-              multiline
-              numberOfLines={6}
-              textAlignVertical="top"
-              maxLength={500}
-            />
-            <Text style={styles.helpText}>
-              {formData.notes.length}/500자
-            </Text>
-          </View>
-        </ScrollView>
+예시:
+• 2024년 크리스마스에 가족들과 함께 마시고 싶어요
+• 친구 생일선물용으로 특별히 제조
+• 회사 동료들과 신년회에서 시음 예정`}
+                  placeholderTextColor={colors.text.muted}
+                  value={formData.notes}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
+                  multiline
+                  numberOfLines={6}
+                  textAlignVertical="top"
+                  maxLength={500}
+                />
+                <Text style={styles.helpText}>
+                  {formData.notes.length}/500자
+                </Text>
+              </View>
+            </GlassCard>
+          </ScrollView>
+        </Animated.View>
 
         {/* 하단 수정 버튼 */}
         <View style={styles.bottomContainer}>
@@ -191,116 +410,10 @@ const EditProjectScreen: React.FC = () => {
           >
             수정 완료
           </Button>
-          
-          <View style={styles.bottomSpacing} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#111811',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#111811',
-  },
-  closeButton: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholderView: {
-    width: 48,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  inputContainer: {
-    marginBottom: 12,
-  },
-  input: {
-    backgroundColor: '#1c261c',
-    color: 'white',
-    paddingHorizontal: 15,
-    paddingVertical: 15,
-    borderRadius: 8,
-    fontSize: 16,
-    height: 56,
-    borderWidth: 1,
-    borderColor: '#3c533c',
-  },
-  textArea: {
-    height: 144,
-    paddingTop: 15,
-  },
-  recipeInfo: {
-    backgroundColor: '#293829',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#22c55e',
-  },
-  recipeInfoTitle: {
-    color: '#22c55e',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  recipeInfoText: {
-    color: 'white',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  helpText: {
-    color: '#9db89d',
-    fontSize: 12,
-    marginTop: 8,
-    fontStyle: 'italic',
-    textAlign: 'right',
-  },
-  bottomContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  bottomSpacing: {
-    height: 20,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#9db89d',
-    textAlign: 'center',
-  },
-});
 
 export default EditProjectScreen;

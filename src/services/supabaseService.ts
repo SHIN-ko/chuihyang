@@ -105,6 +105,12 @@ export class SupabaseService {
         .select('*')
         .eq('id', user.id)
         .single();
+      
+      console.log('getCurrentUser - 프로필 조회:', {
+        userId: user.id,
+        profileData: profile,
+        error: error
+      });
 
       if (error) {
         // profiles 테이블이 없거나 RLS 오류인 경우 auth user 정보만으로 임시 사용자 반환
@@ -364,9 +370,9 @@ export class SupabaseService {
     }
   }
 
-  static async uploadImage(bucket: string, path: string, file: Blob): Promise<string> {
+  static async uploadImage(bucket: string, path: string, file: Blob | Uint8Array): Promise<string> {
     try {
-      console.log('업로드 시작:', { bucket, path, fileSize: file.size });
+      console.log('업로드 시작:', { bucket, path, fileSize: file instanceof Blob ? file.size : file.length });
       
       const { data, error } = await supabase.storage
         .from(bucket)
@@ -397,15 +403,23 @@ export class SupabaseService {
 
   // 데이터 변환 헬퍼 함수들
   private static transformProfileToUser(profile: ProfileRow): User {
-    return {
-      id: profile.id,
-      email: profile.email,
-      nickname: profile.nickname,
-      birthdate: profile.birthdate || undefined,
-      profileImage: profile.profile_image_url || undefined,
-      createdAt: profile.created_at,
-      updatedAt: profile.updated_at,
-    };
+          const userData = {
+        id: profile.id,
+        email: profile.email,
+        nickname: profile.nickname,
+        birthdate: profile.birthdate || undefined,
+        profileImage: profile.profile_image_url || undefined,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at,
+      };
+      
+      console.log('getCurrentUser - 반환 데이터:', {
+        userId: userData.id,
+        hasProfileImage: !!userData.profileImage,
+        profileImageUrl: userData.profileImage
+      });
+      
+      return userData;
   }
 
   private static transformProjectRowToProject(projectRow: any): Project {

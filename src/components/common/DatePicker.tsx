@@ -22,6 +22,7 @@ interface DatePickerProps {
   minimumDate?: string;
   maximumDate?: string;
   disabled?: boolean;
+  isBirthdate?: boolean; // 생년월일 모드
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
@@ -31,6 +32,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
   minimumDate,
   maximumDate,
   disabled = false,
+  isBirthdate = false,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(value);
@@ -39,6 +41,17 @@ const DatePicker: React.FC<DatePickerProps> = ({
   const formatDisplayDate = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
+    
+    if (isBirthdate) {
+      // 생년월일 모드: 간단한 포맷 (1990년 1월 15일)
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    }
+    
+    // 일반 모드: 요일 포함
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
       month: 'long',
@@ -204,13 +217,15 @@ const DatePicker: React.FC<DatePickerProps> = ({
         <View style={styles.modalOverlay}>
           <GlassCard style={styles.modalContent} intensity="medium">
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>날짜 선택</Text>
+              <Text style={styles.modalTitle}>
+                {isBirthdate ? '생년월일 선택' : '날짜 선택'}
+              </Text>
             </View>
             
             <View style={styles.calendarContainer}>
               <Calendar
                 style={styles.calendar}
-                current={selectedDate || new Date().toISOString().split('T')[0]}
+                current={selectedDate || (isBirthdate ? '1990-01-01' : new Date().toISOString().split('T')[0])}
                 onDayPress={handleDateSelect}
                 markedDates={getMarkedDates()}
                 minDate={minimumDate}

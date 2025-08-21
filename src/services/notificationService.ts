@@ -18,6 +18,47 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// 모든 환경에서 알림 호출 추적을 위한 래퍼
+const trackedScheduleNotification = async (request: any) => {
+  const isImmediate = request.trigger === null;
+  const scheduledDate = request.trigger?.date ? new Date(request.trigger.date) : null;
+  const now = new Date();
+  
+  console.log(`🔔 [NOTIFICATION CALL] scheduleNotificationAsync 호출:`, {
+    trigger: request.trigger,
+    title: request.content?.title,
+    body: request.content?.body,
+    identifier: request.identifier,
+    isImmediate: isImmediate,
+    scheduledDate: scheduledDate ? scheduledDate.toLocaleString() : 'N/A',
+    currentTime: now.toLocaleString(),
+    isInPast: scheduledDate ? scheduledDate.getTime() < now.getTime() : false,
+    minutesFromNow: scheduledDate ? Math.round((scheduledDate.getTime() - now.getTime()) / (1000 * 60)) : 0,
+    platform: Platform.OS,
+    isDevice: Device.isDevice
+  });
+
+  // 즉시 알림인 경우 경고
+  if (isImmediate) {
+    console.warn(`⚠️ [즉시 알림 감지] ${request.content?.title} - 이것이 즉시 알림이 오는 원인일 수 있습니다!`);
+  }
+
+  // 과거 시간인 경우 경고
+  if (scheduledDate && scheduledDate.getTime() < now.getTime()) {
+    console.warn(`⚠️ [과거 시간 감지] ${request.content?.title} - 과거 시간으로 스케줄링되어 즉시 실행될 수 있습니다!`);
+  }
+  
+  const result = await Notifications.scheduleNotificationAsync(request);
+  
+  console.log(`📋 [NOTIFICATION RESULT]`, {
+    title: request.content?.title,
+    result: result,
+    resultType: typeof result
+  });
+  
+  return result;
+};
+
 export interface NotificationSchedule {
   id: string;
   projectId: string;
@@ -54,11 +95,12 @@ class NotificationService {
   // 알림 권한 요청 및 초기 설정
   async initialize(): Promise<boolean> {
     try {
-      // 물리적 디바이스 확인
-      if (!Device.isDevice) {
-        console.log('알림은 실제 디바이스에서만 작동합니다.');
-        return false;
-      }
+      // 디바이스 정보 로그
+      console.log(`📱 디바이스 정보:`, {
+        isDevice: Device.isDevice,
+        deviceType: Device.deviceType,
+        platform: Platform.OS
+      });
 
       // 기존 권한 상태 확인
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -101,7 +143,16 @@ class NotificationService {
         });
       }
 
-      console.log('알림 시스템 초기화 완료');
+      // 환경 정보 출력
+      console.log('🔔 알림 시스템 초기화 완료:', {
+        isDevice: Device.isDevice,
+        deviceType: Device.deviceType,
+        platform: Platform.OS,
+        isDev: __DEV__,
+        hasProjectId: !!Constants.easConfig?.projectId,
+        hasPushToken: !!this.pushToken
+      });
+      
       return true;
     } catch (error) {
       console.error('알림 초기화 실패:', error);
@@ -174,6 +225,9 @@ class NotificationService {
   async scheduleProjectNotifications(project: Project): Promise<void> {
     if (!this.isEnabled) return;
 
+    // 모든 환경에서 알림 스케줄링 활성화
+    console.log(`🔔 [${project.name}] 알림 스케줄링 시작 (모든 환경에서 활성화)`);
+
     // 이미 완료된 프로젝트는 알림 설정하지 않음
     if (project.status === 'completed') {
       console.log(`${project.name} 프로젝트는 이미 완료되어 알림을 설정하지 않습니다.`);
@@ -192,15 +246,29 @@ class NotificationService {
       const endDate = new Date(project.expectedEndDate + 'T23:59:59');
       const projectName = project.name;
 
+      console.log(`🔔 [${projectName}] 알림 스케줄링 시작:`, {
+        startDate: project.startDate,
+        endDate: project.expectedEndDate,
+        parsedStartDate: startDate.toLocaleString(),
+        parsedEndDate: endDate.toLocaleString(),
+        currentTime: now.toLocaleString()
+      });
+
       // 날짜 파싱 검증
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        console.error('❌ 날짜 파싱 실패!');
+        console.error('❌ 날짜 파싱 실패!', {
+          startDate: project.startDate,
+          endDate: project.expectedEndDate
+        });
         return;
       }
 
       // 프로젝트가 이미 완료되었는지 확인
       if (endDate <= now) {
-        console.log('⚠️ 프로젝트 완료일이 이미 지났습니다. 알림을 설정하지 않습니다.');
+        console.log('⚠️ 프로젝트 완료일이 이미 지났습니다. 알림을 설정하지 않습니다.', {
+          endDate: endDate.toLocaleString(),
+          currentTime: now.toLocaleString()
+        });
         return;
       }
 
@@ -218,10 +286,22 @@ class NotificationService {
       
       const daysUntilCompletion = Math.ceil((endDateOnly.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       
+      console.log(`📅 [${projectName}] 완료까지 남은 일수 계산:`, {
+        today: today.toLocaleDateString(),
+        endDateOnly: endDateOnly.toLocaleDateString(),
+        daysUntilCompletion: daysUntilCompletion,
+        timeDiffMs: endDateOnly.getTime() - today.getTime()
+      });
+      
       // 3일 전 알림: 완료까지 3일 이상 남았고, 3일 전 시간이 아직 미래인 경우
       if (threeDaysBefore > now && daysUntilCompletion >= 3) {
         const customMessage = generateCustomNotificationMessage(project, 'threeDaysBeforeCompletion');
         const adjustedDate = this.adjustTimeForQuietHours(threeDaysBefore);
+        
+        console.log(`✅ [${projectName}] 3일 전 알림 설정:`, {
+          scheduledDate: adjustedDate.toLocaleString(),
+          daysUntilCompletion: daysUntilCompletion
+        });
         
         notifications.push({
           id: `${project.id}-3days`,
@@ -231,6 +311,13 @@ class NotificationService {
           body: customMessage.body,
           scheduledDate: adjustedDate,
           data: { projectId: project.id, type: 'completion_reminder' },
+        });
+      } else {
+        console.log(`❌ [${projectName}] 3일 전 알림 건너뜀:`, {
+          threeDaysBefore: threeDaysBefore.toLocaleString(),
+          isAfterNow: threeDaysBefore > now,
+          daysUntilCompletion: daysUntilCompletion,
+          condition: 'threeDaysBefore > now && daysUntilCompletion >= 3'
         });
       }
 
@@ -244,6 +331,11 @@ class NotificationService {
         const customMessage = generateCustomNotificationMessage(project, 'oneDayBeforeCompletion');
         const adjustedDate = this.adjustTimeForQuietHours(oneDayBefore);
         
+        console.log(`✅ [${projectName}] 1일 전 알림 설정:`, {
+          scheduledDate: adjustedDate.toLocaleString(),
+          daysUntilCompletion: daysUntilCompletion
+        });
+        
         notifications.push({
           id: `${project.id}-1day`,
           projectId: project.id,
@@ -252,6 +344,12 @@ class NotificationService {
           body: customMessage.body,
           scheduledDate: adjustedDate,
           data: { projectId: project.id, type: 'completion_reminder' },
+        });
+      } else {
+        console.log(`❌ [${projectName}] 1일 전 알림 건너뜀:`, {
+          oneDayBefore: oneDayBefore.toLocaleString(),
+          isAfterNow: oneDayBefore > now,
+          daysUntilCompletion: daysUntilCompletion
         });
       }
 
@@ -264,6 +362,11 @@ class NotificationService {
         const customMessage = generateCustomNotificationMessage(project, 'completionDay');
         const adjustedDate = this.adjustTimeForQuietHours(completionDay);
         
+        console.log(`✅ [${projectName}] 완료일 당일 알림 설정:`, {
+          scheduledDate: adjustedDate.toLocaleString(),
+          daysUntilCompletion: daysUntilCompletion
+        });
+        
         notifications.push({
           id: `${project.id}-completion`,
           projectId: project.id,
@@ -272,6 +375,12 @@ class NotificationService {
           body: customMessage.body,
           scheduledDate: adjustedDate,
           data: { projectId: project.id, type: 'completion_due' },
+        });
+      } else {
+        console.log(`❌ [${projectName}] 완료일 당일 알림 건너뜀:`, {
+          completionDay: completionDay.toLocaleString(),
+          isAfterNow: completionDay > now,
+          daysUntilCompletion: daysUntilCompletion
         });
       }
 
@@ -300,36 +409,64 @@ class NotificationService {
 
 
 
-      // 단기간 프로젝트를 위한 추가 알림 (7일 이내 완료)
-      if (daysUntilCompletion <= 7 && daysUntilCompletion > 0) {
-        // 매일 체크 알림 (단기간 프로젝트용)
-        for (let i = 1; i <= Math.min(daysUntilCompletion, 3); i++) {
-          const dailyCheckDate = new Date(now.getTime());
-          dailyCheckDate.setDate(now.getDate() + i);
+      // 단기간 프로젝트를 위한 추가 알림 (7일 이내 완료, 하지만 기본 알림과 중복되지 않도록)
+      if (daysUntilCompletion <= 7 && daysUntilCompletion > 3) {
+        // 매일 체크 알림 (단기간 프로젝트용) - 하지만 3일 전, 1일 전 알림과 겹치지 않도록 
+        for (let i = 4; i <= Math.min(daysUntilCompletion, 7); i++) {
+          const dailyCheckDate = new Date(today.getTime());
+          dailyCheckDate.setDate(today.getDate() + i);
           dailyCheckDate.setHours(9, 0, 0, 0); // 오전 9시
 
+          // 완료일보다 이전인지 확인
           if (dailyCheckDate < endDate) {
             const customMessage = generateCustomNotificationMessage(project, 'weeklyCheck');
             const adjustedDate = this.adjustTimeForQuietHours(dailyCheckDate);
+            
+            console.log(`⏰ 단기간 프로젝트 알림 설정: ${i}일 후 (${adjustedDate.toLocaleString()})`);
             
             notifications.push({
               id: `${project.id}-daily-${i}`,
               projectId: project.id,
               type: 'progress_check',
-              title: `📅 ${i}일 후 완성!`,
-              body: `${projectName}이(가) ${i}일 후 완성됩니다. 상태를 확인해보세요!`,
+              title: `📅 ${daysUntilCompletion - i + 1}일 후 완성!`,
+              body: `${projectName}이(가) ${daysUntilCompletion - i + 1}일 후 완성됩니다. 상태를 확인해보세요!`,
               scheduledDate: adjustedDate,
               data: { projectId: project.id, type: 'progress_check' },
             });
-
           }
         }
       }
 
       // 모든 알림 스케줄링
+      console.log(`📋 [${projectName}] 총 ${notifications.length}개의 알림 스케줄링 시작`);
+      
       for (const notification of notifications) {
         await this.scheduleNotification(notification);
       }
+      
+      console.log(`🎉 [${projectName}] 알림 스케줄링 완료! 총 ${notifications.length}개 알림 설정됨`);
+      
+      // 설정된 알림 목록 요약
+      notifications.forEach((notif, index) => {
+        console.log(`  ${index + 1}. ${notif.title} - ${notif.scheduledDate.toLocaleString()}`);
+      });
+
+      // 실제 스케줄링된 알림 확인
+      setTimeout(async () => {
+        const scheduledNotifs = await this.getScheduledNotifications();
+        const projectNotifs = scheduledNotifs.filter(n => 
+          n.identifier?.includes(project.id)
+        );
+        console.log(`📋 [${projectName}] 실제 예약된 알림 확인:`, {
+          totalScheduled: scheduledNotifs.length,
+          projectNotifications: projectNotifs.length,
+          projectNotifs: projectNotifs.map(n => ({
+            id: n.identifier,
+            title: n.content.title,
+            trigger: n.trigger
+          }))
+        });
+      }, 1000);
     } catch (error) {
       console.error('프로젝트 알림 설정 실패:', error);
     }
@@ -339,13 +476,31 @@ class NotificationService {
   private async scheduleNotification(notification: NotificationSchedule): Promise<void> {
     try {
       const now = new Date();
+      const timeDiff = notification.scheduledDate.getTime() - now.getTime();
+      const minutesUntil = Math.round(timeDiff / (1000 * 60));
       
-      // 과거 시간 체크 (5분 여유를 둠)
-      if (notification.scheduledDate.getTime() <= now.getTime() + (5 * 60 * 1000)) {
+      console.log(`⏰ 알림 스케줄링 시도: ${notification.title}`, {
+        scheduledDate: notification.scheduledDate.toLocaleString(),
+        currentTime: now.toLocaleString(),
+        minutesUntil: minutesUntil,
+        timeDiffMs: timeDiff
+      });
+      
+      // 과거 시간 체크 (1분 여유만 둠)
+      const minFutureTime = 1 * 60 * 1000; // 1분
+      
+      if (notification.scheduledDate.getTime() <= now.getTime() + minFutureTime) {
+        console.log(`❌ 과거 시간으로 인해 알림 건너뜀: ${notification.title}`, {
+          scheduledDate: notification.scheduledDate.toLocaleString(),
+          currentTime: now.toLocaleString(),
+          timeDiffMinutes: Math.round(timeDiff / (1000 * 60))
+        });
         return;
       }
 
-      await Notifications.scheduleNotificationAsync({
+      console.log(`✅ 알림 스케줄링 성공: ${notification.title} → ${notification.scheduledDate.toLocaleString()}`);
+
+      const result = await trackedScheduleNotification({
         identifier: notification.id,
         content: {
           title: notification.title,
@@ -357,8 +512,41 @@ class NotificationService {
           date: notification.scheduledDate,
         } as Notifications.DateTriggerInput,
       });
+
+      // 스케줄링 결과 상세 로그
+      console.log(`📋 스케줄링 결과:`, {
+        notificationId: notification.id,
+        title: notification.title,
+        result: result,
+        scheduledFor: notification.scheduledDate.toLocaleString()
+      });
+
+      // 즉시 실제 예약 상태 확인
+      setTimeout(async () => {
+        try {
+          const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+          const thisNotification = scheduled.find(n => n.identifier === notification.id);
+          const isScheduled = !!thisNotification;
+          
+          console.log(`🔍 ${notification.title} 예약 확인:`, {
+            found: isScheduled,
+            trigger: thisNotification?.trigger,
+            triggerType: thisNotification?.trigger ? (thisNotification.trigger as any).type : 'N/A',
+            scheduledTime: thisNotification?.trigger && (thisNotification.trigger as any).type === 'date' ? 
+              new Date((thisNotification.trigger as any).value * 1000).toLocaleString() : 'N/A'
+          });
+
+          // 개발 환경에서 실제 예약이 안 되었다면 로그만 남김
+          if (!isScheduled && (__DEV__ || !Device.isDevice)) {
+            console.log(`📝 [개발환경] ${notification.title} - Expo 개발환경에서는 예약이 제한될 수 있습니다`);
+          }
+        } catch (e) {
+          console.log(`❌ 예약 확인 실패:`, e);
+        }
+      }, 100);
+      
     } catch (error) {
-      console.error('❌ 알림 스케줄링 실패:', error);
+      console.error('❌ 알림 스케줄링 실패:', notification.title, error);
     }
   }
 
@@ -404,8 +592,14 @@ class NotificationService {
   async sendImmediateNotification(title: string, body: string, data?: any): Promise<void> {
     if (!this.isEnabled) return;
 
+    console.log(`🔥 즉시 알림 발송!`, {
+      title: title,
+      body: body,
+      data: data
+    });
+
     try {
-      await Notifications.scheduleNotificationAsync({
+      await trackedScheduleNotification({
         content: {
           title,
           body,
@@ -414,6 +608,8 @@ class NotificationService {
         },
         trigger: null, // 즉시 발송
       });
+      
+      console.log(`✅ 즉시 알림 발송 완료: ${title}`);
     } catch (error) {
       console.error('즉시 알림 발송 실패:', error);
     }

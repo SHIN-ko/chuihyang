@@ -24,7 +24,7 @@ import { SupabaseService } from '@/src/services/supabaseService';
 
 const ProfileScreen: React.FC = () => {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, refreshUser } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
   const { colors, brandColors } = useThemeValues();
   const { 
@@ -126,22 +126,31 @@ const ProfileScreen: React.FC = () => {
         try {
           const asset = result.assets[0];
           if (asset.uri) {
-            // 파일을 Blob으로 변환
+            // 파일을 ArrayBuffer로 변환 (Blob 대신 사용)
             const imageResponse = await fetch(asset.uri);
-            const blob = await imageResponse.blob();
+            const arrayBuffer = await imageResponse.arrayBuffer();
+            const imageData = new Uint8Array(arrayBuffer);
             
             // 고유한 파일명 생성
             const fileName = `profile-images/${user?.id}_${Date.now()}.jpg`;
             
             // Supabase Storage에 업로드
-            const publicUrl = await SupabaseService.uploadImage('profile-images', fileName, blob);
+            const publicUrl = await SupabaseService.uploadImage('profile-images', fileName, imageData);
             
             // 프로필 이미지 URL 업데이트
             await SupabaseService.updateProfile(user!.id, { 
               profileImage: publicUrl 
             });
             
-            // 로컬 상태 업데이트 (authStore에서 사용자 정보 다시 로드하거나 업데이트)
+            // 사용자 정보 새로고침 (DB에서 최신 정보 가져오기)
+            await refreshUser();
+            
+            console.log('프로필 이미지 업로드 완료:', {
+              userId: user?.id,
+              imageUrl: publicUrl,
+              updatedUser: useAuthStore.getState().user?.profileImage
+            });
+            
             Alert.alert('성공', '프로필 이미지가 변경되었습니다.');
             
           }
@@ -277,13 +286,24 @@ const ProfileScreen: React.FC = () => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: 12,
+      paddingVertical: 16, // 조금 더 여유있게
       borderBottomWidth: 1,
       borderBottomColor: colors.border.secondary,
     },
     settingInfo: {
-      flexDirection: 'row',
+      flexDirection: 'column', // 세로 배치로 변경
+      alignItems: 'flex-start', // 왼쪽 정렬
+      flex: 1,
+      paddingRight: 16, // Switch와의 간격 확보
+    },
+    settingInfoWithIcon: {
+      flexDirection: 'row', // 아이콘이 있는 경우 가로 배치
       alignItems: 'center',
+      flex: 1,
+      paddingRight: 16,
+    },
+    settingTextContainer: {
+      flexDirection: 'column', // 제목과 설명은 세로 배치
       flex: 1,
     },
     settingIcon: {
@@ -293,11 +313,12 @@ const ProfileScreen: React.FC = () => {
       fontSize: 16,
       fontWeight: '600',
       color: colors.text.primary,
-      marginBottom: 2,
+      marginBottom: 4, // 제목과 설명 사이 간격 늘림
     },
     settingDescription: {
       fontSize: 13,
       color: colors.text.secondary,
+      lineHeight: 18, // 설명 텍스트 가독성 향상
     },
     switch: {
       marginLeft: 12,
@@ -460,14 +481,14 @@ const ProfileScreen: React.FC = () => {
               style={styles.settingRow}
               onPress={toggleTheme}
             >
-              <View style={styles.settingInfo}>
+              <View style={styles.settingInfoWithIcon}>
                 <Ionicons 
                   name={theme === 'dark' ? 'moon' : 'sunny'} 
                   size={20} 
                   color={brandColors.accent.primary} 
                   style={styles.settingIcon}
                 />
-                <View>
+                <View style={styles.settingTextContainer}>
                   <Text style={styles.settingTitle}>
                     {theme === 'dark' ? '다크 모드' : '라이트 모드'}
                   </Text>

@@ -164,44 +164,34 @@ const CreateProjectScreen: React.FC = () => {
     keyboardView: {
       flex: 1,
     },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      marginHorizontal: 20,
-      marginTop: 10,
-      marginBottom: 0,
-    },
-    closeButton: {
+    floatingCloseButton: {
+      position: 'absolute' as const,
+      top: Platform.OS === 'ios' ? 50 : 30,
+      right: 20,
       width: 44,
       height: 44,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
       borderRadius: 22,
-      backgroundColor: colors.background.elevated,
-      ...shadows.glass.light,
+      backgroundColor: colors.background.glass,
+      ...shadows.glass.medium,
+      zIndex: 1000,
+      backdropFilter: 'blur(20px)',
     },
-    headerTitle: {
-      color: colors.text.primary,
-      fontSize: 24,
-      fontWeight: '700',
-      letterSpacing: -0.5,
-      flex: 1,
-      textAlign: 'center',
-    },
-    placeholderView: {
-      width: 44,
-    },
+
     scrollView: {
       flex: 1,
       paddingHorizontal: 20,
     },
     content: {
+      paddingTop: Platform.OS === 'ios' ? 60 : 40, // 홈/프로필 화면과 비슷한 비율
       paddingBottom: 20,
     },
     section: {
+      marginBottom: 24,
+    },
+    firstSection: {
+      marginTop: 16, // 홈 화면과 동일한 상단 여백
       marginBottom: 24,
     },
     sectionTitle: {
@@ -331,23 +321,19 @@ const CreateProjectScreen: React.FC = () => {
       {/* 배경 그라디언트 */}
       <View style={styles.backgroundGradient} />
       
+      {/* 플로팅 닫기 버튼 */}
+      <TouchableOpacity onPress={handleClose} style={styles.floatingCloseButton}>
+        <Ionicons name="close" size={24} color={colors.text.primary} />
+      </TouchableOpacity>
+
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        {/* 헤더 */}
-        <GlassCard style={styles.header} intensity="medium">
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color={colors.text.primary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>새 프로젝트</Text>
-          <View style={styles.placeholderView} />
-        </GlassCard>
-
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
             {/* 기본 정보 섹션 */}
-            <View style={styles.section}>
+            <View style={styles.firstSection}>
               <Text style={styles.sectionTitle}>기본 정보</Text>
               <GlassCard style={styles.sectionCard} intensity="medium">
                 <View style={styles.inputContainer}>
