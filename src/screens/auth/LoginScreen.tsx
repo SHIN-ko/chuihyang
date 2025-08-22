@@ -18,13 +18,142 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/src/stores/authStore';
 import Button from '@/src/components/common/Button';
-import { BRAND_COLORS, SHADOWS, ANIMATIONS } from '@/constants/Colors';
+import { useTheme } from '@/src/contexts/ThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+import { useThemeValues } from '@/src/hooks/useThemedStyles';
 
 const { width } = Dimensions.get('window');
 
 const LoginScreen: React.FC = () => {
   const router = useRouter();
   const { login, isLoading } = useAuthStore();
+  const { theme } = useTheme();
+  const { colors, brandColors } = useThemeValues();
+  
+  const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    backgroundGradient: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      backgroundColor: colors.background.secondary,
+      opacity: 0.5,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+      paddingVertical: 40,
+      minHeight: '100%',
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 48,
+    },
+    logoContainer: {
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    logo: {
+      color: colors.text.primary,
+      fontSize: 48,
+      fontWeight: '800',
+      letterSpacing: -1,
+      marginBottom: 4,
+    },
+    brandTagline: {
+      color: brandColors.accent.primary,
+      fontSize: 14,
+      fontWeight: '500',
+      letterSpacing: 3,
+      textTransform: 'uppercase',
+    },
+    subtitle: {
+      color: colors.text.secondary,
+      fontSize: 16,
+      textAlign: 'center',
+      lineHeight: 24,
+      fontWeight: '400',
+    },
+    form: {
+      marginBottom: 32,
+    },
+    inputGroup: {
+      marginBottom: 24,
+    },
+    label: {
+      color: colors.text.primary,
+      fontSize: 16,
+      fontWeight: '600',
+      marginBottom: 12,
+      letterSpacing: 0.3,
+    },
+    inputContainer: {
+      backgroundColor: colors.background.glass,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border.secondary,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      ...shadows.glass.light,
+    },
+    inputContainerFocused: {
+      borderColor: brandColors.accent.primary,
+      ...shadows.glass.medium,
+    },
+    inputIcon: {
+      marginRight: 12,
+    },
+    input: {
+      flex: 1,
+      color: colors.text.primary,
+      paddingVertical: 16,
+      fontSize: 16,
+      fontWeight: '400',
+    },
+    eyeButton: {
+      padding: 4,
+      marginLeft: 8,
+    },
+    forgotPassword: {
+      marginBottom: 32,
+      alignSelf: 'flex-end',
+    },
+    forgotPasswordText: {
+      color: brandColors.accent.primary,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    signupContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 24,
+    },
+    signupText: {
+      color: colors.text.secondary,
+      fontSize: 14,
+      fontWeight: '400',
+    },
+    signupLink: {
+      color: brandColors.accent.primary,
+      fontSize: 14,
+      fontWeight: '600',
+      marginLeft: 4,
+    },
+  }));
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -84,7 +213,7 @@ const LoginScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLORS.background.primary} />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
       
       {/* 배경 그라디언트 */}
       <View style={styles.backgroundGradient} />
@@ -138,13 +267,13 @@ const LoginScreen: React.FC = () => {
                   <Ionicons 
                     name="mail-outline" 
                     size={20} 
-                    color={emailFocused ? BRAND_COLORS.accent.primary : BRAND_COLORS.text.muted} 
+                    color={emailFocused ? brandColors.accent.primary : colors.text.secondary} 
                     style={styles.inputIcon}
                   />
                   <TextInput
                     style={styles.input}
                     placeholder="이메일을 입력하세요"
-                    placeholderTextColor={BRAND_COLORS.text.muted}
+                    placeholderTextColor={colors.text.muted}
                     value={email}
                     onChangeText={setEmail}
                     onFocus={() => setEmailFocused(true)}
@@ -165,13 +294,13 @@ const LoginScreen: React.FC = () => {
                   <Ionicons 
                     name="lock-closed-outline" 
                     size={20} 
-                    color={passwordFocused ? BRAND_COLORS.accent.primary : BRAND_COLORS.text.muted} 
+                    color={passwordFocused ? brandColors.accent.primary : colors.text.secondary} 
                     style={styles.inputIcon}
                   />
                   <TextInput
                     style={styles.input}
                     placeholder="비밀번호를 입력하세요"
-                    placeholderTextColor={BRAND_COLORS.text.muted}
+                    placeholderTextColor={colors.text.muted}
                     value={password}
                     onChangeText={setPassword}
                     onFocus={() => setPasswordFocused(true)}
@@ -187,7 +316,7 @@ const LoginScreen: React.FC = () => {
                     <Ionicons 
                       name={showPassword ? "eye-outline" : "eye-off-outline"} 
                       size={20} 
-                      color={BRAND_COLORS.text.muted}
+                      color={colors.text.secondary}
                     />
                   </TouchableOpacity>
                 </View>
@@ -216,7 +345,7 @@ const LoginScreen: React.FC = () => {
                 <Text style={styles.signupText}>
                   계정이 없으신가요?
                 </Text>
-                <TouchableOpacity onPress={handleSignUp} style={styles.signupButton}>
+                <TouchableOpacity onPress={handleSignUp}>
                   <Text style={styles.signupLink}>
                     회원가입
                   </Text>
@@ -230,132 +359,5 @@ const LoginScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: BRAND_COLORS.background.primary,
-  },
-  backgroundGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: BRAND_COLORS.background.secondary,
-    opacity: 0.5,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-    minHeight: '100%',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  logo: {
-    color: BRAND_COLORS.text.primary,
-    fontSize: 48,
-    fontWeight: '800',
-    letterSpacing: -1,
-    marginBottom: 4,
-  },
-  brandTagline: {
-    color: BRAND_COLORS.accent.primary,
-    fontSize: 14,
-    fontWeight: '500',
-    letterSpacing: 3,
-    textTransform: 'uppercase',
-  },
-  subtitle: {
-    color: BRAND_COLORS.text.secondary,
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    fontWeight: '400',
-  },
-  form: {
-    marginBottom: 32,
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  label: {
-    color: BRAND_COLORS.text.primary,
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    letterSpacing: 0.3,
-  },
-  inputContainer: {
-    backgroundColor: BRAND_COLORS.background.glass,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: BRAND_COLORS.border.secondary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    ...SHADOWS.neumorphism.inset,
-  },
-  inputContainerFocused: {
-    borderColor: BRAND_COLORS.accent.primary,
-    ...SHADOWS.glass.light,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    color: BRAND_COLORS.text.primary,
-    paddingVertical: 16,
-    fontSize: 16,
-    fontWeight: '400',
-  },
-  eyeButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  forgotPassword: {
-    marginBottom: 32,
-    alignSelf: 'flex-end',
-  },
-  forgotPasswordText: {
-    color: BRAND_COLORS.accent.primary,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  signupContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  signupText: {
-    color: BRAND_COLORS.text.secondary,
-    fontSize: 16,
-    marginRight: 8,
-    fontWeight: '400',
-  },
-  signupButton: {
-    padding: 4,
-  },
-  signupLink: {
-    color: BRAND_COLORS.accent.primary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
 
 export default LoginScreen;

@@ -12,7 +12,8 @@ export const PRESET_RECIPES: PresetRecipe[] = [
       '레몬그라스',
       '빙탕'
     ],
-    instructions: '보리를 발효시킨 후 오크통에서 숙성'
+    instructions: '보리를 발효시킨 후 오크통에서 숙성',
+    brandColor: '#025830' // 진녹색 (전통과 자연)
   },
   {
     id: 'blabla',
@@ -25,7 +26,8 @@ export const PRESET_RECIPES: PresetRecipe[] = [
       '라벤더',
       '빙탕'
     ],
-    instructions: '허브류를 침출시켜 향을 우려낸 후 숙성'
+    instructions: '허브류를 침출시켜 향을 우려낸 후 숙성',
+    brandColor: '#20407c' // 진청색 (허브의 시원함과 신선함)
   },
   {
     id: 'oz',
@@ -38,7 +40,8 @@ export const PRESET_RECIPES: PresetRecipe[] = [
       '로즈마리',
       '빙탕'
     ],
-    instructions: '사탕수수를 발효시켜 오크칩과 함께 장기 숙성'
+    instructions: '사탕수수를 발효시켜 오크칩과 함께 장기 숙성',
+    brandColor: '#ab1e4b' // 진분홍색 (강렬하고 깊은 맛)
   },
   {
     id: 'pachinko',
@@ -51,7 +54,8 @@ export const PRESET_RECIPES: PresetRecipe[] = [
       '코코넛',
       '빙탕'
     ],
-    instructions: '사과를 으깨어 발효시킨 후 여과하여 숙성'
+    instructions: '사과를 으깨어 발효시킨 후 여과하여 숙성',
+    brandColor: '#eaa728' // 주황색 (과일의 달콤함과 활력)
   },
   {
     id: 'gyeaeba',
@@ -65,7 +69,8 @@ export const PRESET_RECIPES: PresetRecipe[] = [
       '바닐라빈',
       '빙탕'
     ],
-    instructions: '감자를 증류한 후 활성탄으로 여과하여 정제'
+    instructions: '감자를 증류한 후 활성탄으로 여과하여 정제',
+    brandColor: '#921e22' // 진빨강색 (클래식한 품격과 깊이)
   },
 ];
 

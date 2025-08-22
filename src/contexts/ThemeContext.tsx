@@ -19,7 +19,7 @@ interface ThemeProviderProps {
 const THEME_STORAGE_KEY = '@chuihyang_theme';
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setThemeState] = useState<ThemeMode>('dark'); // 기본값: 다크모드
+  const [theme, setThemeState] = useState<ThemeMode>('light'); // 기본값: 라이트모드
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

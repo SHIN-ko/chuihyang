@@ -25,6 +25,7 @@ import { Project, ProjectStatus } from '@/src/types';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { calculateProjectStats, ProjectStats } from '@/src/utils/calendar';
+import { getRecipeById } from '@/src/data/presetRecipes';
 
 const { width } = Dimensions.get('window');
 
@@ -104,18 +105,17 @@ export default function HomeScreen() {
     // 검색 관련 스타일
     searchContainer: {
       paddingHorizontal: 20,
-      paddingVertical: 12,
+      paddingVertical: 16,
     },
     searchInputContainer: {
-      borderRadius: 16,
+      borderRadius: 28,
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 20,
-      borderWidth: 1,
-      borderColor: colors.border.glass,
-      backgroundColor: colors.background.glass,
-      overflow: 'hidden',
-      ...shadows.glass.light,
+      paddingVertical: 4,
+      backgroundColor: colors.background.surface,
+      ...shadows.glass.medium,
+      borderWidth: 0,
     },
     searchIcon: {
       marginRight: 12,
@@ -123,9 +123,10 @@ export default function HomeScreen() {
     searchInput: {
       flex: 1,
       color: colors.text.primary,
-      fontSize: 16,
-      paddingVertical: 16,
+      fontSize: 15,
+      paddingVertical: 14,
       fontWeight: '400',
+      height: 48,
     },
     clearButton: {
       padding: 6,
@@ -196,7 +197,7 @@ export default function HomeScreen() {
       fontWeight: '500',
     },
     activeFilterText: {
-      color: colors.text.primary,
+      color: '#FFFFFF',
       fontWeight: '600',
     },
     // 스크롤뷰 및 프로젝트 목록
@@ -209,14 +210,13 @@ export default function HomeScreen() {
     },
     // 프로젝트 카드 스타일
     projectCard: {
-      backgroundColor: colors.background.glass,
-      borderRadius: 20,
-      padding: 24,
-      marginBottom: 16,
-      borderWidth: 1,
-      borderColor: colors.border.glass,
+      backgroundColor: colors.background.surface,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 12,
+      borderWidth: 0,
       overflow: 'hidden',
-      ...shadows.glass.medium,
+      ...shadows.glass.light,
     },
     cardHeader: {
       flexDirection: 'row',
@@ -422,11 +422,13 @@ export default function HomeScreen() {
   const renderProjectCard = (project: Project) => {
     const progress = calculateProgress(project.startDate, project.expectedEndDate);
     const isCompleted = project.status === 'completed';
+    const recipe = getRecipeById(project.recipeId || '');
+    const brandColor = recipe?.brandColor || brandColors.accent.primary;
     
     return (
       <TouchableOpacity
         key={project.id}
-        style={styles.projectCard}
+        style={[styles.projectCard, { borderLeftColor: brandColor, borderLeftWidth: 4 }]}
         onPress={() => router.push(`/project/${project.id}`)}
       >
         <View style={styles.cardHeader}>
@@ -461,7 +463,7 @@ export default function HomeScreen() {
         {!isCompleted && (
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${progress}%` }]} />
+              <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: brandColor }]} />
             </View>
             <Text style={styles.progressLabel}>
               {progress < 100 ? `${Math.max(0, Math.ceil((new Date(project.expectedEndDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))}일 남음` : '완료 대기'}
@@ -540,7 +542,7 @@ export default function HomeScreen() {
             <Ionicons name="search" size={20} color={colors.text.muted} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="담금주 프로젝트 검색..."
+              placeholder="프로젝트를 검색해보세요"
               placeholderTextColor={colors.text.muted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -634,7 +636,7 @@ export default function HomeScreen() {
           onPress={handleCreateProject}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={28} color={colors.text.primary} />
+          <Ionicons name="add" size={28} color="#FFFFFF" />
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>
@@ -751,7 +753,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeFilterText: {
-    color: BRAND_COLORS.text.primary,
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   // 스크롤뷰 및 프로젝트 목록

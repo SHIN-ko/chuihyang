@@ -22,6 +22,7 @@ export interface PresetRecipe {
   defaultDuration: number; // 기본 숙성 기간 (일)
   ingredients: string[]; // 미리 정의된 재료 목록
   instructions?: string; // 제조 방법
+  brandColor: string; // 레시피별 브랜드 컬러
 }
 
 export interface Project {

@@ -1,4 +1,5 @@
 import { Project, ProgressLog } from '@/src/types';
+import { getRecipeById } from '@/src/data/presetRecipes';
 
 // 캘린더에서 사용할 마킹 타입 정의
 export interface CalendarMarking {
@@ -35,7 +36,7 @@ export const generateCalendarMarkings = (projects: Project[]): { [key: string]: 
         markings[startDate] = { marked: true, dots: [] };
       }
       markings[startDate].dots!.push({
-        color: getProjectColor(project.type),
+        color: getProjectColor(project),
         selectedDotColor: 'rgba(255, 255, 255, 0.9)',
       });
     }
@@ -47,7 +48,7 @@ export const generateCalendarMarkings = (projects: Project[]): { [key: string]: 
         markings[completionDate] = { marked: true, dots: [] };
       }
       markings[completionDate].dots!.push({
-        color: project.status === 'completed' ? '#22c55e' : '#f59e0b',
+        color: project.status === 'completed' ? '#22c55e' : getProjectColor(project),
         selectedDotColor: 'rgba(255, 255, 255, 0.9)',
       });
     }
@@ -59,7 +60,7 @@ export const generateCalendarMarkings = (projects: Project[]): { [key: string]: 
           markings[log.date] = { marked: true, dots: [] };
         }
         markings[log.date].dots!.push({
-          color: '#6366f1',
+          color: getProjectColor(project),
           selectedDotColor: 'rgba(255, 255, 255, 0.9)',
         });
       }
@@ -69,14 +70,20 @@ export const generateCalendarMarkings = (projects: Project[]): { [key: string]: 
   return markings;
 };
 
-// 프로젝트 타입별 색상 반환
-export const getProjectColor = (type: string): string => {
-  switch (type) {
-    case 'whiskey': return '#d97706';
-    case 'gin': return '#059669';
-    case 'rum': return '#dc2626';
-    case 'fruit_wine': return '#c026d3';
-    case 'vodka': return '#2563eb';
+// 프로젝트별 브랜드 컬러 반환 (레시피 기반)
+export const getProjectColor = (project: Project): string => {
+  if (project.recipeId) {
+    const recipe = getRecipeById(project.recipeId);
+    if (recipe?.brandColor) {
+      return recipe.brandColor;
+    }
+  }
+  
+  // 기본 타입별 색상 (fallback)
+  switch (project.type) {
+    case 'damgeumSoju25': return '#20407c'; // 블라블라 색상 기본값
+    case 'damgeumSoju30': return '#025830'; // 야레야레 색상 기본값
+    case 'vodka': return '#921e22'; // 계애바 색상 기본값
     default: return '#6b7280';
   }
 };

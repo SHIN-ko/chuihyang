@@ -20,6 +20,7 @@ import Button from '@/src/components/common/Button';
 import GlassCard from '@/src/components/common/GlassCard';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 import { useTheme } from '@/src/contexts/ThemeContext';
+import { getRecipeById } from '@/src/data/presetRecipes';
 
 const EditProjectScreen: React.FC = () => {
   const router = useRouter();
@@ -29,6 +30,8 @@ const EditProjectScreen: React.FC = () => {
   const { colors, brandColors } = useThemeValues();
   
   const project = projects.find(p => p.id === id);
+  const recipe = project?.recipeId ? getRecipeById(project.recipeId) : null;
+  const brandColor = recipe?.brandColor || brandColors.accent.primary;
   
   const [formData, setFormData] = useState({
     name: '',
@@ -104,13 +107,29 @@ const EditProjectScreen: React.FC = () => {
       borderWidth: 1,
       borderColor: colors.border.secondary,
     },
+    titleContainer: {
+      flex: 1,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      flexDirection: 'row' as const,
+    },
+    recipeBadge: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: 8,
+    },
     headerTitle: {
       color: colors.text.primary,
       fontSize: 20,
       fontWeight: '700' as const,
-      flex: 1,
-      textAlign: 'center' as const,
       letterSpacing: -0.3,
+    },
+    recipeSubtitle: {
+      color: colors.text.secondary,
+      fontSize: 12,
+      fontWeight: '500' as const,
+      marginLeft: 8,
     },
     placeholderView: {
       width: 44,
@@ -290,11 +309,17 @@ const EditProjectScreen: React.FC = () => {
         <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
         <View style={styles.backgroundGradient} />
         
-        <GlassCard style={styles.header} intensity="medium">
+        <GlassCard style={{...styles.header, borderLeftWidth: 4, borderLeftColor: brandColor}} intensity="medium">
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>프로젝트 수정</Text>
+          <View style={styles.titleContainer}>
+            <View style={[styles.recipeBadge, { backgroundColor: brandColor }]} />
+            <Text style={styles.headerTitle}>프로젝트 수정</Text>
+            {recipe && (
+              <Text style={styles.recipeSubtitle}>{recipe.name}</Text>
+            )}
+          </View>
           <View style={styles.placeholderView} />
         </GlassCard>
         
@@ -313,11 +338,17 @@ const EditProjectScreen: React.FC = () => {
       <View style={styles.backgroundGradient} />
       
       {/* 헤더 */}
-      <GlassCard style={styles.header} intensity="medium">
+      <GlassCard style={{...styles.header, borderLeftWidth: 4, borderLeftColor: brandColor}} intensity="medium">
         <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
           <Ionicons name="close" size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>프로젝트 수정</Text>
+        <View style={styles.titleContainer}>
+          <View style={[styles.recipeBadge, { backgroundColor: brandColor }]} />
+          <Text style={styles.headerTitle}>프로젝트 수정</Text>
+          {recipe && (
+            <Text style={styles.recipeSubtitle}>{recipe.name}</Text>
+          )}
+        </View>
         <View style={styles.placeholderView} />
       </GlassCard>
 

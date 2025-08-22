@@ -349,7 +349,7 @@ const ProjectDetailScreen: React.FC = () => {
       ...shadows.glass.medium,
     },
     completeButtonText: {
-      color: colors.text.primary,
+      color: '#FFFFFF',
       fontSize: 15,
       fontWeight: '600',
       letterSpacing: 0.3,
@@ -566,6 +566,7 @@ const ProjectDetailScreen: React.FC = () => {
   const recipe = project.recipeId ? getRecipeById(project.recipeId) : null;
   const progress = calculateDetailedProgress(project.startDate, project.expectedEndDate);
   const progressPercentage = Math.min(progress.percentage, 100);
+  const brandColor = recipe?.brandColor || brandColors.accent.primary;
   
   // 프로젝트 상태에 따른 진행률 조정
   const displayProgress = project.status === 'completed' ? 100 : progressPercentage;
@@ -693,7 +694,7 @@ const ProjectDetailScreen: React.FC = () => {
         <View 
           style={[
             styles.progressBar, 
-            { width: `${displayProgress}%` }
+            { width: `${displayProgress}%`, backgroundColor: brandColor }
           ]} 
         />
       </View>

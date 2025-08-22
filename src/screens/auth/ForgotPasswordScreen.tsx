@@ -16,9 +16,11 @@ import Button from '@/src/components/common/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { SupabaseService } from '@/src/services/supabaseService';
 import { emailSchema } from '@/src/utils/validation';
+import { useThemeValues } from '@/src/hooks/useThemedStyles';
 
 const ForgotPasswordScreen: React.FC = () => {
   const router = useRouter();
+  const { colors } = useThemeValues();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -141,7 +143,7 @@ const ForgotPasswordScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111811',
+    backgroundColor: colors.background.primary,
   },
   keyboardView: {
     flex: 1,
@@ -152,7 +154,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#111811',
+    backgroundColor: colors.background.primary,
   },
   backButton: {
     width: 48,
@@ -161,7 +163,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    color: 'white',
+    color: colors.text.primary,
     fontSize: 18,
     fontWeight: 'bold',
     flex: 1,
@@ -179,14 +181,14 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    color: 'white',
+    color: colors.text.primary,
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
   },
   description: {
-    color: 'white',
+    color: colors.text.primary,
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'center',
@@ -197,7 +199,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: '#374151',
-    color: 'white',
+    color: colors.text.primary,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,

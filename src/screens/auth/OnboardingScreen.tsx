@@ -12,12 +12,81 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/src/stores/authStore';
+import { useTheme } from '@/src/contexts/ThemeContext';
+import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+import { GlassCard } from '@/src/components/common/GlassCard';
+import { Button } from '@/src/components/common/Button';
 
 const { width, height } = Dimensions.get('window');
 
 const OnboardingScreen: React.FC = () => {
   const router = useRouter();
   const { setOnboardingCompleted } = useAuthStore();
+  const { theme } = useTheme();
+
+  const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    backgroundGradient: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      backgroundColor: colors.background.secondary,
+      opacity: 0.5,
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+      paddingVertical: 40,
+    },
+    logoContainer: {
+      alignItems: 'center',
+      marginBottom: 48,
+    },
+    logo: {
+      color: colors.text.primary,
+      fontSize: 48,
+      fontWeight: '800',
+      letterSpacing: -1,
+      marginBottom: 4,
+    },
+    brandTagline: {
+      color: brandColors.accent.primary,
+      fontSize: 14,
+      fontWeight: '500',
+      letterSpacing: 3,
+      textTransform: 'uppercase',
+    },
+    welcomeCard: {
+      marginBottom: 32,
+    },
+    title: {
+      color: colors.text.primary,
+      fontSize: 32,
+      fontWeight: '700',
+      textAlign: 'center',
+      marginBottom: 16,
+      letterSpacing: -0.5,
+    },
+    subtitle: {
+      color: colors.text.secondary,
+      fontSize: 16,
+      textAlign: 'center',
+      lineHeight: 24,
+      fontWeight: '400',
+    },
+    buttonContainer: {
+      paddingTop: 24,
+    },
+    bottomSpacing: {
+      height: 20,
+    },
+  }));
 
   const handleGetStarted = () => {
     setOnboardingCompleted(); // 온보딩 완료 상태 저장
@@ -26,49 +95,37 @@ const OnboardingScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
+      
+      {/* 배경 그라디언트 */}
+      <View style={styles.backgroundGradient} />
       
       <View style={styles.content}>
-        {/* 상단 이미지 섹션 */}
-        <View style={styles.imageSection}>
-          <View style={[styles.imageContainer, { minHeight: height * 0.4 }]}>
-            <ImageBackground
-              source={{
-                uri: 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?ixlib=rb-4.0.3&ixid=M3wxMJA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'
-              }}
-              style={styles.backgroundImage}
-              resizeMode="cover"
-            >
-              <LinearGradient
-                colors={['transparent', 'rgba(17, 24, 17, 0.8)', '#111811']}
-                style={styles.gradient}
-              />
-            </ImageBackground>
-          </View>
+        {/* 로고 섹션 */}
+        <View style={styles.logoContainer}>
+          <Text style={styles.logo}>취향</Text>
+          <Text style={styles.brandTagline}>CHUIHYANG</Text>
         </View>
 
-        {/* 중앙 텍스트 섹션 */}
-        <View style={styles.textSection}>
+        {/* 환영 메시지 카드 */}
+        <GlassCard style={styles.welcomeCard} intensity="medium">
           <Text style={styles.title}>
-            취향에 오신 것을{'\n'}환영합니다
+            담금주 프로젝트 관리의{'\n'}새로운 경험
           </Text>
           <Text style={styles.subtitle}>
             나만의 담금주 프로젝트를 체계적으로 관리하고,{'\n'}
             처음부터 완성까지 모든 과정을 기록해보세요.
           </Text>
-        </View>
+        </GlassCard>
 
-        {/* 하단 버튼 섹션 */}
-        <View style={styles.buttonSection}>
-          <TouchableOpacity
+        {/* 시작 버튼 */}
+        <View style={styles.buttonContainer}>
+          <Button
             onPress={handleGetStarted}
-            style={styles.button}
-            activeOpacity={0.8}
+            fullWidth
           >
-            <Text style={styles.buttonText}>
-              시작하기
-            </Text>
-          </TouchableOpacity>
+            시작하기
+          </Button>
           
           <View style={styles.bottomSpacing} />
         </View>
@@ -76,76 +133,5 @@ const OnboardingScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#111811',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  imageSection: {
-    flex: 1,
-  },
-  imageContainer: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 24,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  backgroundImage: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  gradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  textSection: {
-    paddingHorizontal: 16,
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    color: 'white',
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    lineHeight: 34,
-    marginBottom: 12,
-  },
-  subtitle: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    opacity: 0.9,
-  },
-  buttonSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-  },
-  button: {
-    backgroundColor: '#22c55e',
-    borderRadius: 8,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  bottomSpacing: {
-    height: 20,
-  },
-});
 
 export default OnboardingScreen;

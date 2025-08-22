@@ -28,7 +28,7 @@ import {
   getRecipeById, 
   getAllProjectTypes, 
   getTypeDisplayName, 
-  getDurationByType,
+  getDurationByType, 
   calculateFinalDuration 
 } from '@/src/data/presetRecipes';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
@@ -273,6 +273,19 @@ const CreateProjectScreen: React.FC = () => {
       marginTop: 4,
       lineHeight: 18,
     },
+    recipeContent: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+    },
+    recipeBadge: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: 12,
+    },
+    recipeTextContainer: {
+      flex: 1,
+    },
     recipeInfo: {
       padding: 20,
       marginTop: 16,
@@ -369,7 +382,8 @@ const CreateProjectScreen: React.FC = () => {
                         style={[
                           styles.dropdownItem,
                           selectedRecipe?.id === recipe.id && styles.dropdownItemSelected,
-                          index === PRESET_RECIPES.length - 1 && { borderBottomWidth: 0 }
+                          index === PRESET_RECIPES.length - 1 && { borderBottomWidth: 0 },
+                          { borderLeftWidth: 4, borderLeftColor: recipe.brandColor }
                         ]}
                         onPress={() => {
                           setSelectedRecipe(recipe);
@@ -385,19 +399,22 @@ const CreateProjectScreen: React.FC = () => {
                           }
                         }}
                       >
-                        <View>
-                          <Text style={[
-                            styles.dropdownText,
-                            selectedRecipe?.id === recipe.id && styles.dropdownTextSelected
-                          ]}>
-                            {recipe.name}
-                          </Text>
-                          <Text style={[
-                            styles.dropdownSubText,
-                            selectedRecipe?.id === recipe.id && styles.dropdownTextSelected
-                          ]}>
-                            {recipe.description}
-                          </Text>
+                        <View style={styles.recipeContent}>
+                          <View style={[styles.recipeBadge, { backgroundColor: recipe.brandColor }]} />
+                          <View style={styles.recipeTextContainer}>
+                            <Text style={[
+                              styles.dropdownText,
+                              selectedRecipe?.id === recipe.id && styles.dropdownTextSelected
+                            ]}>
+                              {recipe.name}
+                            </Text>
+                            <Text style={[
+                              styles.dropdownSubText,
+                              selectedRecipe?.id === recipe.id && styles.dropdownTextSelected
+                            ]}>
+                              {recipe.description}
+                            </Text>
+                          </View>
                         </View>
                       </TouchableOpacity>
                     ))}

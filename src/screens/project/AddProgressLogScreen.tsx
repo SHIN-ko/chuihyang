@@ -20,11 +20,16 @@ import StarRating from '@/src/components/common/StarRating';
 import { Ionicons } from '@expo/vector-icons';
 import { ProgressLog } from '@/src/types';
 import ImageUpload from '@/src/components/common/ImageUpload';
+import { getRecipeById } from '@/src/data/presetRecipes';
 
 const AddProgressLogScreen: React.FC = () => {
   const router = useRouter();
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
-  const { addProgressLog, isLoading } = useProjectStore();
+  const { addProgressLog, isLoading, projects } = useProjectStore();
+  
+  const project = projects.find(p => p.id === projectId);
+  const recipe = project?.recipeId ? getRecipeById(project.recipeId) : null;
+  const brandColor = recipe?.brandColor || '#7C9885'; // fallback color
   
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [title, setTitle] = useState('');
@@ -109,11 +114,17 @@ const AddProgressLogScreen: React.FC = () => {
         style={styles.keyboardView}
       >
         {/* 헤더 */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: brandColor }]}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>진행 로그 추가</Text>
+          <View style={styles.titleContainer}>
+            <View style={[styles.recipeBadge, { backgroundColor: brandColor }]} />
+            <Text style={styles.headerTitle}>진행 로그 추가</Text>
+            {recipe && (
+              <Text style={styles.recipeSubtitle}>{recipe.name}</Text>
+            )}
+          </View>
           <View style={styles.placeholder} />
         </View>
 
@@ -169,6 +180,7 @@ const AddProgressLogScreen: React.FC = () => {
                 <StarRating
                   rating={tasteRating}
                   onRatingChange={setTasteRating}
+                  color={brandColor}
                 />
               </View>
               
@@ -177,6 +189,7 @@ const AddProgressLogScreen: React.FC = () => {
                 <StarRating
                   rating={aromaRating}
                   onRatingChange={setAromaRating}
+                  color={brandColor}
                 />
               </View>
               
@@ -185,6 +198,7 @@ const AddProgressLogScreen: React.FC = () => {
                 <StarRating
                   rating={appearanceRating}
                   onRatingChange={setAppearanceRating}
+                  color={brandColor}
                 />
               </View>
               
@@ -193,6 +207,7 @@ const AddProgressLogScreen: React.FC = () => {
                 <StarRating
                   rating={overallRating}
                   onRatingChange={setOverallRating}
+                  color={brandColor}
                 />
               </View>
             </View>
@@ -273,6 +288,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     backgroundColor: '#111811',
+    borderBottomWidth: 2,
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  recipeBadge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  recipeSubtitle: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 8,
   },
   closeButton: {
     width: 48,

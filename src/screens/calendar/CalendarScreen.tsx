@@ -381,7 +381,7 @@ const CalendarScreen: React.FC = () => {
           <View 
             style={[
               styles.eventDot, 
-              { backgroundColor: getProjectColor(event.project.type) }
+              { backgroundColor: getProjectColor(event.project) }
             ]} 
           />
           <Ionicons 
