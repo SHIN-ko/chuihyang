@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/src/stores/authStore';
 import Button from '@/src/components/common/Button';
+import GoogleLoginButton from '@/src/components/common/GoogleLoginButton';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 import { useThemeValues } from '@/src/hooks/useThemedStyles';
@@ -153,6 +154,22 @@ const LoginScreen: React.FC = () => {
       fontWeight: '600',
       marginLeft: 4,
     },
+    dividerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 24,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.border.secondary,
+    },
+    dividerText: {
+      color: colors.text.muted,
+      fontSize: 14,
+      fontWeight: '400',
+      marginHorizontal: 16,
+    },
   }));
   
   const [email, setEmail] = useState('');
@@ -160,11 +177,13 @@ const LoginScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const logoAnim = useRef(new Animated.Value(0)).current;
+  const exitAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     // 초기 애니메이션
@@ -197,7 +216,23 @@ const LoginScreen: React.FC = () => {
 
     const success = await login(email, password);
     if (success) {
-      router.replace('/(tabs)');
+      setIsTransitioning(true);
+      
+      // 부드러운 퇴장 애니메이션
+      Animated.parallel([
+        Animated.timing(exitAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: -50,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        router.replace('/(tabs)');
+      });
     } else {
       Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인해주세요.');
     }
@@ -227,7 +262,7 @@ const LoginScreen: React.FC = () => {
             style={[
               styles.content,
               {
-                opacity: fadeAnim,
+                opacity: isTransitioning ? exitAnim : fadeAnim,
                 transform: [{ translateY: slideAnim }]
               }
             ]}
@@ -251,9 +286,7 @@ const LoginScreen: React.FC = () => {
                 <Text style={styles.logo}>취향</Text>
                 <Text style={styles.brandTagline}>CHUIHYANG</Text>
               </View>
-              <Text style={styles.subtitle}>
-                전통과 현대가 만나는 담금주 여정
-              </Text>
+
             </Animated.View>
 
             {/* 로그인 폼 */}
@@ -339,6 +372,16 @@ const LoginScreen: React.FC = () => {
               >
                 로그인
               </Button>
+
+              {/* 구분선 */}
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>또는</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* 구글 로그인 버튼 */}
+              <GoogleLoginButton />
 
               {/* 회원가입 링크 */}
               <View style={styles.signupContainer}>

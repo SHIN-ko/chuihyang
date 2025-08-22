@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, Animated } from 'react-native';
-import { useThemedStyles } from '@/src/hooks/useThemedStyles';
+import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -24,6 +24,7 @@ const Button: React.FC<ButtonProps> = ({
   className,
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const { colors, brandColors } = useThemeValues();
   
   const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
     base: {
@@ -169,10 +170,10 @@ const Button: React.FC<ButtonProps> = ({
       case 'primary':
         return '#FFFFFF';
       case 'secondary':
-        return styles.textSecondary.color;
+        return colors.text.secondary;
       case 'outline':
       case 'ghost':
-        return styles.textOutline.color;
+        return brandColors.accent.primary;
       default:
         return '#FFFFFF';
     }

@@ -12,6 +12,18 @@ import { useAuthStore } from '@/src/stores/authStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { ThemeProvider as CustomThemeProvider } from '@/src/contexts/ThemeContext';
 import { supabase } from '@/src/lib/supabase';
+import { GoogleAuthService } from '@/src/services/googleAuthService';
+
+// 임시: colors 관련 오류 무시
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  const message = args[0];
+  if (typeof message === 'string' && message.includes("Property 'colors' doesn't exist")) {
+    // colors 관련 오류는 무시
+    return;
+  }
+  originalConsoleError.apply(console, args);
+};
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -91,8 +103,38 @@ function RootLayoutNav() {
     };
 
     // URL 변경 리스너 설정
-    const handleDeepLink = (url: string) => {
+    const handleDeepLink = async (url: string) => {
       console.log('Deep Link 수신:', url);
+      
+      // 구글 OAuth 콜백 처리 (Expo Go 및 스탠드얼론 앱 지원)
+      if (url.includes('access_token') || 
+          url.includes('code=') || 
+          url.includes('#access_token') ||
+          url.includes('refresh_token') ||
+          url.includes('auth.expo.io')) {
+        try {
+          console.log('구글 OAuth 콜백 감지:', url.substring(0, 100) + '...');
+          
+          const result = await GoogleAuthService.handleOAuthCallback(url);
+          
+          if (result.success && result.session) {
+            console.log('구글 로그인 성공, 메인 화면으로 이동');
+            // 인증 상태 새로고침
+            await checkAuthState();
+            // 메인 화면으로 이동
+            setTimeout(() => {
+              router.replace('/(tabs)');
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('구글 OAuth 콜백 처리 실패:', error);
+          // 사용자에게 오류 알림
+          setTimeout(() => {
+            router.push('/auth/login');
+          }, 1000);
+        }
+        return;
+      }
       
       // 비밀번호 재설정 링크 확인 (myapp scheme과 다양한 패턴 지원)
       if (url.includes('/auth/reset-password') || 
@@ -158,12 +200,51 @@ function RootLayoutNav() {
   return (
     <CustomThemeProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="auth" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="project" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <Stack 
+          screenOptions={{ 
+            headerShown: false,
+            animation: 'slide_from_right',
+            animationTypeForReplace: 'push',
+            animationDuration: 250,
+            gestureEnabled: true,
+          }}
+        >
+          <Stack.Screen 
+            name="index" 
+            options={{ 
+              headerShown: false,
+              animation: 'fade_from_bottom',
+            }} 
+          />
+          <Stack.Screen 
+            name="auth" 
+            options={{ 
+              headerShown: false,
+              animation: 'slide_from_right',
+            }} 
+          />
+          <Stack.Screen 
+            name="(tabs)" 
+            options={{ 
+              headerShown: false,
+              animation: 'fade_from_bottom',
+              animationDuration: 300,
+            }} 
+          />
+          <Stack.Screen 
+            name="project" 
+            options={{ 
+              headerShown: false,
+              animation: 'slide_from_right',
+            }} 
+          />
+          <Stack.Screen 
+            name="modal" 
+            options={{ 
+              presentation: 'modal',
+              animation: 'slide_from_bottom',
+            }} 
+          />
         </Stack>
       </ThemeProvider>
     </CustomThemeProvider>

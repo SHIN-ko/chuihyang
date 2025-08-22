@@ -21,15 +21,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { ProgressLog } from '@/src/types';
 import ImageUpload from '@/src/components/common/ImageUpload';
 import { getRecipeById } from '@/src/data/presetRecipes';
+import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 
 const AddProgressLogScreen: React.FC = () => {
   const router = useRouter();
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
   const { addProgressLog, isLoading, projects } = useProjectStore();
+  const { colors, brandColors } = useThemeValues();
   
   const project = projects.find(p => p.id === projectId);
   const recipe = project?.recipeId ? getRecipeById(project.recipeId) : null;
-  const brandColor = recipe?.brandColor || '#7C9885'; // fallback color
+  const brandColor = recipe?.brandColor || brandColors.accent.primary;
   
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [title, setTitle] = useState('');
@@ -105,18 +107,150 @@ const AddProgressLogScreen: React.FC = () => {
     setImages(newImages);
   };
 
+  const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: colors.background.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border.primary,
+      ...shadows.glass.light,
+    },
+    titleContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+    },
+    recipeBadge: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: 8,
+    },
+    recipeSubtitle: {
+      color: colors.text.tertiary,
+      fontSize: 12,
+      fontWeight: '500',
+      marginLeft: 8,
+    },
+    closeButton: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 22,
+      backgroundColor: colors.background.secondary,
+    },
+    headerTitle: {
+      color: colors.text.primary,
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    placeholder: {
+      width: 44,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: 20,
+      paddingTop: 24,
+      paddingBottom: 100,
+    },
+    inputContainer: {
+      marginBottom: 24,
+    },
+    label: {
+      color: colors.text.primary,
+      fontSize: 16,
+      fontWeight: '600',
+      marginBottom: 8,
+    },
+    input: {
+      backgroundColor: colors.background.surface,
+      color: colors.text.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      borderRadius: 12,
+      fontSize: 16,
+      minHeight: 56,
+      borderWidth: 1,
+      borderColor: colors.border.primary,
+      ...shadows.glass.light,
+    },
+    textArea: {
+      minHeight: 120,
+      paddingTop: 16,
+      textAlignVertical: 'top',
+    },
+    ratingSection: {
+      marginBottom: 24,
+      backgroundColor: colors.background.surface,
+      borderRadius: 16,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: colors.border.primary,
+      ...shadows.glass.light,
+    },
+    sectionTitle: {
+      color: colors.text.primary,
+      fontSize: 18,
+      fontWeight: '600',
+      marginBottom: 16,
+    },
+    ratingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    ratingLabel: {
+      color: colors.text.secondary,
+      fontSize: 16,
+      fontWeight: '500',
+      width: 60,
+    },
+    imageSection: {
+      marginBottom: 24,
+    },
+    bottomContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.background.surface,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 34,
+      borderTopWidth: 1,
+      borderTopColor: colors.border.primary,
+      ...shadows.glass.medium,
+    },
+  }));
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
       
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         {/* 헤더 */}
-        <View style={[styles.header, { borderBottomColor: brandColor }]}>
+        <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="white" />
+            <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <View style={styles.titleContainer}>
             <View style={[styles.recipeBadge, { backgroundColor: brandColor }]} />
@@ -136,7 +270,7 @@ const AddProgressLogScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor="#9db89d"
+                placeholderTextColor={colors.text.muted}
                 value={date}
                 onChangeText={setDate}
                 keyboardType="numbers-and-punctuation"
@@ -150,7 +284,7 @@ const AddProgressLogScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="예: 첫 시음, 색깔 확인, 향 체크 등"
-                placeholderTextColor="#9db89d"
+                placeholderTextColor={colors.text.muted}
                 value={title}
                 onChangeText={setTitle}
               />
@@ -162,7 +296,7 @@ const AddProgressLogScreen: React.FC = () => {
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="오늘의 상태나 변화에 대해 자세히 기록해보세요&#10;&#10;예:&#10;• 드디어 첫 맛을 봤는데 생각보다 부드럽고 좋다!&#10;• 색이 조금 더 진해진 것 같아요&#10;• 향이 훨씬 풍부해졌네요"
-                placeholderTextColor="#9db89d"
+                placeholderTextColor={colors.text.muted}
                 value={description}
                 onChangeText={setDescription}
                 multiline
@@ -218,7 +352,7 @@ const AddProgressLogScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="예: 연한 황금색, 짙은 호박색, 투명한 무색 등"
-                placeholderTextColor="#9db89d"
+                placeholderTextColor={colors.text.muted}
                 value={color}
                 onChangeText={setColor}
               />
@@ -230,7 +364,7 @@ const AddProgressLogScreen: React.FC = () => {
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="특별한 관찰사항이나 다음에 시도해볼 것들을 메모하세요"
-                placeholderTextColor="#9db89d"
+                placeholderTextColor={colors.text.muted}
                 value={notes}
                 onChangeText={setNotes}
                 multiline
@@ -265,173 +399,10 @@ const AddProgressLogScreen: React.FC = () => {
           >
             로그 저장
           </Button>
-          
-          <View style={styles.bottomSpacing} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#111811',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#111811',
-    borderBottomWidth: 2,
-  },
-  titleContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  recipeBadge: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  recipeSubtitle: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 8,
-  },
-  closeButton: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 48,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#1c261c',
-    color: 'white',
-    paddingHorizontal: 15,
-    paddingVertical: 15,
-    borderRadius: 8,
-    fontSize: 16,
-    height: 56,
-    borderWidth: 1,
-    borderColor: '#3c533c',
-  },
-  textArea: {
-    height: 120,
-    paddingTop: 15,
-  },
-  ratingSection: {
-    marginBottom: 20,
-    backgroundColor: '#1c261c',
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#3c533c',
-  },
-  sectionTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  ratingLabel: {
-    color: 'white',
-    fontSize: 14,
-    width: 60,
-  },
-  imageSection: {
-    marginBottom: 20,
-  },
-  imageUploadArea: {
-    borderWidth: 2,
-    borderColor: '#3c533c',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  imageUploadContent: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  imageUploadTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  imageUploadSubtitle: {
-    color: '#9db89d',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  imagePreviewContainer: {
-    marginTop: 16,
-  },
-  imagePreview: {
-    position: 'relative',
-    marginRight: 12,
-  },
-  previewImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: 'white',
-    borderRadius: 10,
-  },
-  bottomContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  bottomSpacing: {
-    height: 20,
-  },
-});
 
 export default AddProgressLogScreen;

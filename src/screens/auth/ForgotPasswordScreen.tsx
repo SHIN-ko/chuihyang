@@ -16,13 +16,80 @@ import Button from '@/src/components/common/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { SupabaseService } from '@/src/services/supabaseService';
 import { emailSchema } from '@/src/utils/validation';
-import { useThemeValues } from '@/src/hooks/useThemedStyles';
+import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 
 const ForgotPasswordScreen: React.FC = () => {
   const router = useRouter();
   const { colors } = useThemeValues();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const styles = useThemedStyles(({ colors }) => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.primary,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      backgroundColor: colors.background.primary,
+    },
+    backButton: {
+      width: 48,
+      height: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitle: {
+      color: colors.text.primary,
+      fontSize: 18,
+      fontWeight: 'bold' as const,
+      flex: 1,
+      textAlign: 'center' as const,
+    },
+    placeholder: {
+      width: 48,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 32,
+    },
+    descriptionContainer: {
+      marginBottom: 32,
+    },
+    title: {
+      color: colors.text.primary,
+      fontSize: 24,
+      fontWeight: 'bold' as const,
+      marginBottom: 16,
+      textAlign: 'center' as const,
+    },
+    description: {
+      color: colors.text.primary,
+      fontSize: 16,
+      lineHeight: 24,
+      textAlign: 'center' as const,
+      opacity: 0.8,
+    },
+    inputContainer: {
+      marginBottom: 24,
+    },
+    input: {
+      backgroundColor: colors.background.surface,
+      color: colors.text.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+      fontSize: 16,
+    },
+  }));
 
   const handleResetPassword = async () => {
     if (!email.trim()) {
@@ -84,7 +151,7 @@ const ForgotPasswordScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111811" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
       
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -93,7 +160,7 @@ const ForgotPasswordScreen: React.FC = () => {
         {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="white" />
+            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>비밀번호 찾기</Text>
           <View style={styles.placeholder} />
@@ -116,7 +183,7 @@ const ForgotPasswordScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="이메일 주소"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.text.muted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -139,72 +206,5 @@ const ForgotPasswordScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: colors.background.primary,
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 48,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-  },
-  descriptionContainer: {
-    marginBottom: 32,
-  },
-  title: {
-    color: colors.text.primary,
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  description: {
-    color: colors.text.primary,
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-    opacity: 0.8,
-  },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  input: {
-    backgroundColor: '#374151',
-    color: colors.text.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-});
 
 export default ForgotPasswordScreen;

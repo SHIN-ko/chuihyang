@@ -95,7 +95,12 @@ const SignupScreen: React.FC = () => {
           [
             {
               text: '시작하기',
-              onPress: () => router.replace('/(tabs)')
+              onPress: () => {
+                // 부드러운 전환을 위한 지연
+                setTimeout(() => {
+                  router.replace('/(tabs)');
+                }, 300);
+              }
             }
           ]
         );

@@ -38,6 +38,7 @@ export default function TabLayout() {
           fontWeight: '500',
           marginTop: 4,
         },
+        // 탭 전환 스타일 설정
       }}>
       <Tabs.Screen
         name="index"

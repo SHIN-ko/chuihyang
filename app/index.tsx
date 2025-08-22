@@ -22,8 +22,6 @@ export default function IndexScreen() {
     };
   }, [isLoading]);
 
-
-
   // 인증 상태가 확정되지 않은 경우 로딩 유지
   if (isLoading) {
     return (

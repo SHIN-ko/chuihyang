@@ -41,6 +41,7 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [projectStats, setProjectStats] = useState<ProjectStats>({
     totalProjects: 0,
     inProgressProjects: 0,
@@ -353,21 +354,26 @@ export default function HomeScreen() {
   }));
 
   useEffect(() => {
-    fetchProjects();
+    const loadData = async () => {
+      await fetchProjects();
+      setIsInitialLoading(false);
+      
+      // 초기 애니메이션
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    };
     
-    // 초기 애니메이션
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 350,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 350,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    loadData();
   }, [fetchProjects]);
 
   // 화면에 포커스될 때마다 프로젝트 목록 새로고침 (프로젝트 생성 후 돌아올 때)

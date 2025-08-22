@@ -423,18 +423,21 @@ export class SupabaseService {
   }
 
   private static transformProjectRowToProject(projectRow: any): Project {
-    // 빈 이미지 필터링 (content-length가 0인 이미지들 제거)
+    // 이미지 URL 검증 (유효한 URL만 유지)
     const filteredImages = (projectRow.images || []).filter((imageUrl: string) => {
-      // 새로운 이미지 형식인지 체크 (최근 업로드된 것들)
-      const isNewFormat = imageUrl.includes('/logs/') || imageUrl.includes('/progress-images/');
-      // 기존 project-images는 임시로 제외 (빈 파일 문제 있음)
-      const isOldProjectImage = imageUrl.includes('/project-images/projects/');
-      
-      if (isOldProjectImage) {
-        console.warn('빈 파일 가능성 있는 이미지 제외:', imageUrl);
+      // 기본적인 URL 형식 검증
+      if (!imageUrl || typeof imageUrl !== 'string') {
+        console.warn('잘못된 이미지 URL 형식:', imageUrl);
         return false;
       }
       
+      // Supabase Storage URL 형식 검증
+      if (!imageUrl.includes('supabase.co/storage/v1/object/public/')) {
+        console.warn('유효하지 않은 Supabase Storage URL:', imageUrl);
+        return false;
+      }
+      
+      console.log('유효한 이미지 URL:', imageUrl);
       return true;
     });
 

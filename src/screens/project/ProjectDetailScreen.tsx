@@ -22,6 +22,7 @@ import StarRating from '@/src/components/common/StarRating';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import GlassCard from '@/src/components/common/GlassCard';
+import { supabase } from '@/src/lib/supabase';
 
 const { width } = Dimensions.get('window');
 
@@ -33,6 +34,49 @@ const ProjectDetailScreen: React.FC = () => {
   const { projects, updateProject, deleteProject, deleteProjectData, updateProjectStatus, updateProgressLog, deleteProgressLog, isLoading } = useProjectStore();
   
   const [project, setProject] = useState<Project | null>(null);
+
+  // 이미지 URL 유효성 검사 함수
+  const testImageUrl = async (url: string) => {
+    try {
+      console.log('이미지 URL 테스트 시작:', url);
+      
+      // URL이 Supabase Storage URL인지 확인
+      if (url.includes('supabase')) {
+        console.log('Supabase Storage URL 감지됨');
+        
+        // URL에서 버킷과 파일 경로 추출
+        const urlParts = url.split('/storage/v1/object/public/');
+        if (urlParts.length > 1) {
+          const [bucket, ...pathParts] = urlParts[1].split('/');
+          const filePath = pathParts.join('/');
+          console.log('버킷:', bucket, '파일 경로:', filePath);
+          
+          // Supabase에서 직접 파일 존재 여부 확인
+          const { data, error } = await supabase.storage
+            .from(bucket)
+            .list(filePath.split('/').slice(0, -1).join('/'), {
+              search: filePath.split('/').pop()
+            });
+          
+          if (error) {
+            console.error('Supabase Storage 조회 오류:', error);
+            return false;
+          }
+          
+          console.log('Supabase Storage 조회 결과:', data);
+          return data && data.length > 0;
+        }
+      }
+      
+      // 일반 HTTP 요청으로 테스트
+      const response = await fetch(url, { method: 'HEAD' });
+      console.log('HTTP HEAD 응답:', response.status, response.statusText);
+      return response.ok;
+    } catch (error) {
+      console.error('이미지 URL 테스트 실패:', error);
+      return false;
+    }
+  };
 
   const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
     container: {
@@ -522,22 +566,37 @@ const ProjectDetailScreen: React.FC = () => {
   useEffect(() => {
     if (id) {
       const foundProject = projects.find(p => p.id === id);
+      console.log('프로젝트 상세 - 찾은 프로젝트:', foundProject);
+      console.log('프로젝트 이미지 데이터:', foundProject?.images);
+      
+      // 이미지 URL들을 테스트
+      if (foundProject?.images && foundProject.images.length > 0) {
+        console.log('이미지 URL 테스트 시작...');
+        foundProject.images.forEach(async (imageUrl, index) => {
+          const isValid = await testImageUrl(imageUrl);
+          console.log(`이미지 [${index}] 유효성:`, isValid, imageUrl);
+        });
+      }
+      
       setProject(foundProject || null);
       
       // 프로젝트가 로드되면 애니메이션 시작
       if (foundProject) {
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 350,
-            useNativeDriver: true,
-          }),
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 250,
-            useNativeDriver: true,
-          }),
-        ]).start();
+        // 약간의 지연 후 부드러운 애니메이션
+        setTimeout(() => {
+          Animated.parallel([
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }, 50);
       }
     }
   }, [id, projects]);
@@ -708,7 +767,13 @@ const ProjectDetailScreen: React.FC = () => {
   );
 
   const renderImageGrid = () => {
+    console.log('renderImageGrid 호출됨');
+    console.log('project.images 존재 여부:', !!project.images);
+    console.log('project.images 길이:', project.images?.length);
+    console.log('project.images 내용:', project.images);
+    
     if (!project.images || project.images.length === 0) {
+      console.log('이미지가 없어서 placeholder 표시');
       return (
         <View style={styles.noImagesContainer}>
           <Text style={styles.noImagesText}>업로드된 이미지가 없습니다</Text>
@@ -718,6 +783,7 @@ const ProjectDetailScreen: React.FC = () => {
 
     console.log('프로젝트 이미지 배열:', project.images);
     const images = project.images.slice(0, 3); // 최대 3개
+    console.log('렌더링할 이미지들:', images);
 
     return (
       <View style={styles.imageGrid}>
@@ -734,7 +800,18 @@ const ProjectDetailScreen: React.FC = () => {
               style={styles.gridImage}
               resizeMode="cover"
               onError={(error) => {
-                console.error(`프로젝트 이미지 로드 실패 [${index}]:`, imageUri, error.nativeEvent.error);
+                console.error(`프로젝트 이미지 로드 실패 [${index}]:`, imageUri);
+                console.error('에러 상세:', error.nativeEvent);
+                
+                // URL 유효성 검사
+                if (imageUri.startsWith('http')) {
+                  console.log('HTTP URL이므로 네트워크 문제일 수 있음');
+                } else {
+                  console.log('잘못된 URL 형식:', imageUri);
+                }
+              }}
+              onLoadStart={() => {
+                console.log(`이미지 로드 시작 [${index}]:`, imageUri);
               }}
               onLoad={(event) => {
                 // 이미지 크기가 0이면 에러로 처리
@@ -898,6 +975,16 @@ const ProjectDetailScreen: React.FC = () => {
                 source={{ uri: project.images[0] }} 
                 style={styles.projectImage}
                 resizeMode="cover"
+                onError={(error) => {
+                  console.error('메인 프로젝트 이미지 로드 실패:', project.images[0]);
+                  console.error('에러 상세:', error.nativeEvent);
+                }}
+                onLoadStart={() => {
+                  console.log('메인 프로젝트 이미지 로드 시작:', project.images[0]);
+                }}
+                onLoad={() => {
+                  console.log('메인 프로젝트 이미지 로드 성공:', project.images[0]);
+                }}
               />
             ) : (
               <View style={styles.placeholderImage}>
