@@ -20,6 +20,7 @@ interface AuthState {
   refreshUser: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string, birthdate?: string) => Promise<boolean>;
+  loginWithGoogle: () => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -156,6 +157,29 @@ export const useAuthStore = create<AuthState>()(
           return false;
         } catch (error) {
           console.error('회원가입 실패:', error);
+          set({ isLoading: false });
+          return false;
+        }
+      },
+
+      loginWithGoogle: async () => {
+        set({ isLoading: true });
+        try {
+          const { GoogleAuthService } = await import('@/src/services/googleAuthService');
+          const result = await GoogleAuthService.signInWithGoogle();
+          
+          if (result.success) {
+            // OAuth 프로세스가 시작됨을 표시
+            // 실제 로그인 완료는 deep link 콜백에서 처리됨
+            console.log('구글 OAuth 프로세스 시작됨');
+            set({ isLoading: false });
+            return true;
+          }
+          
+          set({ isLoading: false });
+          return false;
+        } catch (error) {
+          console.error('구글 로그인 실패:', error);
           set({ isLoading: false });
           return false;
         }

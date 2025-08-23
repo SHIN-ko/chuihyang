@@ -207,9 +207,18 @@ class NotificationService {
     // 조용한 시간 종료 시간으로 조정
     adjustedDate.setHours(endHour, endMinute, 0, 0);
     
-    // 만약 조정된 시간이 원래 시간보다 이전이라면 다음날로 설정
+    // 만약 조정된 시간이 원래 시간보다 이전이라면 (자정을 넘나든 경우)
+    // 다음 날의 조용한 시간 종료 시점으로 설정
     if (adjustedDate <= originalDate) {
       adjustedDate.setDate(adjustedDate.getDate() + 1);
+      adjustedDate.setHours(endHour, endMinute, 0, 0);
+    }
+
+    // 조정된 시간이 너무 가까우면 추가로 30분 뒤로 미룸
+    const now = new Date();
+    const minFutureTime = 30 * 60 * 1000; // 30분
+    if (adjustedDate.getTime() <= now.getTime() + minFutureTime) {
+      adjustedDate.setMinutes(adjustedDate.getMinutes() + 30);
     }
 
     console.log(`조용한 시간으로 인해 알림 시간 조정: ${originalDate.toLocaleString()} → ${adjustedDate.toLocaleString()}`);
@@ -241,10 +250,13 @@ class NotificationService {
       const now = new Date();
       const notifications: NotificationSchedule[] = [];
       
-      // 날짜 문자열을 로컬 시간대로 파싱 (YYYY-MM-DD 형식을 로컬 시간으로)
+      // 날짜 문자열을 정확하게 파싱 (시간대 문제 방지)
       const startDate = new Date(project.startDate + 'T00:00:00');
-      const endDate = new Date(project.expectedEndDate + 'T23:59:59');
+      const endDate = new Date(project.expectedEndDate + 'T23:59:59'); 
       const projectName = project.name;
+      
+      // 현재 시간을 정확하게 설정 (밀리초 제거)
+      now.setSeconds(0, 0);
 
       console.log(`🔔 [${projectName}] 알림 스케줄링 시작:`, {
         startDate: project.startDate,
@@ -409,6 +421,21 @@ class NotificationService {
 
 
 
+      // 개발 환경에서는 테스트용 즉시 알림 추가 (실제 알림이 작동하는지 확인용)
+      if (__DEV__) {
+        // 즉시 알림으로 변경 (5초 지연도 개발환경에서는 차단됨)
+        console.log(`🧪 [개발환경] 즉시 테스트 알림 발송`);
+        
+        // 즉시 알림 발송
+        setTimeout(async () => {
+          await this.sendImmediateNotification(
+            `🧪 [테스트] ${projectName} 알림 작동 확인`,
+            `개발환경 테스트: ${projectName} 프로젝트의 알림 시스템이 정상 작동 중입니다!`,
+            { projectId: project.id, type: 'dev_test' }
+          );
+        }, 2000); // 2초 후 즉시 알림
+      }
+
       // 단기간 프로젝트를 위한 추가 알림 (7일 이내 완료, 하지만 기본 알림과 중복되지 않도록)
       if (daysUntilCompletion <= 7 && daysUntilCompletion > 3) {
         // 매일 체크 알림 (단기간 프로젝트용) - 하지만 3일 전, 1일 전 알림과 겹치지 않도록 
@@ -486,14 +513,15 @@ class NotificationService {
         timeDiffMs: timeDiff
       });
       
-      // 과거 시간 체크 (1분 여유만 둠)
-      const minFutureTime = 1 * 60 * 1000; // 1분
+      // 과거 시간 체크 (10분 여유를 둠 - 시스템 시간 차이 고려)
+      const minFutureTime = 10 * 60 * 1000; // 10분
       
       if (notification.scheduledDate.getTime() <= now.getTime() + minFutureTime) {
-        console.log(`❌ 과거 시간으로 인해 알림 건너뜀: ${notification.title}`, {
+        console.log(`❌ 과거 시간 또는 너무 가까운 시간으로 인해 알림 건너뜀: ${notification.title}`, {
           scheduledDate: notification.scheduledDate.toLocaleString(),
           currentTime: now.toLocaleString(),
-          timeDiffMinutes: Math.round(timeDiff / (1000 * 60))
+          timeDiffMinutes: Math.round(timeDiff / (1000 * 60)),
+          minRequiredMinutes: 10
         });
         return;
       }
@@ -553,16 +581,25 @@ class NotificationService {
   // 특정 프로젝트의 모든 알림 취소
   async cancelProjectNotifications(projectId: string): Promise<void> {
     try {
-      const identifiers = [
-        `${projectId}-3days`,
-        `${projectId}-1day`,
-        `${projectId}-completion`,
-        `${projectId}-midcheck`,
-      ];
-
-      for (const id of identifiers) {
-        await Notifications.cancelScheduledNotificationAsync(id);
+      // 모든 예약된 알림 조회
+      const allScheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+      
+      // 해당 프로젝트의 알림들 찾기
+      const projectNotifications = allScheduledNotifications.filter(notification => 
+        notification.identifier && notification.identifier.includes(projectId)
+      );
+      
+      console.log(`🗑️ [${projectId}] 기존 알림 ${projectNotifications.length}개 취소 중...`);
+      
+      // 모든 해당 프로젝트 알림 취소
+      for (const notification of projectNotifications) {
+        if (notification.identifier) {
+          await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+          console.log(`   ✅ 취소됨: ${notification.identifier}`);
+        }
       }
+      
+      console.log(`🎯 [${projectId}] 알림 취소 완료: ${projectNotifications.length}개`);
     } catch (error) {
       console.error('프로젝트 알림 취소 실패:', error);
     }
@@ -618,6 +655,66 @@ class NotificationService {
   // Push Token 반환
   getPushToken(): string | null {
     return this.pushToken;
+  }
+
+  // 알림 시스템 상태 진단 (디버깅용)
+  async diagnoseNotificationSystem(): Promise<{
+    permissions: any;
+    scheduledCount: number;
+    pushToken: string | null;
+    settings: any;
+    scheduledNotifications: any[];
+  }> {
+    try {
+      const permissions = await Notifications.getPermissionsAsync();
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      
+      return {
+        permissions: permissions,
+        scheduledCount: scheduled.length,
+        pushToken: this.pushToken,
+        settings: {
+          enabled: this.isEnabled,
+          quietHours: this.quietHours
+        },
+        scheduledNotifications: scheduled.map(n => ({
+          id: n.identifier,
+          title: n.content.title,
+          trigger: n.trigger,
+          triggerDate: n.trigger && 'date' in n.trigger ? new Date(n.trigger.date as any).toLocaleString() : 'N/A'
+        }))
+      };
+    } catch (error) {
+      console.error('알림 시스템 진단 실패:', error);
+      return {
+        permissions: null,
+        scheduledCount: 0,
+        pushToken: this.pushToken,
+        settings: { enabled: this.isEnabled, quietHours: this.quietHours },
+        scheduledNotifications: []
+      };
+    }
+  }
+
+  // 알림 시스템 상태 로깅 (디버깅용)
+  async logNotificationSystemStatus(): Promise<void> {
+    const diagnosis = await this.diagnoseNotificationSystem();
+    
+    console.log('🔔 === 알림 시스템 상태 === ');
+    console.log(`   📱 권한 상태: ${diagnosis.permissions?.status || 'Unknown'}`);
+    console.log(`   ⚡ 알림 활성화: ${diagnosis.settings.enabled ? 'Yes' : 'No'}`);
+    console.log(`   🌙 조용한 시간: ${diagnosis.settings.quietHours.enabled ? 'Yes' : 'No'}`);
+    console.log(`   📊 예약된 알림: ${diagnosis.scheduledCount}개`);
+    console.log(`   🔑 Push Token: ${diagnosis.pushToken ? 'Available' : 'None'}`);
+    
+    if (diagnosis.scheduledNotifications.length > 0) {
+      console.log('   📋 예약된 알림 목록:');
+      diagnosis.scheduledNotifications.forEach((notif, index) => {
+        console.log(`      ${index + 1}. ${notif.title} (${notif.triggerDate})`);
+      });
+    }
+    
+    console.log('🔔 === 상태 확인 완료 === ');
   }
 }
 

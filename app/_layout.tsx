@@ -113,22 +113,73 @@ function RootLayoutNav() {
           url.includes('refresh_token') ||
           url.includes('auth.expo.io')) {
         try {
-          console.log('구글 OAuth 콜백 감지:', url.substring(0, 100) + '...');
+          console.log('구글 OAuth 콜백 감지');
+          console.log('전체 URL:', url);
           
-          const result = await GoogleAuthService.handleOAuthCallback(url);
+          // Hash fragment에서 토큰 직접 추출
+          let access_token: string | null = null;
+          let refresh_token: string | null = null;
           
-          if (result.success && result.session) {
-            console.log('구글 로그인 성공, 메인 화면으로 이동');
-            // 인증 상태 새로고침
-            await checkAuthState();
-            // 메인 화면으로 이동
-            setTimeout(() => {
-              router.replace('/(tabs)');
-            }, 1000);
+          if (url.includes('#')) {
+            const hashPart = url.split('#')[1];
+            console.log('Hash 파라미터:', hashPart);
+            
+            const hashParams = new URLSearchParams(hashPart);
+            access_token = hashParams.get('access_token');
+            refresh_token = hashParams.get('refresh_token');
+            
+            console.log('추출된 토큰:', {
+              access_token: access_token ? '있음' : '없음',
+              refresh_token: refresh_token ? '있음' : '없음'
+            });
+          }
+          
+          if (access_token && refresh_token) {
+            console.log('토큰으로 세션 설정 시작...');
+            
+            // Supabase에 직접 세션 설정
+            const { data, error } = await supabase.auth.setSession({
+              access_token,
+              refresh_token,
+            });
+            
+            if (error) {
+              console.error('세션 설정 실패:', error);
+              throw error;
+            }
+            
+            if (data.session) {
+              console.log('✅ 구글 로그인 성공! 메인 화면으로 이동');
+              
+              // 인증 상태 새로고침
+              await checkAuthState();
+              
+              // 메인 화면으로 이동
+              setTimeout(() => {
+                router.replace('/(tabs)');
+              }, 500);
+            } else {
+              throw new Error('세션 생성 실패');
+            }
+          } else {
+            // 토큰이 없으면 기존 방식으로 시도
+            console.log('토큰 직접 추출 실패, 기존 방식 시도...');
+            const result = await GoogleAuthService.handleOAuthCallback(url);
+            
+            if (result.success && result.session) {
+              console.log('구글 로그인 성공 (기존 방식), 메인 화면으로 이동');
+              await checkAuthState();
+              setTimeout(() => {
+                router.replace('/(tabs)');
+              }, 500);
+            } else {
+              throw new Error('OAuth 콜백 처리 실패');
+            }
           }
         } catch (error) {
-          console.error('구글 OAuth 콜백 처리 실패:', error);
-          // 사용자에게 오류 알림
+          console.error('❌ 구글 OAuth 콜백 처리 실패:', error);
+          
+          // 로그인 화면으로 이동
           setTimeout(() => {
             router.push('/auth/login');
           }, 1000);
@@ -169,6 +220,8 @@ function RootLayoutNav() {
         handleDeepLink(url);
       }
     });
+
+    // 개발환경 테스트 제거됨 - 실제 운영환경에서 정상 작동 예상
 
     // URL 변경 이벤트 리스너 (앱이 열린 상태에서 링크 클릭 시)
     const linkingListener = Linking.addEventListener('url', (event) => {

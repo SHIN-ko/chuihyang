@@ -34,39 +34,55 @@ const NotificationDebugScreen: React.FC = () => {
 
   const runDiagnostics = async () => {
     setIsLoading(true);
-    const info: any = {};
-
+    
     try {
-      // 진단 유틸리티 실행
-      const diagnostics = await NotificationDiagnostics.runFullDiagnostics(projects);
+      // 새로운 진단 기능 사용
+      const diagnosis = await NotificationService.diagnoseNotificationSystem();
+      await NotificationService.logNotificationSystemStatus();
+      
+      // 기존 진단 유틸리티도 실행
+      let diagnostics: DiagnosticResult[] = [];
+      try {
+        diagnostics = await NotificationDiagnostics.runFullDiagnostics(projects);
+      } catch (diagError) {
+        console.warn('기존 진단 유틸리티 실패:', diagError);
+      }
+      
       setDiagnosticResults(diagnostics);
 
-      // 1. 알림 권한 확인
-      const { status } = await Notifications.getPermissionsAsync();
-      info.permissionStatus = status;
-
-      // 2. 예약된 알림 목록
-      const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-      info.scheduledNotifications = scheduledNotifications;
-
-      // 3. 알림 설정 상태
-      info.notificationSettings = settings;
-      info.notificationInitialized = isInitialized;
-
-      // 4. 프로젝트 목록
-      info.projects = projects.map(p => ({
-        id: p.id,
-        name: p.name,
-        status: p.status,
-        startDate: p.startDate,
-        expectedEndDate: p.expectedEndDate,
-        recipeId: p.recipeId
-      }));
-
-      // 5. NotificationService 상태
-      info.serviceEnabled = NotificationService.isNotificationEnabled();
+      // 통합된 디버그 정보 구성
+      const info = {
+        // 새로운 진단 결과
+        systemDiagnosis: diagnosis,
+        
+        // 기존 정보들
+        permissionStatus: diagnosis.permissions?.status || 'unknown',
+        scheduledNotifications: diagnosis.scheduledNotifications,
+        notificationSettings: settings,
+        notificationInitialized: isInitialized,
+        serviceEnabled: NotificationService.isNotificationEnabled(),
+        
+        // 프로젝트 정보
+        projects: projects.map(p => ({
+          id: p.id,
+          name: p.name,
+          status: p.status,
+          startDate: p.startDate,
+          expectedEndDate: p.expectedEndDate,
+          recipeId: p.recipeId,
+          type: p.type
+        })),
+        
+        // 추가 메타데이터
+        timestamp: new Date().toISOString(),
+        projectCount: projects.length,
+        inProgressProjects: projects.filter(p => p.status === 'in_progress').length
+      };
 
       setDebugInfo(info);
+      
+      console.log('🔍 전체 진단 결과:', info);
+      
     } catch (error) {
       console.error('진단 실패:', error);
       Alert.alert('오류', '진단 실행 중 오류가 발생했습니다.');
@@ -86,7 +102,12 @@ const NotificationDebugScreen: React.FC = () => {
     try {
       const success = await rescheduleAllNotifications();
       if (success) {
-        Alert.alert('성공', `모든 프로젝트의 알림을 다시 스케줄링했습니다.`);
+        Alert.alert(
+          '성공', 
+          __DEV__ ? 
+            '개발환경에서는 실제 알림 예약이 제한됩니다. 2초 후 즉시 테스트 알림을 받으셔야 합니다.' :
+            '모든 프로젝트의 알림을 다시 스케줄링했습니다.'
+        );
         runDiagnostics(); // 다시 진단 실행
       } else {
         Alert.alert('오류', '일부 프로젝트의 알림 설정에 실패했습니다.');
@@ -94,6 +115,20 @@ const NotificationDebugScreen: React.FC = () => {
     } catch (error) {
       console.error('알림 스케줄링 실패:', error);
       Alert.alert('오류', `알림 스케줄링에 실패했습니다: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const testImmediateNotification = async () => {
+    try {
+      await NotificationService.sendImmediateNotification(
+        '🧪 개발환경 테스트',
+        '즉시 알림 테스트가 성공했습니다! 🎉',
+        { test: true, timestamp: Date.now() }
+      );
+      Alert.alert('테스트 알림 발송', '즉시 알림을 발송했습니다.');
+    } catch (error) {
+      console.error('테스트 알림 실패:', error);
+      Alert.alert('오류', '테스트 알림 발송에 실패했습니다.');
     }
   };
 
@@ -262,6 +297,15 @@ const NotificationDebugScreen: React.FC = () => {
             >
               <Text style={styles.buttonText}>모든 알림 재설정</Text>
             </TouchableOpacity>
+
+            {__DEV__ && (
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.testButton]}
+                onPress={testImmediateNotification}
+              >
+                <Text style={styles.buttonText}>🧪 즉시 테스트 알림</Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity 
               style={[styles.actionButton, styles.dangerButton]}
@@ -447,6 +491,10 @@ const styles = StyleSheet.create({
   dangerButton: {
     backgroundColor: BRAND_COLORS.background.surface,
     borderColor: `${BRAND_COLORS.semantic.error}40`,
+  },
+  testButton: {
+    backgroundColor: BRAND_COLORS.background.surface,
+    borderColor: `${BRAND_COLORS.accent.primary}60`,
   },
   buttonText: {
     color: BRAND_COLORS.text.primary,

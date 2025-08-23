@@ -57,13 +57,21 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
     setIsLoading(true);
     try {
       console.log('구글 로그인 시작');
-      const result = await GoogleAuthService.signInWithGoogle();
+      const { loginWithGoogle } = useAuthStore.getState();
+      const success = await loginWithGoogle();
       
-      if (result.success) {
+      if (success) {
         console.log('구글 OAuth URL 열기 성공');
         // OAuth 플로우가 시작되었음을 사용자에게 알림
         // 실제 로그인 완료는 Deep Link 콜백에서 처리됨
         onSuccess?.();
+        
+        // 사용자에게 브라우저에서 로그인하라는 안내 메시지 표시
+        Alert.alert(
+          '구글 로그인',
+          '브라우저가 열립니다. 구글 계정으로 로그인한 후 앱으로 돌아와 주세요.',
+          [{ text: '확인' }]
+        );
       }
     } catch (error) {
       console.error('구글 로그인 오류:', error);

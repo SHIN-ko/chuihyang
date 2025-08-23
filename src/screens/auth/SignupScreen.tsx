@@ -20,6 +20,7 @@ import { useAuthStore } from '@/src/stores/authStore';
 import Button from '@/src/components/common/Button';
 import GlassCard from '@/src/components/common/GlassCard';
 import DatePicker from '@/src/components/common/DatePicker';
+import GoogleLoginButton from '@/src/components/common/GoogleLoginButton';
 import { Ionicons } from '@expo/vector-icons';
 import { signupSchema, SignupFormData } from '@/src/utils/validation';
 import * as ImagePicker from 'expo-image-picker';
@@ -291,6 +292,22 @@ const SignupScreen: React.FC = () => {
       fontWeight: '600' as const,
       marginLeft: 4,
     },
+    divider: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      marginVertical: 24,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.border.secondary,
+    },
+    dividerText: {
+      color: colors.text.secondary,
+      fontSize: 14,
+      fontWeight: '500' as const,
+      marginHorizontal: 16,
+    },
   }));
 
   return (
@@ -415,6 +432,19 @@ const SignupScreen: React.FC = () => {
                 회원가입
               </Button>
             </View>
+
+            {/* 구분선 */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>또는</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* 구글 회원가입 버튼 */}
+            <GoogleLoginButton 
+              onSuccess={() => router.replace('/(tabs)')}
+              onError={(error) => console.log('구글 회원가입 오류:', error)}
+            />
             
             {/* 로그인 링크 */}
             <View style={styles.loginLinkContainer}>
