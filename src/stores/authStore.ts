@@ -76,7 +76,13 @@ export const useAuthStore = create<AuthState>()(
       checkAuthState: async () => {
         set({ isLoading: true });
         try {
-          const user = await SupabaseService.getCurrentUser();
+          // 네트워크 연결 상태 확인을 위한 타임아웃 추가
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Auth check timeout')), 10000)
+          );
+          
+          const authPromise = SupabaseService.getCurrentUser();
+          const user = await Promise.race([authPromise, timeoutPromise]);
           
           if (user) {
             set({ user: user as User, isAuthenticated: true, isLoading: false });
@@ -85,6 +91,7 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error('인증 상태 확인 실패:', error);
+          // 인증 실패해도 앱은 계속 실행되도록 처리
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
       },

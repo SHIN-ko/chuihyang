@@ -51,4 +51,5 @@ const GlassCard: React.FC<GlassCardProps> = ({
   );
 };
 
+export { GlassCard };
 export default GlassCard;

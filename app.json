@@ -17,7 +17,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.chuihyang"
+      "bundleIdentifier": "com.anonymous.chuihyang",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
@@ -52,7 +53,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "877bb97f-8c9f-454e-819b-819937b942e6"
       }
     }
   }

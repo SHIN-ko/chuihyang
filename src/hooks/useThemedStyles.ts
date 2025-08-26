@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { getThemeColors, getThemeShadows, BRAND_COLORS, ANIMATIONS, ColorPalette, ShadowPalette } from '../../constants/Colors';
+import { getThemeColors, getThemeShadows, BRAND_COLORS, ANIMATIONS, ColorPalette, ShadowPalette } from '@/constants/Colors';
 
 // 테마별 색상과 그림자를 포함한 객체 타입
 export interface ThemedStyleParams {

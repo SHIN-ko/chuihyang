@@ -14,12 +14,16 @@ import { ThemeProvider as CustomThemeProvider } from '@/src/contexts/ThemeContex
 import { supabase } from '@/src/lib/supabase';
 import { GoogleAuthService } from '@/src/services/googleAuthService';
 
-// 임시: colors 관련 오류 무시
+// 에러 로깅 개선
 const originalConsoleError = console.error;
 console.error = (...args) => {
   const message = args[0];
-  if (typeof message === 'string' && message.includes("Property 'colors' doesn't exist")) {
-    // colors 관련 오류는 무시
+  if (typeof message === 'string' && (
+    message.includes("Property 'colors' doesn't exist") ||
+    message.includes("Non-serializable values")
+  )) {
+    // 알려진 경고는 무시하되 로그는 남김
+    console.warn('Suppressed warning:', message);
     return;
   }
   originalConsoleError.apply(console, args);
@@ -65,13 +69,31 @@ function RootLayoutNav() {
 
   useEffect(() => {
     // 앱 시작 시 인증 상태 확인 (한 번만)
-    checkAuthState();
-  }, []);
+    const initializeAuth = async () => {
+      try {
+        await checkAuthState();
+      } catch (error) {
+        console.error('앱 초기화 중 인증 상태 확인 실패:', error);
+        // 실패해도 앱은 계속 실행
+      }
+    };
+    
+    initializeAuth();
+  }, [checkAuthState]);
 
   useEffect(() => {
     // 사용자가 인증된 경우에만 알림 시스템 초기화
     if (isAuthenticated) {
-      initializeNotifications();
+      const initNotifications = async () => {
+        try {
+          await initializeNotifications();
+        } catch (error) {
+          console.error('알림 초기화 실패:', error);
+          // 알림 초기화 실패해도 앱은 계속 실행
+        }
+      };
+      
+      initNotifications();
     }
   }, [isAuthenticated, initializeNotifications]);
 
