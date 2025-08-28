@@ -4,7 +4,7 @@
     "slug": "chuihyang",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./src/assets/images/icon.png",
     "scheme": "chuihyang",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -22,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./src/assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.chuihyang"
@@ -37,7 +37,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./src/assets/images/icon.png",
           "color": "#ffffff",
           "sounds": [
             "./assets/sounds/notification.wav"
