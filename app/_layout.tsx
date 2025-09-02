@@ -11,7 +11,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { ThemeProvider as CustomThemeProvider } from '@/src/contexts/ThemeContext';
-import { supabase } from '@/src/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/src/lib/supabase';
 import { GoogleAuthService } from '@/src/services/googleAuthService';
 
 // 에러 로깅 개선
@@ -20,7 +20,8 @@ console.error = (...args) => {
   const message = args[0];
   if (typeof message === 'string' && (
     message.includes("Property 'colors' doesn't exist") ||
-    message.includes("Non-serializable values")
+    message.includes("Non-serializable values") ||
+    message.includes("Warning: Can't perform a React state update on an unmounted component")
   )) {
     // 알려진 경고는 무시하되 로그는 남김
     console.warn('Suppressed warning:', message);
@@ -45,12 +46,17 @@ export default function RootLayout() {
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
-    if (error) throw error;
+    if (error) {
+      console.error('폰트 로딩 에러:', error);
+      // 폰트 로딩 실패해도 앱은 계속 실행
+    }
   }, [error]);
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {
+        // 스플래시 스크린 숨기기 실패해도 무시
+      });
     }
   }, [loaded]);
 
@@ -83,7 +89,7 @@ function RootLayoutNav() {
 
   useEffect(() => {
     // 사용자가 인증된 경우에만 알림 시스템 초기화
-    if (isAuthenticated) {
+    if (isAuthenticated && isSupabaseConfigured()) {
       const initNotifications = async () => {
         try {
           await initializeNotifications();
@@ -127,6 +133,12 @@ function RootLayoutNav() {
     // URL 변경 리스너 설정
     const handleDeepLink = async (url: string) => {
       console.log('Deep Link 수신:', url);
+      
+      // Supabase가 설정되지 않은 경우 deep link 처리 건너뛰기
+      if (!isSupabaseConfigured()) {
+        console.warn('Supabase가 설정되지 않아 deep link를 처리할 수 없습니다.');
+        return;
+      }
       
       // 구글 OAuth 콜백 처리 (Expo Go 및 스탠드얼론 앱 지원)
       if (url.includes('access_token') || 
@@ -241,31 +253,35 @@ function RootLayoutNav() {
       if (url) {
         handleDeepLink(url);
       }
+    }).catch((error) => {
+      console.error('초기 URL 확인 실패:', error);
     });
-
-    // 개발환경 테스트 제거됨 - 실제 운영환경에서 정상 작동 예상
 
     // URL 변경 이벤트 리스너 (앱이 열린 상태에서 링크 클릭 시)
     const linkingListener = Linking.addEventListener('url', (event) => {
       handleDeepLink(event.url);
     });
 
-    // Supabase Auth 상태 변화 리스너
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth 상태 변화:', event, session);
-      
-      if (event === 'PASSWORD_RECOVERY') {
-        console.log('패스워드 복구 세션 감지');
-        // 비밀번호 복구 세션이 설정된 경우
-        router.push('/auth/reset-password');
-      }
-    });
+    // Supabase Auth 상태 변화 리스너 (설정된 경우에만)
+    let subscription: any = null;
+    if (isSupabaseConfigured()) {
+      const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log('Auth 상태 변화:', event, session);
+        
+        if (event === 'PASSWORD_RECOVERY') {
+          console.log('패스워드 복구 세션 감지');
+          // 비밀번호 복구 세션이 설정된 경우
+          router.push('/auth/reset-password');
+        }
+      });
+      subscription = authSubscription;
+    }
 
     return () => {
       linkingListener?.remove();
       subscription?.unsubscribe();
     };
-  }, [router]);
+  }, [router, checkAuthState]);
 
   // 로딩 중에는 null 반환 (스플래시 스크린 유지)
   if (isLoading) {

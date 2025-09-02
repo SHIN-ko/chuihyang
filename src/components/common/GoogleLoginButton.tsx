@@ -72,6 +72,8 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
           '브라우저가 열립니다. 구글 계정으로 로그인한 후 앱으로 돌아와 주세요.',
           [{ text: '확인' }]
         );
+      } else {
+        throw new Error('구글 로그인을 시작할 수 없습니다. 네트워크 연결을 확인해주세요.');
       }
     } catch (error) {
       console.error('구글 로그인 오류:', error);

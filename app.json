@@ -4,7 +4,7 @@
     "slug": "chuihyang",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
     "scheme": "chuihyang",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -18,14 +18,38 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.chuihyang",
-      "buildNumber": "1"
+      "buildNumber": "16",
+      "requireFullScreen": false,
+      "infoPlist": {
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "supabase.co": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSExceptionMinimumTLSVersion": "1.2"
+            }
+          }
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.chuihyang"
+      "package": "com.anonymous.chuihyang",
+      "versionCode": 15
     },
     "web": {
       "bundler": "metro",
@@ -34,16 +58,15 @@
     },
     "plugins": [
       "expo-router",
+      "expo-apple-authentication",
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
-          "color": "#ffffff",
-          "sounds": [
-            "./assets/sounds/notification.wav"
-          ]
+          "icon": "./ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
+          "color": "#ffffff"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
