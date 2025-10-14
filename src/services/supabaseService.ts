@@ -62,6 +62,58 @@ export class SupabaseService {
     }
   }
 
+  static async deleteAccount(): Promise<void> {
+    try {
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Supabase 환경변수가 설정되지 않아 계정 삭제를 진행할 수 없습니다.');
+      }
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      const session = sessionData?.session;
+
+      if (!session?.access_token) {
+        throw new Error('세션 정보가 만료되었습니다. 다시 로그인한 후 시도해주세요.');
+      }
+
+      const requestUrl = `${supabaseUrl.replace(/\/$/, '')}/auth/v1/user`;
+
+      const response = await fetch(requestUrl, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: supabaseAnonKey,
+        },
+      });
+
+      if (!response.ok) {
+        let errorMessage = '계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.';
+
+        try {
+          const errorBody = await response.json();
+          errorMessage = errorBody?.msg || errorBody?.message || errorBody?.error_description || errorMessage;
+        } catch {
+          const fallbackText = await response.text();
+          if (fallbackText) {
+            errorMessage = fallbackText;
+          }
+        }
+
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      console.error('계정 삭제 오류:', error);
+      throw error;
+    }
+  }
+
   static async resetPassword(email: string) {
     try {
       // 앱에서 작동하도록 설정

@@ -23,6 +23,7 @@ interface AuthState {
   loginWithGoogle: () => Promise<boolean>;
   loginWithApple: () => Promise<boolean>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 // Expo SecureStore adapter for zustand persist
@@ -262,6 +263,34 @@ export const useAuthStore = create<AuthState>()(
           console.error('로그아웃 실패:', error);
           // 오류가 발생해도 로컬 상태는 초기화
           set({ user: null, isAuthenticated: false });
+        }
+      },
+
+      deleteAccount: async () => {
+        set({ isLoading: true });
+        try {
+          if (!isSupabaseConfigured()) {
+            throw new Error('Supabase가 설정되지 않아 계정 삭제를 진행할 수 없습니다.');
+          }
+
+          await SupabaseService.deleteAccount();
+
+          try {
+            await supabase.auth.signOut();
+          } catch (signOutError) {
+            console.warn('계정 삭제 이후 세션 정리 중 오류가 발생했습니다:', signOutError);
+          }
+
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            hasCompletedOnboarding: false,
+          });
+        } catch (error) {
+          console.error('계정 삭제 실패:', error);
+          set({ isLoading: false });
+          throw error;
         }
       },
     }),
