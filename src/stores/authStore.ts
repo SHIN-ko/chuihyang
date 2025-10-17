@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { User } from '@/src/types';
 import { SupabaseService } from '@/src/services/supabaseService';
 import { supabase, isSupabaseConfigured } from '@/src/lib/supabase';
+import { useNotificationStore } from '@/src/stores/notificationStore';
 
 interface AuthState {
   user: User | null;
@@ -23,6 +24,7 @@ interface AuthState {
   loginWithGoogle: () => Promise<boolean>;
   loginWithApple: () => Promise<boolean>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 // Expo SecureStore adapter for zustand persist
@@ -262,6 +264,46 @@ export const useAuthStore = create<AuthState>()(
           console.error('로그아웃 실패:', error);
           // 오류가 발생해도 로컬 상태는 초기화
           set({ user: null, isAuthenticated: false });
+        }
+      },
+
+      deleteAccount: async () => {
+        set({ isLoading: true });
+        try {
+          if (!isSupabaseConfigured()) {
+            throw new Error('Supabase가 설정되지 않아 계정 삭제를 진행할 수 없습니다.');
+          }
+
+          await SupabaseService.deleteAccount();
+
+          try {
+            await supabase.auth.signOut();
+          } catch (signOutError) {
+            console.warn('계정 삭제 이후 세션 정리 중 오류가 발생했습니다:', signOutError);
+          }
+
+          try {
+            await secureStorage.removeItem('auth-storage');
+          } catch (storageError) {
+            console.warn('계정 삭제 이후 로컬 인증 정보 정리 중 오류가 발생했습니다:', storageError);
+          }
+
+          try {
+            await useNotificationStore.getState().resetSettings();
+          } catch (notificationError) {
+            console.warn('알림 설정 초기화 중 오류가 발생했습니다:', notificationError);
+          }
+
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            hasCompletedOnboarding: false,
+          });
+        } catch (error) {
+          console.error('계정 삭제 실패:', error);
+          set({ isLoading: false });
+          throw error instanceof Error ? error : new Error('계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
         }
       },
     }),
