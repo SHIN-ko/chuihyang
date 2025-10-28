@@ -1,6 +1,7 @@
 import { supabase } from '@/src/lib/supabase';
 import { User, Project, ProgressLog, Ingredient } from '@/src/types';
 import { Database } from '@/src/lib/database.types';
+import { requireSupabaseEnv } from '@/src/config/env';
 
 type ProjectRow = Database['public']['Tables']['projects']['Row'];
 type ProjectInsert = Database['public']['Tables']['projects']['Insert'];
@@ -64,12 +65,7 @@ export class SupabaseService {
 
   static async deleteAccount(): Promise<void> {
     try {
-      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error('Supabase 환경변수가 설정되지 않아 계정 삭제를 진행할 수 없습니다.');
-      }
+      const { supabaseUrl, supabaseAnonKey } = requireSupabaseEnv();
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
