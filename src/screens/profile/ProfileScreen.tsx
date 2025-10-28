@@ -604,9 +604,9 @@ const ProfileScreen: React.FC = () => {
               )}
 
               {/* 조용한 시간 설정 */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.settingRow}
-                onPress={() => router.push('/profile/quiet-hours' as any)}
+                onPress={() => router.push('/profile/quiet-hours')}
               >
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingTitle}>방해 금지 시간</Text>
@@ -623,71 +623,71 @@ const ProfileScreen: React.FC = () => {
           )}
           </GlassCard>
 
-          {/* 앱 정보 */}
+          {/* 알림 관리 */}
           <GlassCard style={styles.section} intensity="medium">
-          <Text style={styles.sectionTitle}>알림 관리</Text>
-          
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => router.push('/profile/notification-history' as any)}
-          >
-            <Ionicons name="time-outline" size={24} color={colors.text.secondary} />
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuTitle}>알림 히스토리</Text>
-              <Text style={styles.menuDescription}>예약된 알림 목록을 확인합니다</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
+            <Text style={styles.sectionTitle}>알림 관리</Text>
 
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => router.push('/profile/notification-debug' as any)}
-          >
-            <Ionicons name="bug-outline" size={24} color={brandColors.semantic.warning} />
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuTitle}>알림 디버그</Text>
-              <Text style={styles.menuDescription}>알림 시스템 진단 및 문제 해결</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push('/profile/notification-history')}
+            >
+              <Ionicons name="time-outline" size={24} color={colors.text.secondary} />
+              <View style={styles.menuInfo}>
+                <Text style={styles.menuTitle}>알림 히스토리</Text>
+                <Text style={styles.menuDescription}>예약된 알림 목록을 확인합니다</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push('/profile/notification-debug')}
+            >
+              <Ionicons name="bug-outline" size={24} color={brandColors.semantic.warning} />
+              <View style={styles.menuInfo}>
+                <Text style={styles.menuTitle}>알림 디버그</Text>
+                <Text style={styles.menuDescription}>알림 시스템 진단 및 문제 해결</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
           </GlassCard>
 
           {/* 앱 정보 */}
           <GlassCard style={styles.section} intensity="light">
-          <Text style={styles.sectionTitle}>앱 정보</Text>
-          
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="help-circle-outline" size={24} color={colors.text.secondary} />
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuTitle}>도움말</Text>
-              <Text style={styles.menuDescription}>사용법 및 FAQ</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
+            <Text style={styles.sectionTitle}>앱 정보</Text>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => router.push('/profile/terms-of-service' as any)}
-          >
-            <Ionicons name="document-text-outline" size={24} color={colors.text.secondary} />
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuTitle}>이용약관</Text>
-              <Text style={styles.menuDescription}>서비스 이용약관</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Ionicons name="help-circle-outline" size={24} color={colors.text.secondary} />
+              <View style={styles.menuInfo}>
+                <Text style={styles.menuTitle}>도움말</Text>
+                <Text style={styles.menuDescription}>사용법 및 FAQ</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => router.push('/profile/privacy-policy' as any)}
-          >
-            <Ionicons name="shield-outline" size={24} color={colors.text.secondary} />
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuTitle}>개인정보처리방침</Text>
-              <Text style={styles.menuDescription}>개인정보 보호정책</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push('/profile/terms-of-service')}
+            >
+              <Ionicons name="document-text-outline" size={24} color={colors.text.secondary} />
+              <View style={styles.menuInfo}>
+                <Text style={styles.menuTitle}>이용약관</Text>
+                <Text style={styles.menuDescription}>서비스 이용약관</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push('/profile/privacy-policy')}
+            >
+              <Ionicons name="shield-outline" size={24} color={colors.text.secondary} />
+              <View style={styles.menuInfo}>
+                <Text style={styles.menuTitle}>개인정보처리방침</Text>
+                <Text style={styles.menuDescription}>개인정보 보호정책</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
           </GlassCard>
 
           {/* 계정 관리 */}
