@@ -1,0 +1,28 @@
+# Android Gradle Properties 예시
+# 이 파일을 복사하여 gradle.properties로 저장하고 실제 값을 입력하세요
+# 주의: gradle.properties 파일은 절대 Git에 커밋하지 마세요!
+
+# Release Keystore 설정 (EAS Build 사용 시 필요없음)
+# CHUIHYANG_UPLOAD_STORE_FILE=chuihyang-release.keystore
+# CHUIHYANG_UPLOAD_KEY_ALIAS=chuihyang-key
+# CHUIHYANG_UPLOAD_STORE_PASSWORD=your-store-password
+# CHUIHYANG_UPLOAD_KEY_PASSWORD=your-key-password
+
+# Android 빌드 최적화
+android.useAndroidX=true
+android.enableJetifier=true
+
+# Gradle 성능 향상
+org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError
+org.gradle.parallel=true
+org.gradle.configureondemand=true
+org.gradle.daemon=true
+
+# React Native 최적화
+# android.enableProguardInReleaseBuilds=true
+# android.enableShrinkResourcesInReleaseBuilds=true
+# android.enablePngCrunchInReleaseBuilds=true
+
+# Expo 설정
+expo.useLegacyPackaging=false
+

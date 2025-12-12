@@ -17,14 +17,29 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.chuihyang"
+      "bundleIdentifier": "com.chuihyang.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "담금주 진행 과정을 촬영하기 위해 카메라 접근이 필요합니다.",
+        "NSPhotoLibraryUsageDescription": "담금주 프로젝트 사진을 업로드하기 위해 사진 라이브러리 접근이 필요합니다.",
+        "NSPhotoLibraryAddUsageDescription": "촬영한 사진을 저장하기 위해 사진 라이브러리 접근이 필요합니다."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.chuihyang"
+      "package": "com.chuihyang.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "NOTIFICATIONS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -42,7 +57,15 @@
             "./assets/sounds/notification.wav"
           ]
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "담금주 프로젝트 사진을 업로드하기 위해 사진 라이브러리 접근이 필요합니다.",
+          "cameraPermission": "담금주 진행 과정을 촬영하기 위해 카메라 접근이 필요합니다."
+        }
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true
@@ -52,8 +75,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "your-eas-project-id-here"
       }
-    }
+    },
+    "owner": "your-expo-username"
   }
 }

@@ -19,6 +19,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/src/stores/authStore';
 import Button from '@/src/components/common/Button';
 import GoogleLoginButton from '@/src/components/common/GoogleLoginButton';
+import AppleLoginButton from '@/src/components/common/AppleLoginButton';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { useThemedStyles } from '@/src/hooks/useThemedStyles';
 import { useThemeValues } from '@/src/hooks/useThemedStyles';
@@ -380,7 +381,9 @@ const LoginScreen: React.FC = () => {
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* 구글 로그인 버튼 */}
+              {/* 소셜 로그인 버튼 */}
+              <AppleLoginButton />
+              <View style={{ height: 12 }} />
               <GoogleLoginButton />
 
               {/* 회원가입 링크 */}

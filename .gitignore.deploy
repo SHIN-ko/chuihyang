@@ -1,0 +1,41 @@
+# 배포 시 Git에 절대 포함하지 말아야 할 파일들
+# 기존 .gitignore에 다음 내용이 있는지 확인하세요
+
+# 환경 변수
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# Android 키스토어 (절대 커밋 금지!)
+*.keystore
+*.jks
+android/app/chuihyang-release.keystore
+android/app/release.keystore
+
+# iOS 인증서 및 프로비저닝 프로파일
+*.mobileprovision
+*.p12
+*.cer
+*.certSigningRequest
+
+# Google Play Service Account JSON (절대 커밋 금지!)
+google-play-service-account.json
+service-account-*.json
+
+# EAS 빌드 시크릿
+.eas-build-*
+eas-credentials.json
+
+# 민감한 설정 파일
+android/gradle.properties
+ios/chuihyang/GoogleService-Info.plist
+android/app/google-services.json
+
+# 프로덕션 설정 백업
+*.backup
+*.secret
+secrets/
+credentials/
+

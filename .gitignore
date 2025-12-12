@@ -1,22 +1,19 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
-node_modules/
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # Expo
-.expo/
+.expo
 dist/
 web-build/
-expo-env.d.ts
+expo-updates/
 
 # Native
-.kotlin/
 *.orig.*
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
+*.keystore
 
 # Metro
 .metro-health-check*
@@ -32,7 +29,66 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.production
+.env.development
 
 # typescript
 *.tsbuildinfo
-.env
+
+# @generated expo-cli sync
+/web
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.history/
+
+# Misc
+*.log
+.cache/
+
+# Android specific
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/google-services.json
+android/app/*.keystore
+android/app/*.jks
+android/gradle.properties
+
+# iOS specific
+ios/build/
+ios/Pods/
+ios/.xcode.env.local
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# 보안 파일 (절대 커밋 금지)
+*.keystore
+*.jks
+google-play-service-account.json
+service-account-*.json
+.eas-build-*
+eas-credentials.json
+
+# 백업 파일
+*.backup
+*.secret
+secrets/
+credentials/
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
