@@ -21,6 +21,7 @@ import Button from '@/src/components/common/Button';
 import GlassCard from '@/src/components/common/GlassCard';
 import DatePicker from '@/src/components/common/DatePicker';
 import GoogleLoginButton from '@/src/components/common/GoogleLoginButton';
+import AppleLoginButton from '@/src/components/common/AppleLoginButton';
 import { Ionicons } from '@expo/vector-icons';
 import { signupSchema, SignupFormData } from '@/src/utils/validation';
 import * as ImagePicker from 'expo-image-picker';
@@ -446,6 +447,12 @@ const SignupScreen: React.FC = () => {
               onError={(error) => console.log('구글 회원가입 오류:', error)}
             />
             
+            {/* 애플 회원가입 버튼 */}
+            <AppleLoginButton 
+              onSuccess={() => router.replace('/(tabs)')}
+              onError={(error) => console.log('애플 회원가입 오류:', error)}
+            />
+
             {/* 로그인 링크 */}
             <View style={styles.loginLinkContainer}>
               <Text style={styles.loginLinkText}>이미 계정이 있으신가요?</Text>

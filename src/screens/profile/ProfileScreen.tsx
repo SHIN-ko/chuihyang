@@ -24,7 +24,7 @@ import { SupabaseService } from '@/src/services/supabaseService';
 
 const ProfileScreen: React.FC = () => {
   const router = useRouter();
-  const { user, logout, refreshUser } = useAuthStore();
+  const { user, logout, refreshUser, deleteAccount } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
   const { colors, brandColors } = useThemeValues();
   const { 
@@ -37,6 +37,7 @@ const ProfileScreen: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingProfileImage, setUploadingProfileImage] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -84,6 +85,46 @@ const ProfileScreen: React.FC = () => {
           },
         },
       ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      '계정 삭제',
+      '계정을 삭제하면 담금주 프로젝트와 알림을 포함한 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+      [
+        {
+          text: '취소',
+          style: 'cancel',
+        },
+        {
+          text: '계정 삭제',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeletingAccount(true);
+            try {
+              await deleteAccount();
+              Alert.alert('계정 삭제 완료', '계정과 모든 데이터가 삭제되었습니다.', [
+                {
+                  text: '확인',
+                  onPress: () => router.replace('/auth/onboarding'),
+                },
+              ]);
+            } catch (error) {
+              console.error('계정 삭제 중 오류 발생:', error);
+              Alert.alert(
+                '오류',
+                error instanceof Error
+                  ? error.message
+                  : '계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.'
+              );
+            } finally {
+              setIsDeletingAccount(false);
+            }
+          },
+        },
+      ],
+      { cancelable: false }
     );
   };
 
@@ -361,6 +402,18 @@ const ProfileScreen: React.FC = () => {
     logoutItem: {
       borderBottomWidth: 0,
     },
+    deleteAccountContainer: {
+      marginBottom: 20,
+    },
+    deleteAccountDescription: {
+      fontSize: 12,
+      color: colors.text.secondary,
+      lineHeight: 18,
+      marginBottom: 12,
+    },
+    deleteAccountButton: {
+      marginBottom: 16,
+    },
     logoutButton: {
       backgroundColor: `${brandColors.semantic.error}20`,
       borderColor: `${brandColors.semantic.error}40`,
@@ -551,9 +604,9 @@ const ProfileScreen: React.FC = () => {
               )}
 
               {/* 조용한 시간 설정 */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.settingRow}
-                onPress={() => router.push('/profile/quiet-hours' as any)}
+                onPress={() => router.push('/profile/quiet-hours')}
               >
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingTitle}>방해 금지 시간</Text>
@@ -570,72 +623,98 @@ const ProfileScreen: React.FC = () => {
           )}
           </GlassCard>
 
-          {/* 앱 정보 */}
+          {/* 알림 관리 */}
           <GlassCard style={styles.section} intensity="medium">
-          <Text style={styles.sectionTitle}>알림 관리</Text>
-          
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => router.push('/profile/notification-history' as any)}
-          >
-            <Ionicons name="time-outline" size={24} color={colors.text.secondary} />
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuTitle}>알림 히스토리</Text>
-              <Text style={styles.menuDescription}>예약된 알림 목록을 확인합니다</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
+            <Text style={styles.sectionTitle}>알림 관리</Text>
 
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => router.push('/profile/notification-debug' as any)}
-          >
-            <Ionicons name="bug-outline" size={24} color={brandColors.semantic.warning} />
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuTitle}>알림 디버그</Text>
-              <Text style={styles.menuDescription}>알림 시스템 진단 및 문제 해결</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push('/profile/notification-history')}
+            >
+              <Ionicons name="time-outline" size={24} color={colors.text.secondary} />
+              <View style={styles.menuInfo}>
+                <Text style={styles.menuTitle}>알림 히스토리</Text>
+                <Text style={styles.menuDescription}>예약된 알림 목록을 확인합니다</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push('/profile/notification-debug')}
+            >
+              <Ionicons name="bug-outline" size={24} color={brandColors.semantic.warning} />
+              <View style={styles.menuInfo}>
+                <Text style={styles.menuTitle}>알림 디버그</Text>
+                <Text style={styles.menuDescription}>알림 시스템 진단 및 문제 해결</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
           </GlassCard>
 
           {/* 앱 정보 */}
           <GlassCard style={styles.section} intensity="light">
-          <Text style={styles.sectionTitle}>앱 정보</Text>
-          
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="help-circle-outline" size={24} color={colors.text.secondary} />
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuTitle}>도움말</Text>
-              <Text style={styles.menuDescription}>사용법 및 FAQ</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
+            <Text style={styles.sectionTitle}>앱 정보</Text>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="document-text-outline" size={24} color={colors.text.secondary} />
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuTitle}>이용약관</Text>
-              <Text style={styles.menuDescription}>서비스 이용약관</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Ionicons name="help-circle-outline" size={24} color={colors.text.secondary} />
+              <View style={styles.menuInfo}>
+                <Text style={styles.menuTitle}>도움말</Text>
+                <Text style={styles.menuDescription}>사용법 및 FAQ</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="shield-outline" size={24} color={colors.text.secondary} />
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuTitle}>개인정보처리방침</Text>
-              <Text style={styles.menuDescription}>개인정보 보호정책</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push('/profile/terms-of-service')}
+            >
+              <Ionicons name="document-text-outline" size={24} color={colors.text.secondary} />
+              <View style={styles.menuInfo}>
+                <Text style={styles.menuTitle}>이용약관</Text>
+                <Text style={styles.menuDescription}>서비스 이용약관</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push('/profile/privacy-policy')}
+            >
+              <Ionicons name="shield-outline" size={24} color={colors.text.secondary} />
+              <View style={styles.menuInfo}>
+                <Text style={styles.menuTitle}>개인정보처리방침</Text>
+                <Text style={styles.menuDescription}>개인정보 보호정책</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
           </GlassCard>
 
           {/* 계정 관리 */}
           <GlassCard style={styles.section} intensity="heavy">
             <Text style={styles.sectionTitle}>계정 관리</Text>
             
-            <TouchableOpacity 
+            <View style={styles.deleteAccountContainer}>
+              <Text style={styles.deleteAccountDescription}>
+                계정을 삭제하면 담금주 프로젝트, 알림, 프로필 정보가 모두 제거되며 다시 복구할 수 없습니다.
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.logoutButton,
+                  styles.deleteAccountButton,
+                  (isDeletingAccount || isLoading) && { opacity: 0.7 },
+                ]}
+                onPress={handleDeleteAccount}
+                disabled={isDeletingAccount || isLoading}
+              >
+                <Ionicons name="trash-outline" size={22} color={brandColors.semantic.error} />
+                <Text style={styles.logoutText}>
+                  {isDeletingAccount ? '계정 삭제 중...' : '계정 삭제'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
               style={[styles.menuItem, styles.logoutItem]}
               onPress={handleLogout}
               disabled={isLoading}

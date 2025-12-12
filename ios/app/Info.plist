@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>chuihyang</string>
+    <string>취향</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -33,7 +33,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>15</string>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
@@ -45,12 +45,6 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
-    <key>NSCameraUsageDescription</key>
-    <string>사진을 촬영하여 프로젝트에 추가하기 위해 카메라 접근이 필요합니다.</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>갤러리에서 사진을 선택하여 프로젝트에 추가하기 위해 사진 라이브러리 접근이 필요합니다.</string>
-    <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>사진을 저장하기 위해 사진 라이브러리 접근이 필요합니다.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
@@ -81,5 +75,7 @@
     <string>Automatic</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>프로젝트에 사진을 첨부하기 위해 사진 라이브러리 접근 권한이 필요합니다.</string>
   </dict>
 </plist>

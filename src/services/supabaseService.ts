@@ -1,6 +1,7 @@
 import { supabase } from '@/src/lib/supabase';
 import { User, Project, ProgressLog, Ingredient } from '@/src/types';
 import { Database } from '@/src/lib/database.types';
+import { requireSupabaseEnv } from '@/src/config/env';
 
 type ProjectRow = Database['public']['Tables']['projects']['Row'];
 type ProjectInsert = Database['public']['Tables']['projects']['Insert'];
@@ -62,6 +63,117 @@ export class SupabaseService {
     }
   }
 
+  static async deleteAccount(): Promise<void> {
+    try {
+      const { supabaseUrl, supabaseAnonKey } = requireSupabaseEnv();
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      const session = sessionData?.session;
+      const userId = session?.user?.id;
+
+      if (!session?.access_token || !userId) {
+        throw new Error('세션 정보가 만료되었습니다. 다시 로그인한 후 시도해주세요.');
+      }
+
+      await this.purgeUserData(userId);
+      const requestUrl = `${supabaseUrl.replace(/\/$/, '')}/auth/v1/user`;
+
+      const response = await fetch(requestUrl, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: supabaseAnonKey,
+        },
+      });
+
+      if (!response.ok) {
+        let errorMessage = '계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.';
+
+        try {
+          const errorBody = await response.json();
+          errorMessage = errorBody?.msg || errorBody?.message || errorBody?.error_description || errorMessage;
+        } catch {
+          const fallbackText = await response.text();
+          if (fallbackText) {
+            errorMessage = fallbackText;
+          }
+        }
+
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      console.error('계정 삭제 오류:', error);
+      throw error;
+    }
+  }
+
+  private static async purgeUserData(userId: string): Promise<void> {
+    const errors: string[] = [];
+
+    try {
+      const { data: projects, error: projectQueryError } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (projectQueryError) {
+        errors.push(`프로젝트 조회 실패: ${projectQueryError.message}`);
+      }
+
+      const projectIds = projects?.map((project) => project.id) ?? [];
+
+      if (projectIds.length > 0) {
+        const { error: progressDeleteError } = await supabase
+          .from('progress_logs')
+          .delete()
+          .in('project_id', projectIds);
+
+        if (progressDeleteError) {
+          errors.push(`숙성 기록 삭제 실패: ${progressDeleteError.message}`);
+        }
+
+        const { error: ingredientDeleteError } = await supabase
+          .from('ingredients')
+          .delete()
+          .in('project_id', projectIds);
+
+        if (ingredientDeleteError) {
+          errors.push(`재료 정보 삭제 실패: ${ingredientDeleteError.message}`);
+        }
+      }
+
+      const { error: projectDeleteError } = await supabase
+        .from('projects')
+        .delete()
+        .eq('user_id', userId);
+
+      if (projectDeleteError) {
+        errors.push(`프로젝트 삭제 실패: ${projectDeleteError.message}`);
+      }
+
+      const { error: profileDeleteError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (profileDeleteError) {
+        errors.push(`프로필 삭제 실패: ${profileDeleteError.message}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      errors.push(`데이터 삭제 중 예기치 못한 오류 발생: ${message}`);
+    }
+
+    if (errors.length > 0) {
+      console.error('계정 삭제 중 사용자 데이터 정리 실패:', errors);
+      throw new Error('계정에 연결된 데이터를 정리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  }
   static async resetPassword(email: string) {
     try {
       // 앱에서 작동하도록 설정

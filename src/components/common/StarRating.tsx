@@ -26,12 +26,14 @@ const StarRating: React.FC<StarRatingProps> = ({
       Animated.sequence([
         Animated.spring(scaleAnims[starIndex], {
           toValue: 1.3,
-          duration: ANIMATIONS.duration.fast,
+          tension: 300,
+          friction: 8,
           useNativeDriver: true,
         }),
         Animated.spring(scaleAnims[starIndex], {
           toValue: 1,
-          duration: ANIMATIONS.duration.fast,
+          tension: 300,
+          friction: 8,
           useNativeDriver: true,
         }),
       ]).start();
@@ -44,7 +46,8 @@ const StarRating: React.FC<StarRatingProps> = ({
     if (!readonly) {
       Animated.spring(scaleAnims[starIndex], {
         toValue: 1.1,
-        duration: ANIMATIONS.duration.fast,
+        tension: 300,
+        friction: 8,
         useNativeDriver: true,
       }).start();
     }
@@ -54,7 +57,8 @@ const StarRating: React.FC<StarRatingProps> = ({
     if (!readonly) {
       Animated.spring(scaleAnims[starIndex], {
         toValue: 1,
-        duration: ANIMATIONS.duration.fast,
+        tension: 300,
+        friction: 8,
         useNativeDriver: true,
       }).start();
     }

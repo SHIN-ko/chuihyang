@@ -95,4 +95,3 @@ const AppleLoginButton: React.FC = () => {
 };
 
 export default AppleLoginButton;
-

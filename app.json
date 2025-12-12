@@ -4,7 +4,7 @@
     "slug": "chuihyang",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
     "scheme": "chuihyang",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -27,7 +27,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.chuihyang.app",
@@ -48,14 +48,12 @@
     },
     "plugins": [
       "expo-router",
+      "expo-apple-authentication",
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
-          "color": "#ffffff",
-          "sounds": [
-            "./assets/sounds/notification.wav"
-          ]
+          "icon": "./ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
+          "color": "#ffffff"
         }
       ],
       [

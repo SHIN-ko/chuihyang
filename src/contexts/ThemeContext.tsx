@@ -8,6 +8,7 @@ interface ThemeContextType {
   theme: ThemeMode;
   toggleTheme: () => void;
   setTheme: (theme: ThemeMode) => void;
+  isLoading: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -34,6 +35,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.log('테마 로드 실패:', error);
+      // 에러가 발생해도 기본값 사용
     } finally {
       setIsLoading(false);
     }
@@ -57,12 +59,16 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     setTheme(newTheme);
   };
 
-  if (isLoading) {
-    return null; // 또는 로딩 스피너
-  }
+  // 로딩 중에도 기본값을 제공하여 크래시 방지
+  const contextValue: ThemeContextType = {
+    theme,
+    toggleTheme,
+    setTheme,
+    isLoading,
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       {children}
     </ThemeContext.Provider>

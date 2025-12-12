@@ -3,7 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
 import { User } from '@/src/types';
 import { SupabaseService } from '@/src/services/supabaseService';
-import { supabase } from '@/src/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/src/lib/supabase';
+import { useNotificationStore } from '@/src/stores/notificationStore';
 
 interface AuthState {
   user: User | null;
@@ -21,7 +22,9 @@ interface AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string, birthdate?: string) => Promise<boolean>;
   loginWithGoogle: () => Promise<boolean>;
+  loginWithApple: () => Promise<boolean>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 // Expo SecureStore adapter for zustand persist
@@ -76,7 +79,20 @@ export const useAuthStore = create<AuthState>()(
       checkAuthState: async () => {
         set({ isLoading: true });
         try {
-          const user = await SupabaseService.getCurrentUser();
+          // Supabase가 설정되지 않은 경우 로컬 상태만 확인
+          if (!isSupabaseConfigured()) {
+            console.warn('Supabase가 설정되지 않아 로컬 인증 상태만 확인합니다.');
+            set({ user: null, isAuthenticated: false, isLoading: false });
+            return;
+          }
+
+          // 네트워크 연결 상태 확인을 위한 타임아웃 추가
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Auth check timeout')), 10000)
+          );
+          
+          const authPromise = SupabaseService.getCurrentUser();
+          const user = await Promise.race([authPromise, timeoutPromise]);
           
           if (user) {
             set({ user: user as User, isAuthenticated: true, isLoading: false });
@@ -85,12 +101,18 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error('인증 상태 확인 실패:', error);
+          // 인증 실패해도 앱은 계속 실행되도록 처리
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
       },
 
       refreshUser: async () => {
         try {
+          if (!isSupabaseConfigured()) {
+            console.warn('Supabase가 설정되지 않아 사용자 정보를 새로고침할 수 없습니다.');
+            return;
+          }
+
           const user = await SupabaseService.getCurrentUser();
           
           if (user) {
@@ -104,6 +126,12 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true });
         try {
+          if (!isSupabaseConfigured()) {
+            console.warn('Supabase가 설정되지 않아 로그인할 수 없습니다.');
+            set({ isLoading: false });
+            return false;
+          }
+
           const { session, user: authUser } = await SupabaseService.signIn(email, password);
           
           if (session && authUser) {
@@ -131,6 +159,12 @@ export const useAuthStore = create<AuthState>()(
       signup: async (email: string, password: string, name: string, birthdate?: string) => {
         set({ isLoading: true });
         try {
+          if (!isSupabaseConfigured()) {
+            console.warn('Supabase가 설정되지 않아 회원가입할 수 없습니다.');
+            set({ isLoading: false });
+            return false;
+          }
+
           const { user: authUser, session } = await SupabaseService.signUp(email, password, name, birthdate);
           
           if (authUser && session) {
@@ -165,6 +199,12 @@ export const useAuthStore = create<AuthState>()(
       loginWithGoogle: async () => {
         set({ isLoading: true });
         try {
+          if (!isSupabaseConfigured()) {
+            console.warn('Supabase가 설정되지 않아 구글 로그인할 수 없습니다.');
+            set({ isLoading: false });
+            return false;
+          }
+
           const { GoogleAuthService } = await import('@/src/services/googleAuthService');
           const result = await GoogleAuthService.signInWithGoogle();
           
@@ -185,14 +225,84 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      loginWithApple: async () => {
+        set({ isLoading: true });
+        try {
+          if (!isSupabaseConfigured()) {
+            console.warn('Supabase가 설정되지 않아 Apple 로그인할 수 없습니다.');
+            set({ isLoading: false });
+            return false;
+          }
+
+          const { AppleAuthService } = await import('@/src/services/appleAuthService');
+          const result = await AppleAuthService.signInWithApple();
+          
+          if (result.success) {
+            // Apple OAuth 프로세스가 시작됨을 표시
+            // 실제 로그인 완료는 deep link 콜백에서 처리됨
+            console.log('Apple OAuth 프로세스 시작됨');
+            set({ isLoading: false });
+            return true;
+          }
+          
+          set({ isLoading: false });
+          return false;
+        } catch (error) {
+          console.error('Apple 로그인 실패:', error);
+          set({ isLoading: false });
+          return false;
+        }
+      },
+
       logout: async () => {
         try {
-          await SupabaseService.signOut();
+          if (isSupabaseConfigured()) {
+            await SupabaseService.signOut();
+          }
           set({ user: null, isAuthenticated: false });
         } catch (error) {
           console.error('로그아웃 실패:', error);
           // 오류가 발생해도 로컬 상태는 초기화
           set({ user: null, isAuthenticated: false });
+        }
+      },
+
+      deleteAccount: async () => {
+        set({ isLoading: true });
+        try {
+          if (!isSupabaseConfigured()) {
+            throw new Error('Supabase가 설정되지 않아 계정 삭제를 진행할 수 없습니다.');
+          }
+
+          await SupabaseService.deleteAccount();
+
+          try {
+            await supabase.auth.signOut();
+          } catch (signOutError) {
+            console.warn('계정 삭제 이후 세션 정리 중 오류가 발생했습니다:', signOutError);
+          }
+
+          try {
+            await secureStorage.removeItem('auth-storage');
+          } catch (storageError) {
+            console.warn('계정 삭제 이후 로컬 인증 정보 정리 중 오류가 발생했습니다:', storageError);
+          }
+
+          try {
+            await useNotificationStore.getState().resetSettings();
+          } catch (notificationError) {
+            console.warn('알림 설정 초기화 중 오류가 발생했습니다:', notificationError);
+          }
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            hasCompletedOnboarding: false,
+          });
+        } catch (error) {
+          console.error('계정 삭제 실패:', error);
+          set({ isLoading: false });
+          throw error instanceof Error ? error : new Error('계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
         }
       },
     }),

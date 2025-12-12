@@ -77,8 +77,9 @@ const OnboardingScreen: React.FC = () => {
       color: colors.text.secondary,
       fontSize: 16,
       textAlign: 'center',
-      lineHeight: 24,
+      lineHeight: 26,
       fontWeight: '400',
+      opacity: 0.9,
     },
     buttonContainer: {
       paddingTop: 24,
@@ -104,17 +105,18 @@ const OnboardingScreen: React.FC = () => {
         {/* 로고 섹션 */}
         <View style={styles.logoContainer}>
           <Text style={styles.logo}>취향</Text>
-          <Text style={styles.brandTagline}>CHUIHYANG</Text>
+          <Text style={styles.brandTagline}>TIME, TASTE & STORY</Text>
         </View>
 
         {/* 환영 메시지 카드 */}
         <GlassCard style={styles.welcomeCard} intensity="medium">
           <Text style={styles.title}>
-            담금주 프로젝트 관리의{'\n'}새로운 경험
+            시간이 빚어내는{'\n'}나만의 취향
           </Text>
           <Text style={styles.subtitle}>
-            나만의 담금주 프로젝트를 체계적으로 관리하고,{'\n'}
-            처음부터 완성까지 모든 과정을 기록해보세요.
+            야레야레부터 파친코까지, 5가지 특별한 레시피로{'\n'}
+            당신만의 담금주 이야기를 시작하세요.{'\n'}{'\n'}
+            기다림 끝에 만나는 완벽한 그 순간까지.
           </Text>
         </GlassCard>
 
@@ -124,7 +126,7 @@ const OnboardingScreen: React.FC = () => {
             onPress={handleGetStarted}
             fullWidth
           >
-            시작하기
+            나의 취향 시작하기
           </Button>
           
           <View style={styles.bottomSpacing} />
