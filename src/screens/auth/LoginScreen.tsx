@@ -20,8 +20,9 @@ import { useAuthStore } from '@/src/stores/authStore';
 import Button from '@/src/components/common/Button';
 import GoogleLoginButton from '@/src/components/common/GoogleLoginButton';
 import AppleLoginButton from '@/src/components/common/AppleLoginButton';
-import { useThemedStyles } from '@/src/hooks/useThemedStyles';
-import { useThemeValues } from '@/src/hooks/useThemedStyles';
+import DemoLoginButton from '@/src/components/common/DemoLoginButton';
+import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
+import { useTheme } from '@/src/contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -381,11 +382,6 @@ const LoginScreen: React.FC = () => {
               </View>
 
               {/* 소셜 로그인 버튼 */}
-              <AppleLoginButton />
-              <View style={{ height: 12 }} />
-              <GoogleLoginButton />
-
-              {/* Apple 로그인 버튼 */}
               <AppleLoginButton 
                 onSuccess={() => {
                   console.log('Apple 로그인 성공, 메인 화면으로 이동');
@@ -393,15 +389,11 @@ const LoginScreen: React.FC = () => {
                 }}
                 onError={(error) => console.log('Apple 로그인 오류:', error)}
               />
-              
-              {/* Apple 로그인 활성화 방법:
-                  1. Xcode에서 프로젝트 열기 (ios/app.xcworkspace)
-                  2. TARGETS > app > Signing & Capabilities
-                  3. + Capability > Sign In with Apple 추가
-                  4. 위 주석 해제하여 Apple 로그인 활성화
-              */}
+              <View style={{ height: 12 }} />
+              <GoogleLoginButton />
+              <View style={{ height: 12 }} />
 
-              {/* 데모 로그인 버튼 */}
+              {/* 데모 로그인 버튼 (앱 스토어 심사용) */}
               <DemoLoginButton 
                 onSuccess={() => {
                   console.log('데모 로그인 성공, 메인 화면으로 이동');

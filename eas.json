@@ -31,13 +31,13 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "your-apple-team-id"
+        "appleId": "shs2810@gmail.com",
+        "ascAppId": "6751449064",
+        "appleTeamId": "7TJYC9WGZ9"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
-        "track": "internal"
+        "track": "production"
       }
     }
   }

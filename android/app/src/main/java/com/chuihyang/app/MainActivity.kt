@@ -1,4 +1,4 @@
-package com.anonymous.chuihyang
+package com.chuihyang.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
