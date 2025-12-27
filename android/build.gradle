@@ -38,8 +38,8 @@ allprojects {
 
 // Make hermesEnabled available to all subprojects
 subprojects {
-  ext {
-    hermesEnabled = rootProject.ext.hermesEnabled
+  beforeEvaluate { project ->
+    project.ext.hermesEnabled = rootProject.ext.hermesEnabled
   }
 }
 
