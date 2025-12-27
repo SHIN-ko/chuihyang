@@ -4,7 +4,7 @@
     "slug": "chuihyang",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "chuihyang",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -22,12 +22,13 @@
       "infoPlist": {
         "NSCameraUsageDescription": "담금주 진행 과정을 촬영하기 위해 카메라 접근이 필요합니다.",
         "NSPhotoLibraryUsageDescription": "담금주 프로젝트 사진을 업로드하기 위해 사진 라이브러리 접근이 필요합니다.",
-        "NSPhotoLibraryAddUsageDescription": "촬영한 사진을 저장하기 위해 사진 라이브러리 접근이 필요합니다."
+        "NSPhotoLibraryAddUsageDescription": "촬영한 사진을 저장하기 위해 사진 라이브러리 접근이 필요합니다.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.chuihyang.app",
@@ -53,7 +54,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png",
+          "icon": "./assets/images/icon.png",
           "color": "#ffffff"
         }
       ],
