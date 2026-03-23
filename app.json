@@ -39,8 +39,7 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
-        "android.permission.NOTIFICATIONS",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.NOTIFICATIONS"
       ]
     },
     "web": {
@@ -64,8 +63,7 @@
           "photosPermission": "담금주 프로젝트 사진을 업로드하기 위해 사진 라이브러리 접근이 필요합니다.",
           "cameraPermission": "담금주 진행 과정을 촬영하기 위해 카메라 접근이 필요합니다."
         }
-      ],
-      "expo-apple-authentication"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
