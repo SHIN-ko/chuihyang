@@ -5,8 +5,6 @@ import { Platform } from 'react-native';
 import { Project } from '@/src/types';
 import { generateCustomNotificationMessage } from '@/src/utils/recipeNotifications';
 
-const IS_DEV = __DEV__;
-
 // 알림 핸들러 설정
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

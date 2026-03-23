@@ -14,21 +14,21 @@ import { ThemeProvider as CustomThemeProvider } from '@/src/contexts/ThemeContex
 import { supabase, isSupabaseConfigured } from '@/src/lib/supabase';
 import { GoogleAuthService } from '@/src/services/googleAuthService';
 
-// 에러 로깅 개선
-const originalConsoleError = console.error;
-console.error = (...args) => {
-  const message = args[0];
-  if (typeof message === 'string' && (
-    message.includes("Property 'colors' doesn't exist") ||
-    message.includes("Non-serializable values") ||
-    message.includes("Warning: Can't perform a React state update on an unmounted component")
-  )) {
-    // 알려진 경고는 무시하되 로그는 남김
-    console.warn('Suppressed warning:', message);
-    return;
-  }
-  originalConsoleError.apply(console, args);
-};
+// 개발 환경에서만 알려진 무해한 경고 억제
+if (__DEV__) {
+  const originalConsoleError = console.error;
+  console.error = (...args: unknown[]) => {
+    const message = args[0];
+    if (typeof message === 'string' && (
+      message.includes("Property 'colors' doesn't exist") ||
+      message.includes("Non-serializable values") ||
+      message.includes("Warning: Can't perform a React state update on an unmounted component")
+    )) {
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
 
 export {
   // Catch any errors thrown by the Layout component.

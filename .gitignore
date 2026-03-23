@@ -79,6 +79,7 @@ ios/*.xcodeproj/project.xcworkspace/xcuserdata/
 *.jks
 google-play-service-account.json
 service-account-*.json
+credentials.json
 .eas-build-*
 eas-credentials.json
 
