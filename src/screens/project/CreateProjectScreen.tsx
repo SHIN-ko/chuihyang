@@ -176,7 +176,6 @@ const CreateProjectScreen: React.FC = () => {
       backgroundColor: colors.background.glass,
       ...shadows.glass.medium,
       zIndex: 1000,
-      backdropFilter: 'blur(20px)',
     },
 
     scrollView: {

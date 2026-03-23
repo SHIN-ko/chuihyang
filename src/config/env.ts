@@ -9,10 +9,10 @@ type EnvKey = keyof typeof rawEnv;
 
 const EnvSchema = z.object({
   EXPO_PUBLIC_SUPABASE_URL: z
-    .string({ required_error: 'EXPO_PUBLIC_SUPABASE_URL이 설정되지 않았습니다.' })
+    .string({ error: 'EXPO_PUBLIC_SUPABASE_URL이 설정되지 않았습니다.' })
     .url('EXPO_PUBLIC_SUPABASE_URL은 유효한 URL이어야 합니다.'),
   EXPO_PUBLIC_SUPABASE_ANON_KEY: z
-    .string({ required_error: 'EXPO_PUBLIC_SUPABASE_ANON_KEY이 설정되지 않았습니다.' })
+    .string({ error: 'EXPO_PUBLIC_SUPABASE_ANON_KEY이 설정되지 않았습니다.' })
     .min(1, 'EXPO_PUBLIC_SUPABASE_ANON_KEY이 비어 있습니다.'),
 });
 

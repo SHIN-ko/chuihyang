@@ -39,15 +39,15 @@ const secureStorage = {
   setItem: async (name: string, value: string) => {
     try {
       await SecureStore.setItemAsync(name, value);
-    } catch {
-      // Handle error silently
+    } catch (error) {
+      console.error('SecureStore setItem failed:', error);
     }
   },
   removeItem: async (name: string) => {
     try {
       await SecureStore.deleteItemAsync(name);
-    } catch {
-      // Handle error silently
+    } catch (error) {
+      console.error('SecureStore removeItem failed:', error);
     }
   },
 };

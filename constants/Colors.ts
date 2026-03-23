@@ -233,10 +233,18 @@ const THEME_SHADOWS: Record<ThemeMode, ShadowPalette> = {
 };
 
 // 공통 브랜드 색상 (테마 독립적)
-export const BRAND_COLORS: any = {
+export interface BrandColorPalette {
+  accent: typeof designTokens.colors.accent;
+  semantic: typeof designTokens.colors.semantic;
+  background: ColorPalette['background'];
+  text: ColorPalette['text'];
+  border: ColorPalette['border'];
+}
+
+export const BRAND_COLORS = {
   accent: designTokens.colors.accent,
   semantic: designTokens.colors.semantic,
-};
+} as BrandColorPalette;
 
 // 애니메이션 설정
 export const ANIMATIONS = {

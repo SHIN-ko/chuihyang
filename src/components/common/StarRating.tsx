@@ -15,7 +15,7 @@ const StarRating: React.FC<StarRatingProps> = ({
   rating,
   onRatingChange,
   size = 24,
-  color = BRAND_COLORS.accent.amber, // 호박색으로 변경 (담금주 테마)
+  color = BRAND_COLORS.semantic.warning,
   readonly = false,
 }) => {
   const scaleAnims = useRef([...Array(5)].map(() => new Animated.Value(1))).current;
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     padding: 2, // 터치 영역 확대
   },
   filledStar: {
-    shadowColor: BRAND_COLORS.accent.amber,
+    shadowColor: BRAND_COLORS.semantic.warning,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,

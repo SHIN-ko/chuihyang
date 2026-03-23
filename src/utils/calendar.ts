@@ -1,5 +1,6 @@
 import { Project, ProgressLog } from '@/src/types';
 import { getRecipeById } from '@/src/data/presetRecipes';
+import { ColorPalette, BrandColorPalette } from '@/constants/Colors';
 
 // 캘린더에서 사용할 마킹 타입 정의
 export interface CalendarMarking {
@@ -260,7 +261,7 @@ export const calculateProjectStats = (projects: Project[]): ProjectStats => {
 };
 
 // 캘린더 테마 설정 (동적 생성 함수)
-export const createCalendarTheme = (theme: 'light' | 'dark', colors: any, brandColors: any) => ({
+export const createCalendarTheme = (theme: 'light' | 'dark', colors: ColorPalette, brandColors: BrandColorPalette) => ({
   backgroundColor: 'transparent',
   calendarBackground: 'transparent',
   

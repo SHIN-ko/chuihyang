@@ -251,7 +251,7 @@ export class SupabaseService {
 
   static async updateProfile(userId: string, updates: { profileImage?: string; nickname?: string; birthdate?: string }): Promise<void> {
     try {
-      const updateData: any = {};
+      const updateData: Record<string, string> = {};
       
       if (updates.profileImage !== undefined) {
         updateData.profile_image_url = updates.profileImage;
@@ -580,7 +580,7 @@ export class SupabaseService {
       title: logRow.title,
       description: logRow.description || undefined,
       images: logRow.images || [],
-      ratings: logRow.ratings as any,
+      ratings: logRow.ratings as ProgressLog['ratings'],
       color: logRow.color || undefined,
       notes: logRow.notes || undefined,
       createdAt: logRow.created_at,
@@ -588,14 +588,14 @@ export class SupabaseService {
     };
   }
 
-  private static transformIngredientRowToIngredient(ingredientRow: any): Ingredient {
+  private static transformIngredientRowToIngredient(ingredientRow: Database['public']['Tables']['ingredients']['Row']): Ingredient {
     return {
       id: ingredientRow.id,
       projectId: ingredientRow.project_id,
       name: ingredientRow.name,
       quantity: ingredientRow.quantity || '',
       unit: ingredientRow.unit || '',
-      notes: ingredientRow.notes,
+      notes: ingredientRow.notes ?? undefined,
     };
   }
 }
