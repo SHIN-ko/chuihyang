@@ -17,7 +17,7 @@ import {
 import { useProjectStore } from '@/src/stores/projectStore';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useEffect, useCallback } from 'react';
-import { formatDate, calculateProgress } from '@/src/utils/date';
+import { formatDate, calculateProgress, calculateDetailedProgress } from '@/src/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '@/src/components/common/Button';
 import GlassCard from '@/src/components/common/GlassCard';
@@ -249,6 +249,12 @@ export default function HomeScreen() {
       fontSize: 20,
       fontWeight: '700',
     },
+    dDayText: {
+      color: colors.text.secondary,
+      fontSize: 12,
+      fontWeight: '500',
+      marginTop: 2,
+    },
     completedBadge: {
       backgroundColor: brandColors.semantic.success,
       paddingHorizontal: 16,
@@ -427,6 +433,7 @@ export default function HomeScreen() {
 
   const renderProjectCard = (project: Project) => {
     const progress = calculateProgress(project.startDate, project.expectedEndDate);
+    const detailed = calculateDetailedProgress(project.startDate, project.expectedEndDate);
     const isCompleted = project.status === 'completed';
     const recipe = getRecipeById(project.recipeId || '');
     const brandColor = recipe?.brandColor || brandColors.accent.primary;
@@ -450,7 +457,10 @@ export default function HomeScreen() {
                 <Text style={styles.completedText}>완료</Text>
               </View>
             ) : (
-              <Text style={styles.progressPercentage}>{progress}%</Text>
+              <>
+                <Text style={styles.progressPercentage}>{progress}%</Text>
+                <Text style={styles.dDayText}>D+{detailed.daysElapsed}</Text>
+              </>
             )}
           </View>
         </View>
@@ -472,7 +482,7 @@ export default function HomeScreen() {
               <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: brandColor }]} />
             </View>
             <Text style={styles.progressLabel}>
-              {progress < 100 ? `${Math.max(0, Math.ceil((new Date(project.expectedEndDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))}일 남음` : '완료 대기'}
+              {detailed.remainingDays > 0 ? `${detailed.remainingDays}일 남음` : '완료 대기'}
             </Text>
           </View>
         )}

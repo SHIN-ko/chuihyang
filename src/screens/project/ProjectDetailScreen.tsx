@@ -22,6 +22,7 @@ import StarRating from '@/src/components/common/StarRating';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import GlassCard from '@/src/components/common/GlassCard';
+import CompletionSummaryCard from '@/src/components/common/CompletionSummaryCard';
 import { supabase } from '@/src/lib/supabase';
 
 const { width } = Dimensions.get('window');
@@ -460,9 +461,45 @@ const ProjectDetailScreen: React.FC = () => {
       textAlign: 'center',
     },
     logsContainer: {
-      // 개별 카드의 marginBottom으로 간격 처리
     },
-
+    timelineItem: {
+      flexDirection: 'row',
+    },
+    timelineLeft: {
+      width: 24,
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    timelineDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      marginTop: 4,
+    },
+    timelineLine: {
+      width: 2,
+      flex: 1,
+      marginTop: 4,
+    },
+    timelineContent: {
+      flex: 1,
+      marginBottom: 16,
+    },
+    timelineDayBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 8,
+    },
+    timelineDayText: {
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    timelineDateText: {
+      color: colors.text.tertiary,
+      fontSize: 12,
+      fontWeight: '400',
+    },
     logContent: {
       backgroundColor: colors.background.elevated,
       borderRadius: 20,
@@ -658,10 +695,9 @@ const ProjectDetailScreen: React.FC = () => {
             const success = await updateProjectStatus(project.id, 'completed');
             
             if (success) {
-              Alert.alert('완료', '프로젝트가 완료 처리되었습니다!', [
+              Alert.alert('축하합니다! 🎉', '숙성이 완료되었습니다!\n요약 카드를 공유해보세요.', [
                 {
                   text: '확인',
-                  onPress: () => router.replace('/(tabs)'),
                 },
               ]);
             } else {
@@ -832,13 +868,6 @@ const ProjectDetailScreen: React.FC = () => {
   const renderProgressLogs = () => {
     const logs = project.progressLogs || [];
     
-    console.log('진행 로그 렌더링:', {
-      projectId: project.id,
-      projectName: project.name,
-      logsCount: logs.length,
-      logs: logs.map(log => ({ id: log.id, title: log.title, date: log.date }))
-    });
-    
     // 날짜순으로 정렬 (최신 순)
     const sortedLogs = [...logs].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -856,89 +885,106 @@ const ProjectDetailScreen: React.FC = () => {
 
     return (
       <View style={styles.logsContainer}>
-        {sortedLogs.map((log, index) => (
-          <View 
-            key={log.id} 
-            style={[
-              styles.logContent,
-              index === sortedLogs.length - 1 && { marginBottom: 0 } // 마지막 카드는 여백 없음
-            ]}
-          >
-              <View style={styles.logHeader}>
-                <View style={styles.logHeaderLeft}>
-                  <Text style={styles.logTitle}>{log.title}</Text>
-                  <Text style={styles.logDate}>{formatDate(log.date, 'YYYY.MM.DD')}</Text>
+        {sortedLogs.map((log, index) => {
+          const logDate = new Date(log.date);
+          const startDate = new Date(project.startDate);
+          const dayNumber = Math.max(1, Math.ceil((logDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+          const isLast = index === sortedLogs.length - 1;
+
+          return (
+            <View key={log.id} style={styles.timelineItem}>
+              {/* 타임라인 왼쪽 축 */}
+              <View style={styles.timelineLeft}>
+                <View style={[styles.timelineDot, { backgroundColor: brandColor }]} />
+                {!isLast && <View style={[styles.timelineLine, { backgroundColor: `${brandColor}40` }]} />}
+              </View>
+
+              {/* 타임라인 오른쪽 콘텐츠 */}
+              <View style={[styles.timelineContent, isLast && { marginBottom: 0 }]}>
+                {/* D+일수 배지 */}
+                <View style={styles.timelineDayBadge}>
+                  <Text style={[styles.timelineDayText, { color: brandColor }]}>D+{dayNumber}</Text>
+                  <Text style={styles.timelineDateText}>{formatDate(log.date, 'MM.dd')}</Text>
                 </View>
-                <View style={styles.logActions}>
-                  <TouchableOpacity 
-                    style={styles.logActionButton}
-                    onPress={() => handleEditLog(log.id)}
-                  >
-                    <Ionicons name="create-outline" size={18} color={colors.text.secondary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.logActionButton}
-                    onPress={() => handleDeleteLog(log.id, log.title)}
-                  >
-                    <Ionicons name="trash-outline" size={18} color={brandColors.semantic.error} />
-                  </TouchableOpacity>
+
+                <View style={styles.logContent}>
+                  <View style={styles.logHeader}>
+                    <View style={styles.logHeaderLeft}>
+                      <Text style={styles.logTitle}>{log.title}</Text>
+                    </View>
+                    <View style={styles.logActions}>
+                      <TouchableOpacity 
+                        style={styles.logActionButton}
+                        onPress={() => handleEditLog(log.id)}
+                      >
+                        <Ionicons name="create-outline" size={18} color={colors.text.secondary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.logActionButton}
+                        onPress={() => handleDeleteLog(log.id, log.title)}
+                      >
+                        <Ionicons name="trash-outline" size={18} color={brandColors.semantic.error} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  
+                  {log.description && (
+                    <Text style={styles.logDescription}>{log.description}</Text>
+                  )}
+                  
+                  {/* 평가 표시 */}
+                  {log.ratings && (
+                    <View style={styles.ratingsContainer}>
+                      {log.ratings.overall && (
+                        <View style={styles.ratingRow}>
+                          <Text style={styles.ratingLabel}>전체</Text>
+                          <StarRating rating={log.ratings.overall} readonly size={16} />
+                        </View>
+                      )}
+                      {log.ratings.taste && log.ratings.taste > 0 && (
+                        <View style={styles.ratingRow}>
+                          <Text style={styles.ratingLabel}>맛</Text>
+                          <StarRating rating={log.ratings.taste} readonly size={16} />
+                        </View>
+                      )}
+                    </View>
+                  )}
+                  
+                  {/* 색깔 정보 */}
+                  {log.color && (
+                    <View style={styles.colorInfo}>
+                      <Ionicons name="color-palette-outline" size={16} color={colors.text.secondary} />
+                      <Text style={styles.colorText}>{log.color}</Text>
+                    </View>
+                  )}
+                  
+                  {/* 이미지 */}
+                  {log.images && log.images.length > 0 && (
+                    <ScrollView 
+                      horizontal 
+                      showsHorizontalScrollIndicator={false}
+                      style={styles.logImages}
+                    >
+                      {log.images.map((imageUri, imgIndex) => (
+                        <Image
+                          key={imgIndex}
+                          source={{ uri: imageUri }}
+                          style={styles.logImage}
+                          resizeMode="cover"
+                        />
+                      ))}
+                    </ScrollView>
+                  )}
+                  
+                  {/* 추가 메모 */}
+                  {log.notes && (
+                    <Text style={styles.logNotes}>{log.notes}</Text>
+                  )}
                 </View>
               </View>
-              
-              {log.description && (
-                <Text style={styles.logDescription}>{log.description}</Text>
-              )}
-              
-              {/* 평가 표시 */}
-              {log.ratings && (
-                <View style={styles.ratingsContainer}>
-                  {log.ratings.overall && (
-                    <View style={styles.ratingRow}>
-                      <Text style={styles.ratingLabel}>전체</Text>
-                      <StarRating rating={log.ratings.overall} readonly size={16} />
-                    </View>
-                  )}
-                  {log.ratings.taste && log.ratings.taste > 0 && (
-                    <View style={styles.ratingRow}>
-                      <Text style={styles.ratingLabel}>맛</Text>
-                      <StarRating rating={log.ratings.taste} readonly size={16} />
-                    </View>
-                  )}
-                </View>
-              )}
-              
-              {/* 색깔 정보 */}
-              {log.color && (
-                <View style={styles.colorInfo}>
-                  <Ionicons name="color-palette-outline" size={16} color={colors.text.secondary} />
-                  <Text style={styles.colorText}>{log.color}</Text>
-                </View>
-              )}
-              
-              {/* 이미지 */}
-              {log.images && log.images.length > 0 && (
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.logImages}
-                >
-                  {log.images.map((imageUri, imgIndex) => (
-                    <Image
-                      key={imgIndex}
-                      source={{ uri: imageUri }}
-                      style={styles.logImage}
-                      resizeMode="cover"
-                    />
-                  ))}
-                </ScrollView>
-              )}
-              
-              {/* 추가 메모 */}
-              {log.notes && (
-                <Text style={styles.logNotes}>{log.notes}</Text>
-              )}
-          </View>
-        ))}
+            </View>
+          );
+        })}
       </View>
     );
   };
@@ -1040,6 +1086,10 @@ const ProjectDetailScreen: React.FC = () => {
             {renderProgressBar()}
           </View>
           </GlassCard>
+
+          {project.status === 'completed' && (
+            <CompletionSummaryCard project={project} />
+          )}
 
           {/* 노트 섹션 */}
           {project.notes && (
