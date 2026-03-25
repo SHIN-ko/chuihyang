@@ -25,7 +25,7 @@ export class GoogleAuthService {
       } else {
         // 스탠드얼론 앱이나 개발 빌드인 경우
         redirectUri = makeRedirectUri({
-          scheme: 'myapp',
+          scheme: 'chuihyang',
           path: 'auth',
         });
         console.log('스탠드얼론 리다이렉트 URI:', redirectUri);
