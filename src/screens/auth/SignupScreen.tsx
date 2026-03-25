@@ -23,6 +23,7 @@ import DatePicker from '@/src/components/common/DatePicker';
 import GoogleLoginButton from '@/src/components/common/GoogleLoginButton';
 import AppleLoginButton from '@/src/components/common/AppleLoginButton';
 import { Ionicons } from '@expo/vector-icons';
+import { z } from 'zod';
 import { signupSchema, SignupFormData } from '@/src/utils/validation';
 import * as ImagePicker from 'expo-image-picker';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
@@ -76,10 +77,23 @@ const SignupScreen: React.FC = () => {
     try {
       // Zod 스키마로 검증
       signupSchema.parse(formData);
-    } catch (error: any) {
-      const errorMessage = error.errors?.[0]?.message || '입력 정보를 확인해주세요.';
-      const fieldName = error.errors?.[0]?.path?.[0] || '';
-      Alert.alert('입력 오류', `${fieldName ? `[${fieldName}] ` : ''}${errorMessage}`);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        const fieldLabels: Record<string, string> = {
+          email: '이메일',
+          password: '비밀번호',
+          confirmPassword: '비밀번호 확인',
+          nickname: '닉네임',
+          birthdate: '생년월일',
+        };
+        const issue = error.issues[0];
+        const fieldKey = String(issue?.path?.[0] || '');
+        const fieldLabel = fieldLabels[fieldKey] || fieldKey;
+        const errorMessage = issue?.message || '입력 정보를 확인해주세요.';
+        Alert.alert('입력 오류', `${fieldLabel ? `[${fieldLabel}] ` : ''}${errorMessage}`);
+      } else {
+        Alert.alert('입력 오류', '입력 정보를 확인해주세요.');
+      }
       return;
     }
 
