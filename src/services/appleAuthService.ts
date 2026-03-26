@@ -58,7 +58,10 @@ export class AppleAuthService {
       });
 
       if (error) {
-        console.error('Supabase Apple 로그인 오류:', error);
+        console.error('Supabase Apple 로그인 오류:', error.message, error.status);
+        if (error.message?.includes('provider') || error.status === 400) {
+          throw new Error('Apple 로그인 서비스가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        }
         throw new Error(`Apple 로그인 실패: ${error.message}`);
       }
 
@@ -80,9 +83,12 @@ export class AppleAuthService {
 
       console.log('Apple 로그인 성공:', data.session?.user.id);
       return { success: true, user: data.user, session: data.session };
-    } catch (error: any) {
-      // 사용자가 취소한 경우
-      if (error.code === 'ERR_REQUEST_CANCELED') {
+    } catch (error: unknown) {
+      const errCode = error instanceof Error && 'code' in error
+        ? (error as Error & { code: string }).code
+        : undefined;
+
+      if (errCode === 'ERR_REQUEST_CANCELED' || errCode === 'ERR_CANCELED') {
         console.log('Apple 로그인 취소됨');
         return { success: false, cancelled: true };
       }

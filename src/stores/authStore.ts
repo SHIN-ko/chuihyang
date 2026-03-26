@@ -208,12 +208,18 @@ export const useAuthStore = create<AuthState>()(
           const { GoogleAuthService } = await import('@/src/services/googleAuthService');
           const result = await GoogleAuthService.signInWithGoogle();
           
-          if (result.success) {
-            // OAuth 프로세스가 시작됨을 표시
-            // 실제 로그인 완료는 deep link 콜백에서 처리됨
-            console.log('구글 OAuth 프로세스 시작됨');
-            set({ isLoading: false });
-            return true;
+          if (result.success && 'session' in result && result.session) {
+            console.log('구글 로그인 성공, 인증 상태 업데이트');
+            const user = await SupabaseService.getCurrentUser();
+            if (user) {
+              set({
+                user: user as User,
+                isAuthenticated: true,
+                isLoading: false,
+                hasCompletedOnboarding: true,
+              });
+              return true;
+            }
           }
           
           set({ isLoading: false });
@@ -237,12 +243,18 @@ export const useAuthStore = create<AuthState>()(
           const { AppleAuthService } = await import('@/src/services/appleAuthService');
           const result = await AppleAuthService.signInWithApple();
           
-          if (result.success) {
-            // Apple OAuth 프로세스가 시작됨을 표시
-            // 실제 로그인 완료는 deep link 콜백에서 처리됨
-            console.log('Apple OAuth 프로세스 시작됨');
-            set({ isLoading: false });
-            return true;
+          if (result.success && 'user' in result && result.user) {
+            console.log('Apple 로그인 성공, 인증 상태 업데이트');
+            const user = await SupabaseService.getCurrentUser();
+            if (user) {
+              set({
+                user: user as User,
+                isAuthenticated: true,
+                isLoading: false,
+                hasCompletedOnboarding: true,
+              });
+              return true;
+            }
           }
           
           set({ isLoading: false });
@@ -250,7 +262,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Apple 로그인 실패:', error);
           set({ isLoading: false });
-          return false;
+          throw error;
         }
       },
 

@@ -3,7 +3,6 @@ import { TouchableOpacity, Text, StyleSheet, Alert, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useThemedStyles } from '@/src/hooks/useThemedStyles';
-import { GoogleAuthService } from '@/src/services/googleAuthService';
 import { useAuthStore } from '@/src/stores/authStore';
 
 interface GoogleLoginButtonProps {
@@ -16,7 +15,6 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   onError,
 }) => {
   const router = useRouter();
-  const { setUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
   const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
@@ -61,19 +59,9 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
       const success = await loginWithGoogle();
       
       if (success) {
-        console.log('구글 OAuth URL 열기 성공');
-        // OAuth 플로우가 시작되었음을 사용자에게 알림
-        // 실제 로그인 완료는 Deep Link 콜백에서 처리됨
+        console.log('구글 로그인 성공');
         onSuccess?.();
-        
-        // 사용자에게 브라우저에서 로그인하라는 안내 메시지 표시
-        Alert.alert(
-          '구글 로그인',
-          '브라우저가 열립니다. 구글 계정으로 로그인한 후 앱으로 돌아와 주세요.',
-          [{ text: '확인' }]
-        );
-      } else {
-        throw new Error('구글 로그인을 시작할 수 없습니다. 네트워크 연결을 확인해주세요.');
+        router.replace('/(tabs)');
       }
     } catch (error) {
       console.error('구글 로그인 오류:', error);
