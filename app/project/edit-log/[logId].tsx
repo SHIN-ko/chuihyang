@@ -25,11 +25,11 @@ const EditProgressLogScreen: React.FC = () => {
   const router = useRouter();
   const { logId, projectId } = useLocalSearchParams<{ logId: string; projectId: string }>();
   const { projects, updateProgressLog, isLoading } = useProjectStore();
-  
+
   // 현재 프로젝트와 로그 찾기
-  const project = projects.find(p => p.id === projectId);
-  const log = project?.progressLogs.find(l => l.id === logId);
-  
+  const project = projects.find((p) => p.id === projectId);
+  const log = project?.progressLogs.find((l) => l.id === logId);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -98,7 +98,7 @@ const EditProgressLogScreen: React.FC = () => {
       };
 
       const success = await updateProgressLog(log.id, updates);
-      
+
       if (success) {
         Alert.alert('완료', '로그가 수정되었습니다!', [
           {
@@ -116,9 +116,9 @@ const EditProgressLogScreen: React.FC = () => {
   };
 
   const handleImagesChange = (newImages: string[]) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      images: newImages
+      images: newImages,
     }));
   };
 
@@ -143,8 +143,8 @@ const EditProgressLogScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#111811" />
-      
-      <KeyboardAvoidingView 
+
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -166,7 +166,7 @@ const EditProgressLogScreen: React.FC = () => {
                 placeholder="로그 제목"
                 placeholderTextColor="#9db89d"
                 value={formData.title}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, title: text }))}
+                onChangeText={(text) => setFormData((prev) => ({ ...prev, title: text }))}
                 maxLength={100}
               />
             </View>
@@ -178,7 +178,7 @@ const EditProgressLogScreen: React.FC = () => {
                 placeholder="날짜 (YYYY-MM-DD)"
                 placeholderTextColor="#9db89d"
                 value={formData.date}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, date: text }))}
+                onChangeText={(text) => setFormData((prev) => ({ ...prev, date: text }))}
                 keyboardType="numbers-and-punctuation"
                 maxLength={10}
               />
@@ -191,7 +191,7 @@ const EditProgressLogScreen: React.FC = () => {
                 placeholder="상세 설명"
                 placeholderTextColor="#9db89d"
                 value={formData.description}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
+                onChangeText={(text) => setFormData((prev) => ({ ...prev, description: text }))}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -202,15 +202,15 @@ const EditProgressLogScreen: React.FC = () => {
             {/* 평점 섹션 */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>평가</Text>
-              
+
               <View style={styles.ratingRow}>
                 <Text style={styles.ratingLabel}>전체 평가</Text>
                 <StarRating
                   rating={formData.ratings.overall}
-                  onRatingChange={(rating) => 
-                    setFormData(prev => ({
+                  onRatingChange={(rating) =>
+                    setFormData((prev) => ({
                       ...prev,
-                      ratings: { ...prev.ratings, overall: rating }
+                      ratings: { ...prev.ratings, overall: rating },
                     }))
                   }
                   size={24}
@@ -221,10 +221,10 @@ const EditProgressLogScreen: React.FC = () => {
                 <Text style={styles.ratingLabel}>맛</Text>
                 <StarRating
                   rating={formData.ratings.taste}
-                  onRatingChange={(rating) => 
-                    setFormData(prev => ({
+                  onRatingChange={(rating) =>
+                    setFormData((prev) => ({
                       ...prev,
-                      ratings: { ...prev.ratings, taste: rating }
+                      ratings: { ...prev.ratings, taste: rating },
                     }))
                   }
                   size={24}
@@ -235,10 +235,10 @@ const EditProgressLogScreen: React.FC = () => {
                 <Text style={styles.ratingLabel}>향</Text>
                 <StarRating
                   rating={formData.ratings.aroma}
-                  onRatingChange={(rating) => 
-                    setFormData(prev => ({
+                  onRatingChange={(rating) =>
+                    setFormData((prev) => ({
                       ...prev,
-                      ratings: { ...prev.ratings, aroma: rating }
+                      ratings: { ...prev.ratings, aroma: rating },
                     }))
                   }
                   size={24}
@@ -249,10 +249,10 @@ const EditProgressLogScreen: React.FC = () => {
                 <Text style={styles.ratingLabel}>외관</Text>
                 <StarRating
                   rating={formData.ratings.appearance}
-                  onRatingChange={(rating) => 
-                    setFormData(prev => ({
+                  onRatingChange={(rating) =>
+                    setFormData((prev) => ({
                       ...prev,
-                      ratings: { ...prev.ratings, appearance: rating }
+                      ratings: { ...prev.ratings, appearance: rating },
                     }))
                   }
                   size={24}
@@ -267,7 +267,7 @@ const EditProgressLogScreen: React.FC = () => {
                 placeholder="색상 (예: 황금색, 호박색)"
                 placeholderTextColor="#9db89d"
                 value={formData.color}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, color: text }))}
+                onChangeText={(text) => setFormData((prev) => ({ ...prev, color: text }))}
                 maxLength={50}
               />
             </View>
@@ -279,7 +279,7 @@ const EditProgressLogScreen: React.FC = () => {
                 placeholder="추가 메모"
                 placeholderTextColor="#9db89d"
                 value={formData.notes}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
+                onChangeText={(text) => setFormData((prev) => ({ ...prev, notes: text }))}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
@@ -305,15 +305,10 @@ const EditProgressLogScreen: React.FC = () => {
 
         {/* 하단 저장 버튼 */}
         <View style={styles.bottomContainer}>
-          <Button
-            onPress={handleSave}
-            loading={isLoading}
-            disabled={isLoading}
-            fullWidth
-          >
+          <Button onPress={handleSave} loading={isLoading} disabled={isLoading} fullWidth>
             수정 완료
           </Button>
-          
+
           <View style={styles.bottomSpacing} />
         </View>
       </KeyboardAvoidingView>

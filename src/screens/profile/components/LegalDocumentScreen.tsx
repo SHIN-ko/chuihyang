@@ -236,10 +236,11 @@ const LegalDocumentScreen: React.FC<LegalDocumentScreenProps> = ({ title, intro,
               ) : null}
 
               {section.entries?.map((entry) => (
-                <View key={`${section.title}-${entry.label ?? entry.value}`} style={styles.entryRow}>
-                  {entry.label ? (
-                    <Text style={styles.entryLabel}>{entry.label}</Text>
-                  ) : null}
+                <View
+                  key={`${section.title}-${entry.label ?? entry.value}`}
+                  style={styles.entryRow}
+                >
+                  {entry.label ? <Text style={styles.entryLabel}>{entry.label}</Text> : null}
                   <Text style={styles.entryValue}>{entry.value}</Text>
                 </View>
               ))}

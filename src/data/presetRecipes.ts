@@ -7,13 +7,9 @@ export const PRESET_RECIPES: PresetRecipe[] = [
     type: 'damgeumSoju30',
     description: '활력을 담은 한 잔 야레야레, 맛에서 놀라고 그 놀라움은... 야레야레~',
     defaultDuration: 30, // 30일
-    ingredients: [
-      '야관문',
-      '레몬그라스',
-      '빙탕'
-    ],
+    ingredients: ['야관문', '레몬그라스', '빙탕'],
     instructions: '보리를 발효시킨 후 오크통에서 숙성',
-    brandColor: '#025830' // 진녹색 (전통과 자연)
+    brandColor: '#025830', // 진녹색 (전통과 자연)
   },
   {
     id: 'blabla',
@@ -21,13 +17,9 @@ export const PRESET_RECIPES: PresetRecipe[] = [
     type: 'damgeumSoju25',
     description: '블라블라와 함께라면 어떤 대화이건 시간가는 줄 모르고 달큰하게 빠져들거야.',
     defaultDuration: 10, // 10일
-    ingredients: [
-      '블루베리',
-      '라벤더',
-      '빙탕'
-    ],
+    ingredients: ['블루베리', '라벤더', '빙탕'],
     instructions: '허브류를 침출시켜 향을 우려낸 후 숙성',
-    brandColor: '#20407c' // 진청색 (허브의 시원함과 신선함)
+    brandColor: '#20407c', // 진청색 (허브의 시원함과 신선함)
   },
   {
     id: 'oz',
@@ -35,13 +27,9 @@ export const PRESET_RECIPES: PresetRecipe[] = [
     type: 'damgeumSoju30',
     description: '오즈는 친구들과의 마법 같은 순간을 담은, 다채로운 맛의 여행을 제공합니다',
     defaultDuration: 10, // 10일
-    ingredients: [
-      '오미자',
-      '로즈마리',
-      '빙탕'
-    ],
+    ingredients: ['오미자', '로즈마리', '빙탕'],
     instructions: '사탕수수를 발효시켜 오크칩과 함께 장기 숙성',
-    brandColor: '#ab1e4b' // 진분홍색 (강렬하고 깊은 맛)
+    brandColor: '#ab1e4b', // 진분홍색 (강렬하고 깊은 맛)
   },
   {
     id: 'pachinko',
@@ -49,13 +37,9 @@ export const PRESET_RECIPES: PresetRecipe[] = [
     type: 'damgeumSoju25',
     description: '트로피컬한 향과 우연히 찾아온 행운 같은 기쁨 파칭코',
     defaultDuration: 15, // 15일
-    ingredients: [
-      '파인애플',
-      '코코넛',
-      '빙탕'
-    ],
+    ingredients: ['파인애플', '코코넛', '빙탕'],
     instructions: '사과를 으깨어 발효시킨 후 여과하여 숙성',
-    brandColor: '#eaa728' // 주황색 (과일의 달콤함과 활력)
+    brandColor: '#eaa728', // 주황색 (과일의 달콤함과 활력)
   },
   {
     id: 'gyeaeba',
@@ -63,23 +47,18 @@ export const PRESET_RECIPES: PresetRecipe[] = [
     type: 'vodka',
     description: '익숙하게 다가오지만 색다른 부드러움이 감싸는 조합! 계애바!',
     defaultDuration: 14, // 14일
-    ingredients: [
-      '사과',
-      '계피',
-      '바닐라빈',
-      '빙탕'
-    ],
+    ingredients: ['사과', '계피', '바닐라빈', '빙탕'],
     instructions: '감자를 증류한 후 활성탄으로 여과하여 정제',
-    brandColor: '#921e22' // 진빨강색 (클래식한 품격과 깊이)
+    brandColor: '#921e22', // 진빨강색 (클래식한 품격과 깊이)
   },
 ];
 
 export const getRecipeById = (id: string): PresetRecipe | undefined => {
-  return PRESET_RECIPES.find(recipe => recipe.id === id);
+  return PRESET_RECIPES.find((recipe) => recipe.id === id);
 };
 
 export const getRecipesByType = (type: ProjectType): PresetRecipe[] => {
-  return PRESET_RECIPES.filter(recipe => recipe.type === type);
+  return PRESET_RECIPES.filter((recipe) => recipe.type === type);
 };
 
 // 타입별 숙성 기간 조정값 반환

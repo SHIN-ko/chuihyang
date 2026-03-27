@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Modal, StyleSheet, Dimensions } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from './GlassCard';
@@ -41,7 +34,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
   const formatDisplayDate = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    
+
     if (isBirthdate) {
       // 생년월일 모드: 간단한 포맷 (1990년 1월 15일)
       return date.toLocaleDateString('ko-KR', {
@@ -50,7 +43,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
         day: 'numeric',
       });
     }
-    
+
     // 일반 모드: 요일 포함
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
@@ -76,7 +69,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
   const getMarkedDates = () => {
     if (!selectedDate) return {};
-    
+
     return {
       [selectedDate]: {
         selected: true,
@@ -86,90 +79,92 @@ const DatePicker: React.FC<DatePickerProps> = ({
     };
   };
 
-  const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
-    pickerButton: {
-      backgroundColor: colors.background.glass,
-      paddingHorizontal: 20,
-      paddingVertical: 18,
-      borderRadius: 12,
-      fontSize: 16,
-      minHeight: 56,
-      borderWidth: 1,
-      borderColor: colors.border.glass,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      ...shadows.glass.light,
-    },
-    pickerButtonDisabled: {
-      opacity: 0.5,
-    },
-    pickerText: {
-      color: colors.text.primary,
-      fontSize: 16,
-      flex: 1,
-    },
-    placeholderText: {
-      color: colors.text.muted,
-      fontSize: 16,
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-    },
-    modalContent: {
-      width: width - 40,
-      maxWidth: 400,
-      borderRadius: 20,
-      overflow: 'hidden',
-    },
-    modalHeader: {
-      padding: 20,
-      paddingBottom: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border.secondary,
-    },
-    modalTitle: {
-      color: colors.text.primary,
-      fontSize: 20,
-      fontWeight: '700',
-      textAlign: 'center',
-      letterSpacing: 0.2,
-    },
-    calendarContainer: {
-      padding: 20,
-      paddingTop: 16,
-    },
-    calendar: {
-      borderRadius: 12,
-      overflow: 'hidden',
-    },
-    modalFooter: {
-      flexDirection: 'row',
-      padding: 20,
-      paddingTop: 16,
-      gap: 12,
-    },
-    cancelButton: {
-      flex: 1,
-      backgroundColor: colors.background.secondary,
-      paddingVertical: 16,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    cancelButtonText: {
-      color: colors.text.secondary,
-      fontSize: 16,
-      fontWeight: '600',
-    },
-    confirmButton: {
-      flex: 1,
-    },
-  }));
+  const styles = useThemedStyles(({ colors, shadows, brandColors }) =>
+    StyleSheet.create({
+      pickerButton: {
+        backgroundColor: colors.background.glass,
+        paddingHorizontal: 20,
+        paddingVertical: 18,
+        borderRadius: 12,
+        fontSize: 16,
+        minHeight: 56,
+        borderWidth: 1,
+        borderColor: colors.border.glass,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        ...shadows.glass.light,
+      },
+      pickerButtonDisabled: {
+        opacity: 0.5,
+      },
+      pickerText: {
+        color: colors.text.primary,
+        fontSize: 16,
+        flex: 1,
+      },
+      placeholderText: {
+        color: colors.text.muted,
+        fontSize: 16,
+      },
+      modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+      },
+      modalContent: {
+        width: width - 40,
+        maxWidth: 400,
+        borderRadius: 20,
+        overflow: 'hidden',
+      },
+      modalHeader: {
+        padding: 20,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.secondary,
+      },
+      modalTitle: {
+        color: colors.text.primary,
+        fontSize: 20,
+        fontWeight: '700',
+        textAlign: 'center',
+        letterSpacing: 0.2,
+      },
+      calendarContainer: {
+        padding: 20,
+        paddingTop: 16,
+      },
+      calendar: {
+        borderRadius: 12,
+        overflow: 'hidden',
+      },
+      modalFooter: {
+        flexDirection: 'row',
+        padding: 20,
+        paddingTop: 16,
+        gap: 12,
+      },
+      cancelButton: {
+        flex: 1,
+        backgroundColor: colors.background.secondary,
+        paddingVertical: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      cancelButtonText: {
+        color: colors.text.secondary,
+        fontSize: 16,
+        fontWeight: '600',
+      },
+      confirmButton: {
+        flex: 1,
+      },
+    }),
+  );
 
   const calendarTheme = {
     backgroundColor: colors.background.primary,
@@ -201,11 +196,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
         <Text style={value ? styles.pickerText : styles.placeholderText}>
           {value ? formatDisplayDate(value) : placeholder}
         </Text>
-        <Ionicons 
-          name="calendar-outline" 
-          size={20} 
-          color={colors.text.secondary} 
-        />
+        <Ionicons name="calendar-outline" size={20} color={colors.text.secondary} />
       </TouchableOpacity>
 
       <Modal
@@ -217,15 +208,16 @@ const DatePicker: React.FC<DatePickerProps> = ({
         <View style={styles.modalOverlay}>
           <GlassCard style={styles.modalContent} intensity="medium">
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {isBirthdate ? '생년월일 선택' : '날짜 선택'}
-              </Text>
+              <Text style={styles.modalTitle}>{isBirthdate ? '생년월일 선택' : '날짜 선택'}</Text>
             </View>
-            
+
             <View style={styles.calendarContainer}>
               <Calendar
                 style={styles.calendar}
-                current={selectedDate || (isBirthdate ? '1990-01-01' : new Date().toISOString().split('T')[0])}
+                current={
+                  selectedDate ||
+                  (isBirthdate ? '1990-01-01' : new Date().toISOString().split('T')[0])
+                }
                 onDayPress={handleDateSelect}
                 markedDates={getMarkedDates()}
                 minDate={minimumDate}
@@ -240,7 +232,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
               <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
                 <Text style={styles.cancelButtonText}>취소</Text>
               </TouchableOpacity>
-              
+
               <View style={styles.confirmButton}>
                 <Button onPress={handleConfirm} disabled={!selectedDate}>
                   확인

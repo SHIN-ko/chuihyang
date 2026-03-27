@@ -25,7 +25,7 @@ const ResetPasswordScreen: React.FC = () => {
     access_token?: string;
     refresh_token?: string;
   }>();
-  
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -38,10 +38,13 @@ const ResetPasswordScreen: React.FC = () => {
       try {
         console.log('세션 복구 시작...');
         console.log('URL 파라미터:', { access_token, refresh_token });
-        
+
         // 현재 세션 확인
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
         if (session && !sessionError) {
           console.log('기존 세션 발견');
           setHasValidSession(true);
@@ -113,10 +116,10 @@ const ResetPasswordScreen: React.FC = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
       await SupabaseService.updatePassword(newPassword);
-      
+
       Alert.alert(
         '비밀번호 변경 완료',
         '새 비밀번호가 성공적으로 설정되었습니다.\n로그인 화면으로 이동합니다.',
@@ -125,13 +128,13 @@ const ResetPasswordScreen: React.FC = () => {
             text: '확인',
             onPress: () => router.replace('/auth/login'),
           },
-        ]
+        ],
       );
     } catch (error: any) {
       console.error('비밀번호 변경 오류:', error);
-      
+
       let errorMessage = '비밀번호 변경 중 오류가 발생했습니다.';
-      
+
       if (error.message) {
         if (error.message.includes('Invalid session')) {
           errorMessage = '세션이 만료되었습니다. 비밀번호 재설정을 다시 요청해주세요.';
@@ -139,7 +142,7 @@ const ResetPasswordScreen: React.FC = () => {
           errorMessage = '기존 비밀번호와 다른 새 비밀번호를 입력해주세요.';
         }
       }
-      
+
       Alert.alert('오류', errorMessage);
     } finally {
       setIsLoading(false);
@@ -159,7 +162,7 @@ const ResetPasswordScreen: React.FC = () => {
           text: '확인',
           onPress: () => router.replace('/auth/login'),
         },
-      ]
+      ],
     );
   };
 
@@ -174,9 +177,7 @@ const ResetPasswordScreen: React.FC = () => {
         <StatusBar barStyle="light-content" backgroundColor="#111811" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#22c55e" />
-          <Text style={styles.loadingText}>
-            세션을 확인하는 중...
-          </Text>
+          <Text style={styles.loadingText}>세션을 확인하는 중...</Text>
         </View>
       </SafeAreaView>
     );
@@ -187,7 +188,7 @@ const ResetPasswordScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#111811" />
-        
+
         {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
@@ -200,18 +201,13 @@ const ResetPasswordScreen: React.FC = () => {
         <View style={styles.content}>
           <View style={styles.errorContainer}>
             <Ionicons name="warning-outline" size={64} color="#ef4444" />
-            <Text style={styles.errorTitle}>
-              세션 만료
-            </Text>
+            <Text style={styles.errorTitle}>세션 만료</Text>
             <Text style={styles.errorDescription}>
               비밀번호 재설정 링크가 만료되었거나{'\n'}
               유효하지 않습니다.{'\n\n'}
               비밀번호 찾기를 다시 시도해주세요.
             </Text>
-            <Button
-              onPress={handleRetryReset}
-              fullWidth
-            >
+            <Button onPress={handleRetryReset} fullWidth>
               다시 시도하기
             </Button>
           </View>
@@ -224,8 +220,8 @@ const ResetPasswordScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#111811" />
-      
-      <KeyboardAvoidingView 
+
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -241,9 +237,7 @@ const ResetPasswordScreen: React.FC = () => {
         <View style={styles.content}>
           {/* 설명 텍스트 */}
           <View style={styles.descriptionContainer}>
-            <Text style={styles.title}>
-              새 비밀번호 설정
-            </Text>
+            <Text style={styles.title}>새 비밀번호 설정</Text>
             <Text style={styles.description}>
               안전한 새 비밀번호를 설정해주세요.{'\n'}
               최소 6자 이상의 비밀번호를 입력해주세요.
@@ -282,9 +276,7 @@ const ResetPasswordScreen: React.FC = () => {
 
           {/* 비밀번호 안내 */}
           <View style={styles.hintContainer}>
-            <Text style={styles.hintText}>
-              💡 비밀번호는 최소 6자 이상이어야 합니다
-            </Text>
+            <Text style={styles.hintText}>💡 비밀번호는 최소 6자 이상이어야 합니다</Text>
           </View>
 
           {/* 변경 버튼 */}

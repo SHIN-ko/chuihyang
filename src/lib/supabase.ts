@@ -18,7 +18,7 @@ export const supabase = createClient<Database>(
       persistSession: true,
       detectSessionInUrl: false,
     },
-  }
+  },
 );
 
 // Supabase 연결 상태 확인 함수

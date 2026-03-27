@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-} from 'react-native';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,7 +13,7 @@ interface TimePickerProps {
 const TimePicker: React.FC<TimePickerProps> = ({
   value,
   onTimeChange,
-  title = "시간 선택",
+  title = '시간 선택',
   disabled = false,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
@@ -77,18 +70,12 @@ const TimePicker: React.FC<TimePickerProps> = ({
         disabled={disabled}
       >
         <View style={styles.timeInfo}>
-          <Text style={[styles.timeLabel, disabled && styles.disabledText]}>
-            {title}
-          </Text>
+          <Text style={[styles.timeLabel, disabled && styles.disabledText]}>{title}</Text>
           <Text style={[styles.timeValue, disabled && styles.disabledText]}>
             {formatTime(value)}
           </Text>
         </View>
-        <Ionicons 
-          name="time-outline" 
-          size={20} 
-          color={disabled ? "#666" : "#9db89d"} 
-        />
+        <Ionicons name="time-outline" size={20} color={disabled ? '#666' : '#9db89d'} />
       </TouchableOpacity>
 
       {showPicker && (
@@ -111,7 +98,7 @@ const TimePicker: React.FC<TimePickerProps> = ({
                       <Text style={styles.confirmButton}>확인</Text>
                     </TouchableOpacity>
                   </View>
-                  
+
                   <DateTimePicker
                     value={tempDate}
                     mode="time"

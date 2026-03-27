@@ -11,7 +11,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   hasCompletedOnboarding: boolean;
-  
+
   // Actions
   setUser: (user: User | null) => void;
   clearUser: () => void;
@@ -55,10 +55,10 @@ const secureStorage = {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        hasCompletedOnboarding: false,
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      hasCompletedOnboarding: false,
 
       setUser: (user: User | null) => {
         set({ user, isAuthenticated: !!user });
@@ -87,13 +87,13 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // 네트워크 연결 상태 확인을 위한 타임아웃 추가
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Auth check timeout')), 10000)
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Auth check timeout')), 10000),
           );
-          
+
           const authPromise = SupabaseService.getCurrentUser();
           const user = await Promise.race([authPromise, timeoutPromise]);
-          
+
           if (user) {
             set({ user: user as User, isAuthenticated: true, isLoading: false });
           } else {
@@ -114,7 +114,7 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const user = await SupabaseService.getCurrentUser();
-          
+
           if (user) {
             set({ user: user as User });
           }
@@ -133,20 +133,20 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const { session, user: authUser } = await SupabaseService.signIn(email, password);
-          
+
           if (session && authUser) {
             const user = await SupabaseService.getCurrentUser();
             if (user) {
-              set({ 
-                user: user as User, 
-                isAuthenticated: true, 
+              set({
+                user: user as User,
+                isAuthenticated: true,
                 isLoading: false,
-                hasCompletedOnboarding: true // 로그인 성공 시에도 온보딩 완료 처리
+                hasCompletedOnboarding: true, // 로그인 성공 시에도 온보딩 완료 처리
               });
               return true;
             }
           }
-          
+
           set({ isLoading: false });
           return false;
         } catch (error) {
@@ -165,28 +165,33 @@ export const useAuthStore = create<AuthState>()(
             return false;
           }
 
-          const { user: authUser, session } = await SupabaseService.signUp(email, password, name, birthdate);
-          
+          const { user: authUser, session } = await SupabaseService.signUp(
+            email,
+            password,
+            name,
+            birthdate,
+          );
+
           if (authUser && session) {
             const user = await SupabaseService.getCurrentUser();
             if (user) {
-              set({ 
-                user: user as User, 
-                isAuthenticated: true, 
+              set({
+                user: user as User,
+                isAuthenticated: true,
                 isLoading: false,
-                hasCompletedOnboarding: true // 회원가입 성공 시 온보딩 완료 처리
+                hasCompletedOnboarding: true, // 회원가입 성공 시 온보딩 완료 처리
               });
               return true;
             }
           } else if (authUser && !session) {
             // 이메일 확인 필요한 경우도 온보딩 완료 처리
-            set({ 
+            set({
               isLoading: false,
-              hasCompletedOnboarding: true
+              hasCompletedOnboarding: true,
             });
             return true;
           }
-          
+
           set({ isLoading: false });
           return false;
         } catch (error) {
@@ -207,7 +212,7 @@ export const useAuthStore = create<AuthState>()(
 
           const { GoogleAuthService } = await import('@/src/services/googleAuthService');
           const result = await GoogleAuthService.signInWithGoogle();
-          
+
           if (result.success && 'session' in result && result.session) {
             console.log('구글 로그인 성공, 인증 상태 업데이트');
             const user = await SupabaseService.getCurrentUser();
@@ -221,7 +226,7 @@ export const useAuthStore = create<AuthState>()(
               return true;
             }
           }
-          
+
           set({ isLoading: false });
           return false;
         } catch (error) {
@@ -242,7 +247,7 @@ export const useAuthStore = create<AuthState>()(
 
           const { AppleAuthService } = await import('@/src/services/appleAuthService');
           const result = await AppleAuthService.signInWithApple();
-          
+
           if (result.success && 'user' in result && result.user) {
             console.log('Apple 로그인 성공, 인증 상태 업데이트');
             const user = await SupabaseService.getCurrentUser();
@@ -256,7 +261,7 @@ export const useAuthStore = create<AuthState>()(
               return true;
             }
           }
-          
+
           set({ isLoading: false });
           return false;
         } catch (error) {
@@ -297,7 +302,10 @@ export const useAuthStore = create<AuthState>()(
           try {
             await secureStorage.removeItem('auth-storage');
           } catch (storageError) {
-            console.warn('계정 삭제 이후 로컬 인증 정보 정리 중 오류가 발생했습니다:', storageError);
+            console.warn(
+              '계정 삭제 이후 로컬 인증 정보 정리 중 오류가 발생했습니다:',
+              storageError,
+            );
           }
 
           try {
@@ -314,18 +322,20 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('계정 삭제 실패:', error);
           set({ isLoading: false });
-          throw error instanceof Error ? error : new Error('계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+          throw error instanceof Error
+            ? error
+            : new Error('계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
         }
       },
     }),
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => secureStorage),
-      partialize: (state) => ({ 
-        user: state.user, 
+      partialize: (state) => ({
+        user: state.user,
         isAuthenticated: state.isAuthenticated,
-        hasCompletedOnboarding: state.hasCompletedOnboarding
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
       }),
-    }
-  )
+    },
+  ),
 );

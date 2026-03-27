@@ -1,9 +1,13 @@
 import { useMemo } from 'react';
-import { StyleSheet } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
-import { getThemeColors, getThemeShadows, BRAND_COLORS, ANIMATIONS, ColorPalette, ShadowPalette } from '@/constants/Colors';
+import {
+  getThemeColors,
+  getThemeShadows,
+  BRAND_COLORS,
+  ANIMATIONS,
+  ColorPalette,
+  ShadowPalette,
+} from '@/constants/Colors';
 
-// 테마별 색상과 그림자를 포함한 객체 타입
 export interface ThemedStyleParams {
   colors: ColorPalette;
   shadows: ShadowPalette;
@@ -11,46 +15,27 @@ export interface ThemedStyleParams {
   animations: typeof ANIMATIONS;
 }
 
-// 테마 기반 스타일을 생성하는 Hook
-export const useThemedStyles = <T>(
-  styleCreator: (params: ThemedStyleParams) => T
-): T => {
-  const { theme, isLoading } = useTheme();
-  
-  const themedStyles = useMemo(() => {
-    // 로딩 중이거나 테마가 없을 때 기본 라이트 테마 사용
-    const safeTheme = isLoading ? 'light' : theme;
-    const colors = getThemeColors(safeTheme);
-    const shadows = getThemeShadows(safeTheme);
-    
+const STATIC_COLORS = getThemeColors();
+const STATIC_SHADOWS = getThemeShadows();
+
+export const useThemedStyles = <T>(styleCreator: (params: ThemedStyleParams) => T): T => {
+  return useMemo(() => {
     return styleCreator({
-      colors,
-      shadows,
+      colors: STATIC_COLORS,
+      shadows: STATIC_SHADOWS,
       brandColors: BRAND_COLORS,
       animations: ANIMATIONS,
     });
-  }, [theme, isLoading, styleCreator]);
-  
-  return themedStyles;
+  }, [styleCreator]);
 };
 
-// 테마별 색상과 그림자만 필요한 경우의 간소화된 Hook
 export const useThemeValues = () => {
-  const { theme, isLoading } = useTheme();
-  
-  const values = useMemo(() => {
-    // 로딩 중이거나 테마가 없을 때 기본 라이트 테마 사용
-    const safeTheme = isLoading ? 'light' : theme;
-    
-    return {
-      colors: getThemeColors(safeTheme),
-      shadows: getThemeShadows(safeTheme),
-      brandColors: BRAND_COLORS,
-      animations: ANIMATIONS,
-      theme: safeTheme,
-      isLoading,
-    };
-  }, [theme, isLoading]);
-  
-  return values;
+  return {
+    colors: STATIC_COLORS,
+    shadows: STATIC_SHADOWS,
+    brandColors: BRAND_COLORS,
+    animations: ANIMATIONS,
+    theme: 'light' as const,
+    isLoading: false,
+  };
 };

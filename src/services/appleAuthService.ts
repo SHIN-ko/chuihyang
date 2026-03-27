@@ -10,7 +10,7 @@ export class AppleAuthService {
     if (Platform.OS !== 'ios') {
       return false;
     }
-    
+
     try {
       return await AppleAuthentication.isAvailableAsync();
     } catch (error) {
@@ -60,17 +60,16 @@ export class AppleAuthService {
       if (error) {
         console.error('Supabase Apple 로그인 오류:', error.message, error.status);
         if (error.message?.includes('provider') || error.status === 400) {
-          throw new Error('Apple 로그인 서비스가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.');
+          throw new Error(
+            'Apple 로그인 서비스가 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.',
+          );
         }
         throw new Error(`Apple 로그인 실패: ${error.message}`);
       }
 
       // 첫 로그인 시 프로필 정보 업데이트
       if (credential.fullName && data.user) {
-        const fullName = [
-          credential.fullName.givenName,
-          credential.fullName.familyName,
-        ]
+        const fullName = [credential.fullName.givenName, credential.fullName.familyName]
           .filter(Boolean)
           .join(' ');
 
@@ -84,9 +83,10 @@ export class AppleAuthService {
       console.log('Apple 로그인 성공:', data.session?.user.id);
       return { success: true, user: data.user, session: data.session };
     } catch (error: unknown) {
-      const errCode = error instanceof Error && 'code' in error
-        ? (error as Error & { code: string }).code
-        : undefined;
+      const errCode =
+        error instanceof Error && 'code' in error
+          ? (error as Error & { code: string }).code
+          : undefined;
 
       if (errCode === 'ERR_REQUEST_CANCELED' || errCode === 'ERR_CANCELED') {
         console.log('Apple 로그인 취소됨');
@@ -104,7 +104,7 @@ export class AppleAuthService {
   static async revokeAppleCredential() {
     try {
       const credential = await AppleAuthentication.getCredentialStateAsync(
-        'USER_ID_HERE' // 실제 Apple User ID 필요
+        'USER_ID_HERE', // 실제 Apple User ID 필요
       );
 
       console.log('Apple 인증 상태:', credential);
@@ -115,4 +115,3 @@ export class AppleAuthService {
     }
   }
 }
-

@@ -17,28 +17,24 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useProjectStore } from '@/src/stores/projectStore';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '@/src/components/common/Button';
-import GlassCard from '@/src/components/common/GlassCard';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
-import { useTheme } from '@/src/contexts/ThemeContext';
 import { getRecipeById } from '@/src/data/presetRecipes';
 
 const EditProjectScreen: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { projects, updateProjectData, isLoading } = useProjectStore();
-  const { theme } = useTheme();
-  const { colors, brandColors } = useThemeValues();
-  
-  const project = projects.find(p => p.id === id);
+  const { colors, brandColors, shadows } = useThemeValues();
+
+  const project = projects.find((p) => p.id === id);
   const recipe = project?.recipeId ? getRecipeById(project.recipeId) : null;
   const brandColor = recipe?.brandColor || brandColors.accent.primary;
-  
+
   const [formData, setFormData] = useState({
     name: '',
     notes: '',
   });
 
-  // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -52,7 +48,6 @@ const EditProjectScreen: React.FC = () => {
   }, [project]);
 
   useEffect(() => {
-    // 화면 진입 애니메이션
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -72,14 +67,6 @@ const EditProjectScreen: React.FC = () => {
       flex: 1,
       backgroundColor: colors.background.primary,
     },
-    backgroundGradient: {
-      position: 'absolute' as const,
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: colors.background.primary,
-    },
     keyboardView: {
       flex: 1,
     },
@@ -89,10 +76,11 @@ const EditProjectScreen: React.FC = () => {
       justifyContent: 'space-between' as const,
       paddingHorizontal: 20,
       paddingVertical: 16,
-      backgroundColor: colors.background.glass,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border.secondary,
-      borderRadius: 16,
+      backgroundColor: colors.background.surface,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border.primary,
+      ...shadows.glass.light,
       marginHorizontal: 20,
       marginTop: 8,
       marginBottom: 16,
@@ -148,6 +136,11 @@ const EditProjectScreen: React.FC = () => {
       paddingHorizontal: 20,
       paddingVertical: 20,
       marginBottom: 16,
+      backgroundColor: colors.background.surface,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border.primary,
+      ...shadows.glass.light,
     },
     sectionTitle: {
       color: colors.text.primary,
@@ -255,13 +248,12 @@ const EditProjectScreen: React.FC = () => {
     }
 
     try {
-      // 변경된 값만 업데이트
       const updates: { name?: string; notes?: string } = {};
-      
+
       if (formData.name.trim() !== project.name) {
         updates.name = formData.name.trim();
       }
-      
+
       if (formData.notes.trim() !== (project.notes || '')) {
         updates.notes = formData.notes.trim();
       }
@@ -272,12 +264,12 @@ const EditProjectScreen: React.FC = () => {
       }
 
       const success = await updateProjectData(project.id, updates);
-      
+
       if (!success) {
         Alert.alert('오류', '프로젝트 수정에 실패했습니다.');
         return;
       }
-      
+
       Alert.alert('완료', '프로젝트가 수정되었습니다!', [
         {
           text: '확인',
@@ -292,37 +284,39 @@ const EditProjectScreen: React.FC = () => {
 
   const getRecipeName = (recipeId: string | undefined) => {
     if (!recipeId) return '알 수 없는 레시피';
-    
+
     switch (recipeId) {
-      case 'yareyare': return '야레야레 (위스키, 60일)';
-      case 'blabla': return '블라블라 (진, 30일)';
-      case 'oz': return '오즈 (럼, 90일)';
-      case 'pachinko': return '파친코 (과실주, 45일)';
-      case 'gyeaeba': return '계애바 (보드카, 21일)';
-      default: return '알 수 없는 레시피';
+      case 'yareyare':
+        return '야레야레 (위스키, 60일)';
+      case 'blabla':
+        return '블라블라 (진, 30일)';
+      case 'oz':
+        return '오즈 (럼, 90일)';
+      case 'pachinko':
+        return '파친코 (과실주, 45일)';
+      case 'gyeaeba':
+        return '계애바 (보드카, 21일)';
+      default:
+        return '알 수 없는 레시피';
     }
   };
 
   if (!project) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
-        <View style={styles.backgroundGradient} />
-        
-        <GlassCard style={{...styles.header, borderLeftWidth: 4, borderLeftColor: brandColor}} intensity="medium">
+        <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
+        <View style={{ ...styles.header, borderLeftWidth: 4, borderLeftColor: brandColor }}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <View style={styles.titleContainer}>
             <View style={[styles.recipeBadge, { backgroundColor: brandColor }]} />
             <Text style={styles.headerTitle}>프로젝트 수정</Text>
-            {recipe && (
-              <Text style={styles.recipeSubtitle}>{recipe.name}</Text>
-            )}
+            {recipe && <Text style={styles.recipeSubtitle}>{recipe.name}</Text>}
           </View>
           <View style={styles.placeholderView} />
-        </GlassCard>
-        
+        </View>
+
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>프로젝트를 찾을 수 없습니다.</Text>
         </View>
@@ -332,49 +326,43 @@ const EditProjectScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
-      
-      {/* 배경 그라디언트 */}
-      <View style={styles.backgroundGradient} />
-      
-      {/* 헤더 */}
-      <GlassCard style={{...styles.header, borderLeftWidth: 4, borderLeftColor: brandColor}} intensity="medium">
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
+      <View style={{ ...styles.header, borderLeftWidth: 4, borderLeftColor: brandColor }}>
         <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
           <Ionicons name="close" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <View style={[styles.recipeBadge, { backgroundColor: brandColor }]} />
           <Text style={styles.headerTitle}>프로젝트 수정</Text>
-          {recipe && (
-            <Text style={styles.recipeSubtitle}>{recipe.name}</Text>
-          )}
+          {recipe && <Text style={styles.recipeSubtitle}>{recipe.name}</Text>}
         </View>
         <View style={styles.placeholderView} />
-      </GlassCard>
+      </View>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <Animated.View 
+        <Animated.View
           style={[
             styles.content,
             {
               opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
+              transform: [{ translateY: slideAnim }],
+            },
           ]}
         >
-          <ScrollView 
-            style={styles.scrollView} 
-            showsVerticalScrollIndicator={false} 
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
           >
-            {/* 수정 불가능한 정보 표시 */}
-            <GlassCard style={styles.section} intensity="light">
+            <View style={styles.section}>
               <View style={styles.recipeInfo}>
                 <Text style={styles.recipeInfoTitle}>기본 정보 (수정 불가)</Text>
-                <Text style={styles.recipeInfoText}>🧪 레시피: {getRecipeName(project.recipeId)}</Text>
+                <Text style={styles.recipeInfoText}>
+                  🧪 레시피: {getRecipeName(project.recipeId)}
+                </Text>
                 <Text style={styles.recipeInfoText}>
                   📅 시작일: {new Date(project.startDate).toLocaleDateString('ko-KR')}
                 </Text>
@@ -385,13 +373,11 @@ const EditProjectScreen: React.FC = () => {
                   📊 상태: {project.status === 'completed' ? '✅ 완료됨' : '🔄 진행 중'}
                 </Text>
               </View>
-            </GlassCard>
+            </View>
 
-            {/* 수정 가능한 정보 */}
-            <GlassCard style={styles.section} intensity="light">
+            <View style={styles.section}>
               <Text style={styles.sectionTitle}>수정 가능한 정보</Text>
-              
-              {/* 프로젝트 이름 */}
+
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>프로젝트 이름</Text>
                 <TextInput
@@ -399,12 +385,11 @@ const EditProjectScreen: React.FC = () => {
                   placeholder="프로젝트 이름을 입력하세요"
                   placeholderTextColor={colors.text.muted}
                   value={formData.name}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+                  onChangeText={(text) => setFormData((prev) => ({ ...prev, name: text }))}
                   maxLength={50}
                 />
               </View>
 
-              {/* 메모/목적 */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>프로젝트 노트</Text>
                 <TextInput
@@ -417,28 +402,20 @@ const EditProjectScreen: React.FC = () => {
 • 회사 동료들과 신년회에서 시음 예정`}
                   placeholderTextColor={colors.text.muted}
                   value={formData.notes}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
+                  onChangeText={(text) => setFormData((prev) => ({ ...prev, notes: text }))}
                   multiline
                   numberOfLines={6}
                   textAlignVertical="top"
                   maxLength={500}
                 />
-                <Text style={styles.helpText}>
-                  {formData.notes.length}/500자
-                </Text>
+                <Text style={styles.helpText}>{formData.notes.length}/500자</Text>
               </View>
-            </GlassCard>
+            </View>
           </ScrollView>
         </Animated.View>
 
-        {/* 하단 수정 버튼 */}
         <View style={styles.bottomContainer}>
-          <Button
-            onPress={handleSave}
-            loading={isLoading}
-            disabled={isLoading}
-            fullWidth
-          >
+          <Button onPress={handleSave} loading={isLoading} disabled={isLoading} fullWidth>
             수정 완료
           </Button>
         </View>

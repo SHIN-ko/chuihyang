@@ -11,576 +11,981 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Image,
   Animated,
-  Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useProjectStore } from '@/src/stores/projectStore';
 import Button from '@/src/components/common/Button';
-import GlassCard from '@/src/components/common/GlassCard';
 import DatePicker from '@/src/components/common/DatePicker';
 import { Ionicons } from '@expo/vector-icons';
-import { ProjectType, PresetRecipe } from '@/src/types';
+import { ProjectType, Ingredient } from '@/src/types';
 import ImageUpload from '@/src/components/common/ImageUpload';
-import { 
-  PRESET_RECIPES, 
-  getRecipeById, 
-  getAllProjectTypes, 
-  getTypeDisplayName, 
-  getDurationByType, 
-  calculateFinalDuration 
+import {
+  PRESET_RECIPES,
+  getAllProjectTypes,
+  getTypeDisplayName,
+  getDurationByType,
+  calculateFinalDuration,
+  getTypeDescription,
 } from '@/src/data/presetRecipes';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
-import { useTheme } from '@/src/contexts/ThemeContext';
 
-const { width } = Dimensions.get('window');
+type RecipeMode = 'preset' | 'custom';
+
+interface CustomIngredient {
+  id: string;
+  name: string;
+  quantity: string;
+  unit: string;
+}
+
+const BRAND_COLOR_OPTIONS = [
+  '#025830',
+  '#20407c',
+  '#ab1e4b',
+  '#eaa728',
+  '#921e22',
+  '#5B4F9E',
+  '#2E8B57',
+  '#D2691E',
+];
+
+const TOTAL_STEPS = 4;
 
 const CreateProjectScreen: React.FC = () => {
   const router = useRouter();
   const { createProject, isLoading } = useProjectStore();
-  const { theme } = useTheme();
   const { colors, brandColors } = useThemeValues();
-  
+
+  const [currentStep, setCurrentStep] = useState(1);
+
   const [name, setName] = useState('');
-  const [selectedRecipe, setSelectedRecipe] = useState<PresetRecipe | null>(null);
+  const [recipeMode, setRecipeMode] = useState<RecipeMode>('preset');
+  const [selectedRecipe, setSelectedRecipe] = useState<(typeof PRESET_RECIPES)[0] | null>(null);
   const [selectedType, setSelectedType] = useState<ProjectType | null>(null);
   const [startDate, setStartDate] = useState(() => {
-    // 오늘 날짜를 YYYY-MM-DD 형식으로 설정
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
   const [expectedEndDate, setExpectedEndDate] = useState('');
   const [notes, setNotes] = useState('');
   const [images, setImages] = useState<string[]>([]);
-  const [showRecipePicker, setShowRecipePicker] = useState(false);
-  const [showTypePicker, setShowTypePicker] = useState(false);
 
-  const handleClose = () => {
-    router.back();
+  const [customRecipeName, setCustomRecipeName] = useState('');
+  const [customIngredients, setCustomIngredients] = useState<CustomIngredient[]>([
+    { id: `ing-${Date.now()}`, name: '', quantity: '', unit: '' },
+  ]);
+  const [customDuration, setCustomDuration] = useState('14');
+  const [customBrandColor, setCustomBrandColor] = useState(BRAND_COLOR_OPTIONS[0]);
+
+  const progressAnim = useState(() => new Animated.Value(1 / TOTAL_STEPS))[0];
+
+  const styles = useThemedStyles(({ colors, shadows, brandColors }) =>
+    StyleSheet.create({
+      container: {
+        flex: 1,
+        backgroundColor: colors.background.primary,
+      },
+      keyboardView: {
+        flex: 1,
+      },
+      topBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingTop: Platform.OS === 'ios' ? 8 : 16,
+        paddingBottom: 12,
+      },
+      closeButton: {
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 20,
+        backgroundColor: colors.background.surface,
+        ...shadows.glass.light,
+      },
+      stepIndicator: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: colors.text.secondary,
+      },
+      placeholder40: {
+        width: 40,
+      },
+      progressBarContainer: {
+        height: 4,
+        backgroundColor: colors.border.secondary,
+        marginHorizontal: 24,
+        borderRadius: 2,
+        marginBottom: 8,
+      },
+      progressBarFill: {
+        height: 4,
+        backgroundColor: brandColors.accent.primary,
+        borderRadius: 2,
+      },
+      scrollView: {
+        flex: 1,
+      },
+      stepContent: {
+        paddingHorizontal: 24,
+        paddingTop: 24,
+        paddingBottom: 40,
+      },
+      stepTitle: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: colors.text.primary,
+        marginBottom: 8,
+      },
+      stepDescription: {
+        fontSize: 15,
+        color: colors.text.secondary,
+        lineHeight: 22,
+        marginBottom: 32,
+      },
+      modeToggleContainer: {
+        flexDirection: 'row',
+        marginBottom: 24,
+        borderRadius: 12,
+        overflow: 'hidden',
+        backgroundColor: colors.background.surface,
+        ...shadows.glass.light,
+      },
+      modeToggleButton: {
+        flex: 1,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      modeToggleButtonActive: {
+        backgroundColor: brandColors.accent.primary,
+      },
+      modeToggleText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: colors.text.secondary,
+      },
+      modeToggleTextActive: {
+        color: '#FFFFFF',
+      },
+      recipeCard: {
+        backgroundColor: colors.background.surface,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 2,
+        borderColor: 'transparent',
+        ...shadows.glass.light,
+      },
+      recipeCardSelected: {
+        borderColor: brandColors.accent.primary,
+      },
+      recipeCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+      },
+      recipeBadge: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        marginRight: 12,
+      },
+      recipeName: {
+        fontSize: 17,
+        fontWeight: '600',
+        color: colors.text.primary,
+        flex: 1,
+      },
+      recipeCheck: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: brandColors.accent.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      recipeDescription: {
+        fontSize: 14,
+        color: colors.text.secondary,
+        lineHeight: 20,
+        marginTop: 8,
+        marginLeft: 24,
+      },
+      recipeIngredients: {
+        fontSize: 13,
+        color: colors.text.tertiary,
+        marginTop: 4,
+        marginLeft: 24,
+      },
+      typeCard: {
+        backgroundColor: colors.background.surface,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 2,
+        borderColor: 'transparent',
+        ...shadows.glass.light,
+      },
+      typeCardSelected: {
+        borderColor: brandColors.accent.primary,
+      },
+      typeCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      },
+      typeName: {
+        fontSize: 17,
+        fontWeight: '600',
+        color: colors.text.primary,
+      },
+      typeDuration: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: brandColors.accent.primary,
+      },
+      typeDescription: {
+        fontSize: 14,
+        color: colors.text.secondary,
+        marginTop: 6,
+      },
+      inputGroup: {
+        marginBottom: 20,
+      },
+      label: {
+        color: colors.text.primary,
+        fontSize: 15,
+        fontWeight: '600',
+        marginBottom: 8,
+      },
+      input: {
+        backgroundColor: colors.background.surface,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.border.primary,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        fontSize: 15,
+        color: colors.text.primary,
+        ...shadows.glass.light,
+      },
+      textArea: {
+        minHeight: 120,
+        textAlignVertical: 'top',
+      },
+      summaryCard: {
+        backgroundColor: colors.background.surface,
+        borderRadius: 20,
+        padding: 20,
+        ...shadows.glass.light,
+      },
+      summaryRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border.secondary,
+      },
+      summaryRowLast: {
+        borderBottomWidth: 0,
+      },
+      summaryLabel: {
+        fontSize: 15,
+        color: colors.text.secondary,
+      },
+      summaryValue: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: colors.text.primary,
+        maxWidth: '60%',
+        textAlign: 'right',
+      },
+      bottomBar: {
+        flexDirection: 'row',
+        paddingHorizontal: 24,
+        paddingTop: 12,
+        paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+        gap: 12,
+        backgroundColor: colors.background.primary,
+        borderTopWidth: 1,
+        borderTopColor: colors.border.secondary,
+      },
+      backButton: {
+        flex: 1,
+      },
+      nextButton: {
+        flex: 2,
+      },
+      ingredientRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+        gap: 8,
+      },
+      ingredientNameInput: {
+        flex: 3,
+        backgroundColor: colors.background.surface,
+        color: colors.text.primary,
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        borderRadius: 12,
+        fontSize: 15,
+        borderWidth: 1,
+        borderColor: colors.border.primary,
+      },
+      ingredientSmallInput: {
+        flex: 1.5,
+        backgroundColor: colors.background.surface,
+        color: colors.text.primary,
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        borderRadius: 12,
+        fontSize: 15,
+        borderWidth: 1,
+        borderColor: colors.border.primary,
+      },
+      ingredientUnitInput: {
+        flex: 1,
+        backgroundColor: colors.background.surface,
+        color: colors.text.primary,
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        borderRadius: 12,
+        fontSize: 15,
+        borderWidth: 1,
+        borderColor: colors.border.primary,
+      },
+      removeIngredientButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: `${brandColors.semantic.error}15`,
+      },
+      addIngredientButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: brandColors.accent.primary + '60',
+        borderStyle: 'dashed',
+        gap: 6,
+      },
+      addIngredientText: {
+        color: brandColors.accent.primary,
+        fontSize: 15,
+        fontWeight: '500',
+      },
+      durationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+      },
+      durationInput: {
+        flex: 1,
+        backgroundColor: colors.background.surface,
+        color: colors.text.primary,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        borderRadius: 12,
+        fontSize: 16,
+        borderWidth: 1,
+        borderColor: colors.border.primary,
+        textAlign: 'center',
+      },
+      durationLabel: {
+        color: colors.text.secondary,
+        fontSize: 16,
+        fontWeight: '500',
+      },
+      colorPickerContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        marginTop: 4,
+      },
+      colorOption: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: 'transparent',
+      },
+      colorOptionSelected: {
+        borderColor: colors.text.primary,
+        borderWidth: 3,
+      },
+    }),
+  );
+
+  const animateProgress = (step: number) => {
+    Animated.timing(progressAnim, {
+      toValue: step / TOTAL_STEPS,
+      duration: 250,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const goNext = () => {
+    if (currentStep < TOTAL_STEPS) {
+      const next = currentStep + 1;
+      setCurrentStep(next);
+      animateProgress(next);
+    }
+  };
+
+  const goBack = () => {
+    if (currentStep > 1) {
+      const prev = currentStep - 1;
+      setCurrentStep(prev);
+      animateProgress(prev);
+    } else {
+      router.back();
+    }
+  };
+
+  const calculateEndDate = (start: string, days: number): string => {
+    const d = new Date(start);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+  };
+
+  const addIngredient = () => {
+    setCustomIngredients((prev) => [
+      ...prev,
+      { id: `ing-${Date.now()}-${prev.length}`, name: '', quantity: '', unit: '' },
+    ]);
+  };
+
+  const removeIngredient = (id: string) => {
+    if (customIngredients.length <= 1) return;
+    setCustomIngredients((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const updateIngredient = (id: string, field: keyof CustomIngredient, value: string) => {
+    setCustomIngredients((prev) => prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
+  };
+
+  const canProceed = (): boolean => {
+    switch (currentStep) {
+      case 1:
+        if (recipeMode === 'preset') return !!selectedRecipe;
+        return !!customRecipeName.trim() && customIngredients.some((i) => i.name.trim());
+      case 2:
+        return !!selectedType;
+      case 3:
+        return !!name.trim() && !!startDate;
+      case 4:
+        return true;
+      default:
+        return false;
+    }
   };
 
   const handleCreateProject = async () => {
-    // 기본 검증
-    if (!name.trim()) {
-      Alert.alert('오류', '프로젝트 이름을 입력해주세요.');
-      return;
-    }
-    
-    if (!selectedRecipe) {
-      Alert.alert('오류', '담금주 레시피를 선택해주세요.');
-      return;
-    }
-    
-    if (!selectedType) {
-      Alert.alert('오류', '담금주 타입을 선택해주세요.');
-      return;
-    }
-    
-    if (!startDate) {
-      Alert.alert('오류', '시작일을 입력해주세요.');
-      return;
-    }
+    if (!selectedType || !name.trim() || !startDate) return;
 
-    // 자동으로 완료 예정일 계산 (선택한 타입의 기본 기간 사용)
-    let calculatedEndDate = expectedEndDate;
-    if (!expectedEndDate && selectedType) {
-      const start = new Date(startDate);
-      const duration = calculateFinalDuration(selectedRecipe.id, selectedType);
-      start.setDate(start.getDate() + duration);
-      calculatedEndDate = start.toISOString().split('T')[0];
-      setExpectedEndDate(calculatedEndDate);
-    }
+    if (recipeMode === 'preset') {
+      if (!selectedRecipe) return;
 
-    // 날짜 검증 (입력한 경우에만)
-    if (expectedEndDate) {
-      const start = new Date(startDate);
-      const end = new Date(expectedEndDate);
-      
-      if (end <= start) {
-        Alert.alert('오류', '완료 예정일은 시작일보다 늦어야 합니다.');
-        return;
+      let finalEndDate = expectedEndDate;
+      if (!finalEndDate) {
+        finalEndDate = calculateEndDate(
+          startDate,
+          calculateFinalDuration(selectedRecipe.id, selectedType),
+        );
+      }
+
+      const ingredientList = selectedRecipe.ingredients.map((ingredientName, index) => ({
+        id: `ingredient-${Date.now()}-${index}`,
+        projectId: '',
+        name: ingredientName,
+        quantity: '',
+        unit: '',
+      }));
+
+      const success = await createProject({
+        name: name.trim(),
+        type: selectedType,
+        startDate,
+        expectedEndDate: finalEndDate,
+        status: 'in_progress' as const,
+        notes: notes.trim() || undefined,
+        images,
+        ingredients: ingredientList,
+        progressLogs: [],
+        recipeId: selectedRecipe.id,
+      });
+
+      if (success) {
+        Alert.alert('프로젝트 생성 완료', `${selectedRecipe.name} 프로젝트가 생성되었습니다!`, [
+          { text: '확인', onPress: () => router.replace('/(tabs)') },
+        ]);
+      } else {
+        Alert.alert('오류', '프로젝트 생성에 실패했습니다.');
+      }
+    } else {
+      const validIngredients = customIngredients.filter((i) => i.name.trim());
+      const duration = parseInt(customDuration, 10);
+      const finalEndDate = calculateEndDate(startDate, duration || 14);
+
+      const ingredientList: Ingredient[] = validIngredients.map((ing, index) => ({
+        id: `ingredient-${Date.now()}-${index}`,
+        projectId: '',
+        name: ing.name.trim(),
+        quantity: ing.quantity.trim(),
+        unit: ing.unit.trim(),
+      }));
+
+      const success = await createProject({
+        name: name.trim(),
+        type: selectedType,
+        startDate,
+        expectedEndDate: finalEndDate,
+        status: 'in_progress' as const,
+        notes: notes.trim() || undefined,
+        images,
+        ingredients: ingredientList,
+        progressLogs: [],
+        recipeId: 'custom',
+        customRecipeName: customRecipeName.trim(),
+        customDuration: duration || 14,
+        customBrandColor,
+      });
+
+      if (success) {
+        Alert.alert('프로젝트 생성 완료', `${customRecipeName.trim()} 프로젝트가 생성되었습니다!`, [
+          { text: '확인', onPress: () => router.replace('/(tabs)') },
+        ]);
+      } else {
+        Alert.alert('오류', '프로젝트 생성에 실패했습니다.');
       }
     }
+  };
 
-    // 선택한 레시피의 재료를 사용
-    const ingredientList = selectedRecipe.ingredients.map((ingredientName, index) => ({
-      id: `ingredient-${Date.now()}-${index}`,
-      projectId: '', // 프로젝트 생성 후 설정됨
-      name: ingredientName,
-      quantity: '',
-      unit: '',
-    }));
+  const renderStep1 = () => (
+    <>
+      <Text style={styles.stepTitle}>레시피 선택</Text>
+      <Text style={styles.stepDescription}>어떤 담금주를 만들어볼까요?</Text>
 
-    const projectData = {
-      name: name.trim(),
-      type: selectedType, // 사용자가 선택한 타입 사용
-      startDate,
-      expectedEndDate: calculatedEndDate,
-      status: 'in_progress' as const, // 생성과 동시에 진행 중으로 변경
-      notes: notes.trim() || undefined,
-      images,
-      ingredients: ingredientList,
-      progressLogs: [],
-      recipeId: selectedRecipe.id, // 선택한 레시피 ID 저장
-    };
+      <View style={styles.modeToggleContainer}>
+        <TouchableOpacity
+          style={[
+            styles.modeToggleButton,
+            recipeMode === 'preset' && styles.modeToggleButtonActive,
+          ]}
+          onPress={() => setRecipeMode('preset')}
+        >
+          <Text
+            style={[styles.modeToggleText, recipeMode === 'preset' && styles.modeToggleTextActive]}
+          >
+            프리셋 레시피
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.modeToggleButton,
+            recipeMode === 'custom' && styles.modeToggleButtonActive,
+          ]}
+          onPress={() => setRecipeMode('custom')}
+        >
+          <Text
+            style={[styles.modeToggleText, recipeMode === 'custom' && styles.modeToggleTextActive]}
+          >
+            나만의 레시피
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-    const success = await createProject(projectData);
-    
-    if (success) {
-      Alert.alert(
-        '프로젝트 생성 완료',
-        `${selectedRecipe.name} 프로젝트가 생성되었습니다!`,
-        [
-          {
-            text: '확인',
-            onPress: () => router.replace('/(tabs)'),
-          },
-        ]
-      );
-    } else {
-      Alert.alert('오류', '프로젝트 생성에 실패했습니다.');
+      {recipeMode === 'preset' ? (
+        PRESET_RECIPES.map((recipe) => (
+          <TouchableOpacity
+            key={recipe.id}
+            style={[
+              styles.recipeCard,
+              selectedRecipe?.id === recipe.id && styles.recipeCardSelected,
+            ]}
+            onPress={() => {
+              setSelectedRecipe(recipe);
+              if (startDate && selectedType) {
+                const duration = calculateFinalDuration(recipe.id, selectedType);
+                setExpectedEndDate(calculateEndDate(startDate, duration));
+              }
+            }}
+          >
+            <View style={styles.recipeCardHeader}>
+              <View style={[styles.recipeBadge, { backgroundColor: recipe.brandColor }]} />
+              <Text style={styles.recipeName}>{recipe.name}</Text>
+              {selectedRecipe?.id === recipe.id && (
+                <View style={styles.recipeCheck}>
+                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                </View>
+              )}
+            </View>
+            <Text style={styles.recipeDescription}>{recipe.description}</Text>
+            <Text style={styles.recipeIngredients}>재료: {recipe.ingredients.join(', ')}</Text>
+          </TouchableOpacity>
+        ))
+      ) : (
+        <>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>레시피 이름</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="예: 나만의 매실주"
+              placeholderTextColor={colors.text.muted}
+              value={customRecipeName}
+              onChangeText={setCustomRecipeName}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>재료 목록</Text>
+            {customIngredients.map((ingredient) => (
+              <View key={ingredient.id} style={styles.ingredientRow}>
+                <TextInput
+                  style={styles.ingredientNameInput}
+                  placeholder="재료명"
+                  placeholderTextColor={colors.text.muted}
+                  value={ingredient.name}
+                  onChangeText={(v) => updateIngredient(ingredient.id, 'name', v)}
+                />
+                <TextInput
+                  style={styles.ingredientSmallInput}
+                  placeholder="양"
+                  placeholderTextColor={colors.text.muted}
+                  value={ingredient.quantity}
+                  onChangeText={(v) => updateIngredient(ingredient.id, 'quantity', v)}
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  style={styles.ingredientUnitInput}
+                  placeholder="단위"
+                  placeholderTextColor={colors.text.muted}
+                  value={ingredient.unit}
+                  onChangeText={(v) => updateIngredient(ingredient.id, 'unit', v)}
+                />
+                <TouchableOpacity
+                  style={styles.removeIngredientButton}
+                  onPress={() => removeIngredient(ingredient.id)}
+                  disabled={customIngredients.length <= 1}
+                >
+                  <Ionicons
+                    name="close"
+                    size={18}
+                    color={
+                      customIngredients.length <= 1 ? colors.text.muted : brandColors.semantic.error
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity style={styles.addIngredientButton} onPress={addIngredient}>
+              <Ionicons name="add" size={18} color={brandColors.accent.primary} />
+              <Text style={styles.addIngredientText}>재료 추가</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>숙성 기간</Text>
+            <View style={styles.durationRow}>
+              <TextInput
+                style={styles.durationInput}
+                value={customDuration}
+                onChangeText={(v) => {
+                  const cleaned = v.replace(/[^0-9]/g, '');
+                  setCustomDuration(cleaned);
+                  const days = parseInt(cleaned, 10);
+                  if (days > 0 && startDate) {
+                    setExpectedEndDate(calculateEndDate(startDate, days));
+                  }
+                }}
+                keyboardType="number-pad"
+                maxLength={4}
+              />
+              <Text style={styles.durationLabel}>일</Text>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>브랜드 컬러</Text>
+            <View style={styles.colorPickerContainer}>
+              {BRAND_COLOR_OPTIONS.map((color) => (
+                <TouchableOpacity
+                  key={color}
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: color },
+                    customBrandColor === color && styles.colorOptionSelected,
+                  ]}
+                  onPress={() => setCustomBrandColor(color)}
+                />
+              ))}
+            </View>
+          </View>
+        </>
+      )}
+    </>
+  );
+
+  const renderStep2 = () => (
+    <>
+      <Text style={styles.stepTitle}>담금주 타입</Text>
+      <Text style={styles.stepDescription}>어떤 베이스를 사용할까요?</Text>
+
+      {getAllProjectTypes().map((type) => {
+        const duration =
+          recipeMode === 'preset' && selectedRecipe
+            ? calculateFinalDuration(selectedRecipe.id, type)
+            : getDurationByType(type);
+
+        return (
+          <TouchableOpacity
+            key={type}
+            style={[styles.typeCard, selectedType === type && styles.typeCardSelected]}
+            onPress={() => {
+              setSelectedType(type);
+              if (startDate) {
+                setExpectedEndDate(calculateEndDate(startDate, duration));
+              }
+            }}
+          >
+            <View style={styles.typeCardHeader}>
+              <Text style={styles.typeName}>{getTypeDisplayName(type)}</Text>
+              <Text style={styles.typeDuration}>{duration}일 숙성</Text>
+            </View>
+            <Text style={styles.typeDescription}>{getTypeDescription(type)}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </>
+  );
+
+  const renderStep3 = () => (
+    <>
+      <Text style={styles.stepTitle}>프로젝트 정보</Text>
+      <Text style={styles.stepDescription}>이름과 일정을 정해주세요.</Text>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>프로젝트 이름</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="나만의 프로젝트 이름"
+          placeholderTextColor={colors.text.muted}
+          value={name}
+          onChangeText={setName}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>시작일</Text>
+        <DatePicker
+          value={startDate}
+          onDateChange={(date) => {
+            setStartDate(date);
+            if (date && selectedType) {
+              const duration =
+                recipeMode === 'preset' && selectedRecipe
+                  ? calculateFinalDuration(selectedRecipe.id, selectedType)
+                  : parseInt(customDuration, 10) || 14;
+              setExpectedEndDate(calculateEndDate(date, duration));
+            }
+          }}
+          placeholder="시작일 선택"
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>완료 예정일</Text>
+        <DatePicker
+          value={expectedEndDate}
+          onDateChange={setExpectedEndDate}
+          placeholder="자동 설정됨 (변경 가능)"
+          minimumDate={startDate || new Date().toISOString().split('T')[0]}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>메모 (선택)</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          placeholder="프로젝트에 대한 메모를 남겨보세요"
+          placeholderTextColor={colors.text.muted}
+          value={notes}
+          onChangeText={setNotes}
+          multiline
+          numberOfLines={4}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>이미지 (선택)</Text>
+        <ImageUpload
+          images={images}
+          onImagesChange={setImages}
+          maxImages={5}
+          title="이미지 추가"
+          subtitle="프로젝트 관련 사진을 추가하세요"
+          bucket="project-images"
+          uploadPath="projects"
+        />
+      </View>
+    </>
+  );
+
+  const getRecipeDisplayName = () => {
+    if (recipeMode === 'preset') return selectedRecipe?.name || '';
+    return customRecipeName || '';
+  };
+
+  const getIngredientsSummary = () => {
+    if (recipeMode === 'preset') return selectedRecipe?.ingredients.join(', ') || '';
+    return (
+      customIngredients
+        .filter((i) => i.name.trim())
+        .map((i) => (i.quantity ? `${i.name} ${i.quantity}${i.unit}` : i.name))
+        .join(', ') || '미입력'
+    );
+  };
+
+  const getDuration = () => {
+    if (recipeMode === 'preset' && selectedRecipe && selectedType) {
+      return `${calculateFinalDuration(selectedRecipe.id, selectedType)}일`;
+    }
+    return `${customDuration}일`;
+  };
+
+  const renderStep4 = () => (
+    <>
+      <Text style={styles.stepTitle}>최종 확인</Text>
+      <Text style={styles.stepDescription}>모든 정보가 맞는지 확인해주세요.</Text>
+
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>레시피</Text>
+          <Text style={styles.summaryValue}>{getRecipeDisplayName()}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>타입</Text>
+          <Text style={styles.summaryValue}>
+            {selectedType ? getTypeDisplayName(selectedType) : ''}
+          </Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>이름</Text>
+          <Text style={styles.summaryValue}>{name}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>재료</Text>
+          <Text style={styles.summaryValue}>{getIngredientsSummary()}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>숙성 기간</Text>
+          <Text style={styles.summaryValue}>{getDuration()}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>시작일</Text>
+          <Text style={styles.summaryValue}>{startDate}</Text>
+        </View>
+        <View style={[styles.summaryRow, styles.summaryRowLast]}>
+          <Text style={styles.summaryLabel}>완료 예정일</Text>
+          <Text style={styles.summaryValue}>{expectedEndDate}</Text>
+        </View>
+        {notes.trim() && (
+          <View style={[styles.summaryRow, styles.summaryRowLast]}>
+            <Text style={styles.summaryLabel}>메모</Text>
+            <Text style={styles.summaryValue} numberOfLines={2}>
+              {notes}
+            </Text>
+          </View>
+        )}
+      </View>
+    </>
+  );
+
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 1:
+        return renderStep1();
+      case 2:
+        return renderStep2();
+      case 3:
+        return renderStep3();
+      case 4:
+        return renderStep4();
+      default:
+        return null;
     }
   };
 
-  const handleImagesChange = (newImages: string[]) => {
-    setImages(newImages);
-  };
-
-  const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background.primary,
-    },
-    backgroundGradient: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      top: 0,
-      bottom: 0,
-      backgroundColor: colors.background.secondary,
-      opacity: 0.3,
-    },
-    keyboardView: {
-      flex: 1,
-    },
-    floatingCloseButton: {
-      position: 'absolute' as const,
-      top: Platform.OS === 'ios' ? 50 : 30,
-      right: 20,
-      width: 44,
-      height: 44,
-      alignItems: 'center' as const,
-      justifyContent: 'center' as const,
-      borderRadius: 22,
-      backgroundColor: colors.background.glass,
-      ...shadows.glass.medium,
-      zIndex: 1000,
-    },
-
-    scrollView: {
-      flex: 1,
-      paddingHorizontal: 20,
-    },
-    content: {
-      paddingTop: Platform.OS === 'ios' ? 60 : 40, // 홈/프로필 화면과 비슷한 비율
-      paddingBottom: 20,
-    },
-    section: {
-      marginBottom: 24,
-    },
-    firstSection: {
-      marginTop: 16, // 홈 화면과 동일한 상단 여백
-      marginBottom: 24,
-    },
-    sectionTitle: {
-      color: colors.text.primary,
-      fontSize: 18,
-      fontWeight: '600',
-      marginBottom: 12,
-      letterSpacing: 0.2,
-      paddingHorizontal: 4, // 텍스트 좌우 여백
-    },
-    inputContainer: {
-      marginBottom: 16,
-    },
-    input: {
-      backgroundColor: colors.background.glass,
-      color: colors.text.primary,
-      paddingHorizontal: 20,
-      paddingVertical: 18,
-      borderRadius: 12,
-      fontSize: 16,
-      minHeight: 56,
-      borderWidth: 1,
-      borderColor: colors.border.glass,
-      ...shadows.glass.light,
-    },
-    inputFocused: {
-      borderColor: brandColors.accent.primary,
-      ...shadows.glass.medium,
-    },
-    inputText: {
-      color: colors.text.primary,
-      fontSize: 16,
-      flex: 1,
-    },
-    placeholderStyle: {
-      color: colors.text.muted,
-    },
-    textArea: {
-      minHeight: 120,
-      paddingTop: 18,
-      textAlignVertical: 'top',
-    },
-    pickerButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    dropdown: {
-      backgroundColor: colors.background.glass,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border.glass,
-      marginTop: 8,
-      marginBottom: 12, // 드롭다운과 다음 요소 간 여백
-      overflow: 'hidden',
-      ...shadows.glass.medium,
-    },
-    dropdownItem: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border.secondary,
-    },
-    dropdownItemSelected: {
-      backgroundColor: brandColors.accent.primary + '20',
-    },
-    dropdownText: {
-      color: colors.text.primary,
-      fontSize: 16,
-      fontWeight: '500',
-    },
-    dropdownTextSelected: {
-      color: brandColors.accent.primary,
-      fontWeight: '600',
-    },
-    dropdownSubText: {
-      color: colors.text.secondary,
-      fontSize: 14,
-      marginTop: 4,
-      lineHeight: 18,
-    },
-    recipeContent: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-    },
-    recipeBadge: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      marginRight: 12,
-    },
-    recipeTextContainer: {
-      flex: 1,
-    },
-    recipeInfo: {
-      padding: 20,
-      marginTop: 16,
-      marginBottom: 24, // 다음 섹션과의 여백 확보
-      borderRadius: 16,
-      borderLeftWidth: 4,
-      borderLeftColor: brandColors.accent.primary,
-    },
-    recipeInfoTitle: {
-      color: brandColors.accent.primary,
-      fontSize: 18,
-      fontWeight: '700',
-      marginBottom: 12,
-      letterSpacing: 0.2,
-    },
-    recipeInfoText: {
-      color: colors.text.primary,
-      fontSize: 15,
-      lineHeight: 22,
-      marginBottom: 8,
-    },
-    helpText: {
-      color: colors.text.secondary,
-      fontSize: 14,
-      marginTop: 12,
-      lineHeight: 18,
-      fontStyle: 'italic',
-    },
-
-    sectionCard: {
-      padding: 20,
-      paddingTop: 16, // 상단 여백을 조금 줄여서 제목과의 간격 조정
-    },
-
-    bottomContainer: {
-      paddingHorizontal: 20,
-      paddingTop: 20,
-      paddingBottom: 20,
-    },
-  }));
+  const isLastStep = currentStep === TOTAL_STEPS;
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
-      
-      {/* 배경 그라디언트 */}
-      <View style={styles.backgroundGradient} />
-      
-      {/* 플로팅 닫기 버튼 */}
-      <TouchableOpacity onPress={handleClose} style={styles.floatingCloseButton}>
-        <Ionicons name="close" size={24} color={colors.text.primary} />
-      </TouchableOpacity>
+      <StatusBar barStyle="dark-content" />
 
-      <KeyboardAvoidingView 
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={goBack} style={styles.closeButton}>
+          <Ionicons
+            name={currentStep === 1 ? 'close' : 'chevron-back'}
+            size={22}
+            color={colors.text.primary}
+          />
+        </TouchableOpacity>
+        <Text style={styles.stepIndicator}>
+          {currentStep} / {TOTAL_STEPS}
+        </Text>
+        <View style={styles.placeholder40} />
+      </View>
+
+      <View style={styles.progressBarContainer}>
+        <Animated.View
+          style={[
+            styles.progressBarFill,
+            {
+              width: progressAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0%', '100%'],
+              }),
+            },
+          ]}
+        />
+      </View>
+
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.content}>
-            {/* 기본 정보 섹션 */}
-            <View style={styles.firstSection}>
-              <Text style={styles.sectionTitle}>기본 정보</Text>
-              <GlassCard style={styles.sectionCard} intensity="medium">
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="프로젝트 이름"
-                    placeholderTextColor={colors.text.muted}
-                    value={name}
-                    onChangeText={setName}
-                  />
-                </View>
-
-                <TouchableOpacity 
-                  style={[styles.input, styles.pickerButton]}
-                  onPress={() => setShowRecipePicker(!showRecipePicker)}
-                >
-                  <Text style={[styles.inputText, !selectedRecipe && styles.placeholderStyle]}>
-                    {selectedRecipe ? selectedRecipe.name : '담금주 레시피 선택'}
-                  </Text>
-                  <Ionicons 
-                    name={showRecipePicker ? "chevron-up" : "chevron-down"} 
-                    size={20} 
-                    color={colors.text.secondary} 
-                  />
-                </TouchableOpacity>
-
-                {/* 레시피 선택 드롭다운 */}
-                {showRecipePicker && (
-                  <GlassCard style={styles.dropdown} intensity="light">
-                    {PRESET_RECIPES.map((recipe, index) => (
-                      <TouchableOpacity
-                        key={recipe.id}
-                        style={[
-                          styles.dropdownItem,
-                          selectedRecipe?.id === recipe.id && styles.dropdownItemSelected,
-                          index === PRESET_RECIPES.length - 1 && { borderBottomWidth: 0 },
-                          { borderLeftWidth: 4, borderLeftColor: recipe.brandColor }
-                        ]}
-                        onPress={() => {
-                          setSelectedRecipe(recipe);
-                          setShowRecipePicker(false);
-                          // 완료 예정일을 자동으로 설정 (선택된 타입이 있으면 함께 고려)
-                          if (startDate) {
-                            const start = new Date(startDate);
-                            const duration = selectedType 
-                              ? calculateFinalDuration(recipe.id, selectedType)
-                              : recipe.defaultDuration;
-                            start.setDate(start.getDate() + duration);
-                            setExpectedEndDate(start.toISOString().split('T')[0]);
-                          }
-                        }}
-                      >
-                        <View style={styles.recipeContent}>
-                          <View style={[styles.recipeBadge, { backgroundColor: recipe.brandColor }]} />
-                          <View style={styles.recipeTextContainer}>
-                            <Text style={[
-                              styles.dropdownText,
-                              selectedRecipe?.id === recipe.id && styles.dropdownTextSelected
-                            ]}>
-                              {recipe.name}
-                            </Text>
-                            <Text style={[
-                              styles.dropdownSubText,
-                              selectedRecipe?.id === recipe.id && styles.dropdownTextSelected
-                            ]}>
-                              {recipe.description}
-                            </Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </GlassCard>
-                )}
-              </GlassCard>
-            </View>
-
-            {/* 타입 선택 섹션 */}
-            {selectedRecipe && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>담금주 타입</Text>
-                <GlassCard style={styles.sectionCard} intensity="medium">
-                  <TouchableOpacity 
-                    style={[styles.input, styles.pickerButton]}
-                    onPress={() => setShowTypePicker(!showTypePicker)}
-                  >
-                    <Text style={[styles.inputText, !selectedType && styles.placeholderStyle]}>
-                      {selectedType ? getTypeDisplayName(selectedType) : '담금주 타입 선택'}
-                    </Text>
-                    <Ionicons 
-                      name={showTypePicker ? "chevron-up" : "chevron-down"} 
-                      size={20} 
-                      color={colors.text.secondary} 
-                    />
-                  </TouchableOpacity>
-
-                  {/* 타입 선택 드롭다운 */}
-                  {showTypePicker && (
-                    <GlassCard style={styles.dropdown} intensity="light">
-                      {getAllProjectTypes().map((type, index) => (
-                        <TouchableOpacity
-                          key={type}
-                          style={[
-                            styles.dropdownItem,
-                            selectedType === type && styles.dropdownItemSelected,
-                            index === getAllProjectTypes().length - 1 && { borderBottomWidth: 0 }
-                          ]}
-                          onPress={() => {
-                            setSelectedType(type);
-                            setShowTypePicker(false);
-                            // 타입 선택시 완료 예정일을 자동으로 설정
-                            if (startDate && selectedRecipe) {
-                              const start = new Date(startDate);
-                              const duration = calculateFinalDuration(selectedRecipe.id, type);
-                              start.setDate(start.getDate() + duration);
-                              setExpectedEndDate(start.toISOString().split('T')[0]);
-                            }
-                          }}
-                        >
-                          <View>
-                            <Text style={[
-                              styles.dropdownText,
-                              selectedType === type && styles.dropdownTextSelected
-                            ]}>
-                              {getTypeDisplayName(type)}
-                            </Text>
-                            <Text style={[
-                              styles.dropdownSubText,
-                              selectedType === type && styles.dropdownTextSelected
-                            ]}>
-                              기본 숙성 기간: {selectedRecipe ? calculateFinalDuration(selectedRecipe.id, type) : getDurationByType(type)}일
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))}
-                    </GlassCard>
-                  )}
-                </GlassCard>
-              </View>
-            )}
-
-            {/* 선택된 레시피 정보 */}
-            {selectedRecipe && selectedType && (
-              <GlassCard style={styles.recipeInfo} intensity="light">
-                <Text style={styles.recipeInfoTitle}>선택된 구성</Text>
-                <Text style={styles.recipeInfoText}>📝 레시피: {selectedRecipe.name}</Text>
-                <Text style={styles.recipeInfoText}>🍶 타입: {getTypeDisplayName(selectedType)}</Text>
-                <Text style={styles.recipeInfoText}>⏱️ 예상 숙성 기간: {calculateFinalDuration(selectedRecipe.id, selectedType)}일</Text>
-                <Text style={styles.recipeInfoText}>🧪 재료: {selectedRecipe.ingredients.join(', ')}</Text>
-              </GlassCard>
-            )}
-
-            {/* 일정 정보 섹션 */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>일정 정보</Text>
-              <GlassCard style={styles.sectionCard} intensity="medium">
-                <View style={styles.inputContainer}>
-                  <DatePicker
-                    value={startDate}
-                    onDateChange={(date) => {
-                      setStartDate(date);
-                      // 시작일 선택시 완료 예정일 자동 계산
-                      if (date && selectedRecipe && selectedType) {
-                        const start = new Date(date);
-                        const duration = calculateFinalDuration(selectedRecipe.id, selectedType);
-                        start.setDate(start.getDate() + duration);
-                        setExpectedEndDate(start.toISOString().split('T')[0]);
-                      }
-                    }}
-                    placeholder="시작일 선택"
-                  />
-                </View>
-
-                <View style={styles.inputContainer}>
-                  <DatePicker
-                    value={expectedEndDate}
-                    onDateChange={setExpectedEndDate}
-                    placeholder="완료 예정일 선택 (자동 설정됨)"
-                    minimumDate={startDate || new Date().toISOString().split('T')[0]}
-                    disabled={!selectedType}
-                  />
-                  {selectedType && (
-                    <Text style={styles.helpText}>
-                      💡 {getTypeDisplayName(selectedType)}의 권장 숙성 기간은 {selectedRecipe ? calculateFinalDuration(selectedRecipe.id, selectedType) : getDurationByType(selectedType)}일입니다
-                    </Text>
-                  )}
-                </View>
-              </GlassCard>
-            </View>
-
-            {/* 노트 섹션 */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>프로젝트 노트</Text>
-              <GlassCard style={styles.sectionCard} intensity="medium">
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  placeholder="프로젝트 목적이나 특별한 의미를 작성해보세요&#10;&#10;예시:&#10;• 2024년 크리스마스에 가족들과 함께 마시고 싶어요&#10;• 친구 생일선물용으로 특별히 제조&#10;• 회사 동료들과 신년회에서 시음 예정"
-                  placeholderTextColor={colors.text.muted}
-                  value={notes}
-                  onChangeText={setNotes}
-                  multiline
-                  numberOfLines={6}
-                  textAlignVertical="top"
-                />
-              </GlassCard>
-            </View>
-
-            {/* 이미지 업로드 섹션 */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>프로젝트 이미지</Text>
-              <GlassCard style={styles.sectionCard} intensity="medium">
-                <ImageUpload
-                  images={images}
-                  onImagesChange={handleImagesChange}
-                  maxImages={5}
-                  title="이미지 추가"
-                  subtitle="프로젝트 관련 사진을 추가하세요"
-                  bucket="project-images"
-                  uploadPath="projects"
-                />
-              </GlassCard>
-            </View>
-          </View>
+          <View style={styles.stepContent}>{renderCurrentStep()}</View>
         </ScrollView>
 
-        {/* 하단 생성 버튼 */}
-        <GlassCard style={styles.bottomContainer} intensity="medium">
-          <Button
-            onPress={handleCreateProject}
-            loading={isLoading}
-            disabled={isLoading || !name.trim() || !selectedRecipe || !selectedType || !startDate}
-            fullWidth
-          >
-            프로젝트 생성
-          </Button>
-        </GlassCard>
+        <View style={styles.bottomBar}>
+          {currentStep > 1 && (
+            <View style={styles.backButton}>
+              <Button onPress={goBack} variant="secondary" fullWidth>
+                이전
+              </Button>
+            </View>
+          )}
+          <View style={currentStep > 1 ? styles.nextButton : { flex: 1 }}>
+            <Button
+              onPress={isLastStep ? handleCreateProject : goNext}
+              disabled={!canProceed() || (isLastStep && isLoading)}
+              loading={isLastStep && isLoading}
+              fullWidth
+              size="lg"
+            >
+              {isLastStep ? '프로젝트 생성' : '다음'}
+            </Button>
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

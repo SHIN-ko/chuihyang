@@ -4,9 +4,7 @@ import { z } from 'zod';
 export const emailSchema = z.string().email('올바른 이메일 주소를 입력해주세요');
 
 // 비밀번호 검증 (완화된 버전)
-export const passwordSchema = z
-  .string()
-  .min(6, '비밀번호는 최소 6자 이상이어야 합니다');
+export const passwordSchema = z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다');
 
 // 이름 검증 (공백 허용)
 export const nicknameSchema = z
@@ -37,32 +35,39 @@ const birthdateSchema = z
   }, '생년월일은 YYYY-MM-DD 형식으로 입력해주세요 (예: 1990-01-01)');
 
 // 회원가입 폼 스키마
-export const signupSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema,
-  confirmPassword: z.string().min(1, '비밀번호 확인을 입력해주세요'),
-  nickname: nicknameSchema,
-  birthdate: birthdateSchema,
-}).refine((data) => data.password === data.confirmPassword, {
-  message: '비밀번호가 일치하지 않습니다',
-  path: ['confirmPassword'],
-});
+export const signupSchema = z
+  .object({
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, '비밀번호 확인을 입력해주세요'),
+    nickname: nicknameSchema,
+    birthdate: birthdateSchema,
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: '비밀번호가 일치하지 않습니다',
+    path: ['confirmPassword'],
+  });
 
 // 프로젝트 생성 폼 스키마
-export const projectSchema = z.object({
-  name: projectNameSchema,
-  type: z.enum(['whiskey', 'gin', 'rum', 'fruit_wine', 'vodka', 'other']),
-  startDate: z.string().min(1, '시작일을 선택해주세요'),
-  expectedEndDate: z.string().min(1, '완료 예정일을 선택해주세요'),
-  notes: z.string().optional(),
-}).refine((data) => {
-  const start = new Date(data.startDate);
-  const end = new Date(data.expectedEndDate);
-  return end > start;
-}, {
-  message: '완료 예정일은 시작일보다 늦어야 합니다',
-  path: ['expectedEndDate'],
-});
+export const projectSchema = z
+  .object({
+    name: projectNameSchema,
+    type: z.enum(['whiskey', 'gin', 'rum', 'fruit_wine', 'vodka', 'other']),
+    startDate: z.string().min(1, '시작일을 선택해주세요'),
+    expectedEndDate: z.string().min(1, '완료 예정일을 선택해주세요'),
+    notes: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      const start = new Date(data.startDate);
+      const end = new Date(data.expectedEndDate);
+      return end > start;
+    },
+    {
+      message: '완료 예정일은 시작일보다 늦어야 합니다',
+      path: ['expectedEndDate'],
+    },
+  );
 
 // 타입 추출
 export type LoginFormData = z.infer<typeof loginSchema>;

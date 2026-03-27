@@ -23,7 +23,10 @@ export class GoogleAuthService {
   /**
    * URL에서 OAuth 토큰 추출
    */
-  private static extractTokensFromUrl(url: string): { access_token: string | null; refresh_token: string | null } {
+  private static extractTokensFromUrl(url: string): {
+    access_token: string | null;
+    refresh_token: string | null;
+  } {
     let access_token: string | null = null;
     let refresh_token: string | null = null;
 

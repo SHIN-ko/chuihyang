@@ -1,0 +1,8 @@
+[
+  "src/components/common/AppleLoginButton.tsx|components→stores|@/src/stores/authStore",
+  "src/components/common/AppleLoginButton.tsx|components→services|@/src/services/appleAuthService",
+  "src/components/common/DemoLoginButton.tsx|components→stores|@/src/stores/authStore",
+  "src/components/common/DemoLoginButton.tsx|components→services|@/src/services/demoAccountService",
+  "src/components/common/GoogleLoginButton.tsx|components→stores|@/src/stores/authStore",
+  "src/components/common/ImageUpload.tsx|components→services|@/src/services/supabaseService"
+]

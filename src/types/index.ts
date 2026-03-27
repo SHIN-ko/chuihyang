@@ -38,7 +38,10 @@ export interface Project {
   images: string[];
   ingredients: Ingredient[];
   progressLogs: ProgressLog[];
-  recipeId?: string; // 사용한 레시피 ID (미리 정의된 레시피 사용 시)
+  recipeId?: string; // 사용한 레시피 ID (미리 정의된 레시피 사용 시, 커스텀 레시피는 'custom')
+  customRecipeName?: string;
+  customDuration?: number; // 일 단위
+  customBrandColor?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,9 +67,11 @@ export interface ProgressLog {
   // 평가 관련 필드 추가
   ratings?: {
     taste?: number; // 1-5 별점
-    aroma?: number; // 1-5 별점  
+    aroma?: number; // 1-5 별점
     appearance?: number; // 1-5 별점
     overall?: number; // 1-5 별점
+    body?: number; // 1-5 별점 (바디감)
+    finish?: number; // 1-5 별점 (여운)
   };
   color?: string; // 색깔 설명
   notes?: string; // 추가 메모

@@ -8,13 +8,9 @@ interface GlassCardProps {
   intensity?: 'light' | 'medium' | 'heavy';
 }
 
-const GlassCard: React.FC<GlassCardProps> = ({ 
-  children, 
-  style, 
-  intensity = 'medium' 
-}) => {
+const GlassCard: React.FC<GlassCardProps> = ({ children, style, intensity = 'medium' }) => {
   const { colors, shadows } = useThemeValues();
-  
+
   const getIntensityStyle = () => {
     switch (intensity) {
       case 'light':
@@ -44,11 +40,7 @@ const GlassCard: React.FC<GlassCardProps> = ({
     },
   });
 
-  return (
-    <View style={[styles.container, getIntensityStyle(), style]}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.container, getIntensityStyle(), style]}>{children}</View>;
 };
 
 export { GlassCard };

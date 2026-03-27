@@ -35,9 +35,7 @@ const PRIVACY_SECTIONS: LegalDocumentSection[] = [
     title: '개인정보 제3자 제공',
     description:
       '원칙적으로 외부에 개인정보를 제공하지 않으며, 사전 동의가 필요한 경우 이용 목적과 범위를 명확히 안내합니다.',
-    bulletItems: [
-      '제공하지 않음 (단, 사전 동의 시에만 외부 마케팅·배송 업체 등에 제공)',
-    ],
+    bulletItems: ['제공하지 않음 (단, 사전 동의 시에만 외부 마케팅·배송 업체 등에 제공)'],
   },
   {
     title: '개인정보 처리 위탁',

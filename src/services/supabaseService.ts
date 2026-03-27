@@ -20,8 +20,8 @@ export class SupabaseService {
           data: {
             nickname,
             birthdate: birthdate || null,
-          }
-        }
+          },
+        },
       });
 
       if (authError) throw authError;
@@ -29,7 +29,7 @@ export class SupabaseService {
 
       // 프로필은 Database Trigger가 자동으로 생성함
       // 트리거가 실행될 시간을 위해 잠시 대기
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       return { user: authData.user, session: authData.session };
     } catch (error) {
@@ -96,7 +96,8 @@ export class SupabaseService {
 
         try {
           const errorBody = await response.json();
-          errorMessage = errorBody?.msg || errorBody?.message || errorBody?.error_description || errorMessage;
+          errorMessage =
+            errorBody?.msg || errorBody?.message || errorBody?.error_description || errorMessage;
         } catch {
           const fallbackText = await response.text();
           if (fallbackText) {
@@ -171,7 +172,9 @@ export class SupabaseService {
 
     if (errors.length > 0) {
       console.error('계정 삭제 중 사용자 데이터 정리 실패:', errors);
-      throw new Error('계정에 연결된 데이터를 정리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      throw new Error(
+        '계정에 연결된 데이터를 정리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      );
     }
   }
   static async resetPassword(email: string) {
@@ -184,7 +187,7 @@ export class SupabaseService {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo,
       });
-      
+
       if (error) throw error;
       return { success: true };
     } catch (error) {
@@ -198,7 +201,7 @@ export class SupabaseService {
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
-      
+
       if (error) throw error;
       return { success: true };
     } catch (error) {
@@ -209,7 +212,9 @@ export class SupabaseService {
 
   static async getCurrentUser() {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return null;
 
       const { data: profile, error } = await supabase
@@ -217,11 +222,11 @@ export class SupabaseService {
         .select('*')
         .eq('id', user.id)
         .single();
-      
+
       console.log('getCurrentUser - 프로필 조회:', {
         userId: user.id,
         profileData: profile,
-        error: error
+        error: error,
       });
 
       if (error) {
@@ -249,10 +254,13 @@ export class SupabaseService {
     }
   }
 
-  static async updateProfile(userId: string, updates: { profileImage?: string; nickname?: string; birthdate?: string }): Promise<void> {
+  static async updateProfile(
+    userId: string,
+    updates: { profileImage?: string; nickname?: string; birthdate?: string },
+  ): Promise<void> {
     try {
       const updateData: Record<string, string> = {};
-      
+
       if (updates.profileImage !== undefined) {
         updateData.profile_image_url = updates.profileImage;
       }
@@ -283,11 +291,13 @@ export class SupabaseService {
     try {
       const { data: projectsData, error } = await supabase
         .from('projects')
-        .select(`
+        .select(
+          `
           *,
           progress_logs(*),
           ingredients(*)
-        `)
+        `,
+        )
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -301,9 +311,14 @@ export class SupabaseService {
     }
   }
 
-  static async createProject(projectData: Omit<Project, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, userId: string): Promise<Project> {
+  static async createProject(
+    projectData: Omit<Project, 'id' | 'userId' | 'createdAt' | 'updatedAt'>,
+    userId: string,
+  ): Promise<Project> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('인증되지 않은 사용자');
 
       // 프로젝트 생성
@@ -317,6 +332,9 @@ export class SupabaseService {
         status: projectData.status,
         notes: projectData.notes || null,
         images: projectData.images || null,
+        custom_recipe_name: projectData.customRecipeName || null,
+        custom_duration: projectData.customDuration || null,
+        custom_brand_color: projectData.customBrandColor || null,
       };
 
       const { data: project, error: projectError } = await supabase
@@ -330,7 +348,7 @@ export class SupabaseService {
 
       // 재료 생성
       if (projectData.ingredients && projectData.ingredients.length > 0) {
-        const ingredientsToInsert = projectData.ingredients.map(ingredient => ({
+        const ingredientsToInsert = projectData.ingredients.map((ingredient) => ({
           project_id: project.id,
           name: ingredient.name,
           quantity: ingredient.quantity || null,
@@ -348,11 +366,13 @@ export class SupabaseService {
       // 생성된 프로젝트 전체 데이터 조회
       const { data: fullProject, error: fetchError } = await supabase
         .from('projects')
-        .select(`
+        .select(
+          `
           *,
           progress_logs(*),
           ingredients(*)
-        `)
+        `,
+        )
         .eq('id', project.id)
         .single();
 
@@ -369,17 +389,19 @@ export class SupabaseService {
   static async updateProject(projectId: string, updates: Partial<Project>): Promise<void> {
     try {
       const updateData: Partial<ProjectRow> = {};
-      
+
       if (updates.name !== undefined) updateData.name = updates.name;
       if (updates.status !== undefined) updateData.status = updates.status;
       if (updates.notes !== undefined) updateData.notes = updates.notes;
       if (updates.actualEndDate !== undefined) updateData.actual_end_date = updates.actualEndDate;
       if (updates.images !== undefined) updateData.images = updates.images;
+      if (updates.customRecipeName !== undefined)
+        updateData.custom_recipe_name = updates.customRecipeName;
+      if (updates.customDuration !== undefined) updateData.custom_duration = updates.customDuration;
+      if (updates.customBrandColor !== undefined)
+        updateData.custom_brand_color = updates.customBrandColor;
 
-      const { error } = await supabase
-        .from('projects')
-        .update(updateData)
-        .eq('id', projectId);
+      const { error } = await supabase.from('projects').update(updateData).eq('id', projectId);
 
       if (error) throw error;
     } catch (error) {
@@ -390,10 +412,7 @@ export class SupabaseService {
 
   static async deleteProject(projectId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId);
+      const { error } = await supabase.from('projects').delete().eq('id', projectId);
 
       if (error) throw error;
     } catch (error) {
@@ -403,7 +422,9 @@ export class SupabaseService {
   }
 
   // 진행 로그 관련
-  static async addProgressLog(logData: Omit<ProgressLog, 'id' | 'createdAt' | 'updatedAt'>): Promise<ProgressLog> {
+  static async addProgressLog(
+    logData: Omit<ProgressLog, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ProgressLog> {
     try {
       const logInsert: ProgressLogInsert = {
         project_id: logData.projectId,
@@ -435,7 +456,7 @@ export class SupabaseService {
   static async updateProgressLog(logId: string, updates: Partial<ProgressLog>): Promise<void> {
     try {
       const updateData: Partial<ProgressLogRow> = {};
-      
+
       if (updates.title !== undefined) updateData.title = updates.title;
       if (updates.description !== undefined) updateData.description = updates.description;
       if (updates.images !== undefined) updateData.images = updates.images;
@@ -443,10 +464,7 @@ export class SupabaseService {
       if (updates.color !== undefined) updateData.color = updates.color;
       if (updates.notes !== undefined) updateData.notes = updates.notes;
 
-      const { error } = await supabase
-        .from('progress_logs')
-        .update(updateData)
-        .eq('id', logId);
+      const { error } = await supabase.from('progress_logs').update(updateData).eq('id', logId);
 
       if (error) throw error;
     } catch (error) {
@@ -457,10 +475,7 @@ export class SupabaseService {
 
   static async deleteProgressLog(logId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('progress_logs')
-        .delete()
-        .eq('id', logId);
+      const { error } = await supabase.from('progress_logs').delete().eq('id', logId);
 
       if (error) throw error;
     } catch (error) {
@@ -484,20 +499,22 @@ export class SupabaseService {
 
   static async uploadImage(bucket: string, path: string, file: Blob | Uint8Array): Promise<string> {
     try {
-      console.log('업로드 시작:', { bucket, path, fileSize: file instanceof Blob ? file.size : file.length });
-      
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(path, file);
+      console.log('업로드 시작:', {
+        bucket,
+        path,
+        fileSize: file instanceof Blob ? file.size : file.length,
+      });
+
+      const { data, error } = await supabase.storage.from(bucket).upload(path, file);
 
       if (error) throw error;
       if (!data) throw new Error('이미지 업로드 실패');
 
       console.log('업로드 완료 데이터:', data);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(data.path);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(bucket).getPublicUrl(data.path);
 
       console.log('생성된 Public URL:', publicUrl);
 
@@ -515,23 +532,23 @@ export class SupabaseService {
 
   // 데이터 변환 헬퍼 함수들
   private static transformProfileToUser(profile: ProfileRow): User {
-          const userData = {
-        id: profile.id,
-        email: profile.email,
-        nickname: profile.nickname,
-        birthdate: profile.birthdate || undefined,
-        profileImage: profile.profile_image_url || undefined,
-        createdAt: profile.created_at,
-        updatedAt: profile.updated_at,
-      };
-      
-      console.log('getCurrentUser - 반환 데이터:', {
-        userId: userData.id,
-        hasProfileImage: !!userData.profileImage,
-        profileImageUrl: userData.profileImage
-      });
-      
-      return userData;
+    const userData = {
+      id: profile.id,
+      email: profile.email,
+      nickname: profile.nickname,
+      birthdate: profile.birthdate || undefined,
+      profileImage: profile.profile_image_url || undefined,
+      createdAt: profile.created_at,
+      updatedAt: profile.updated_at,
+    };
+
+    console.log('getCurrentUser - 반환 데이터:', {
+      userId: userData.id,
+      hasProfileImage: !!userData.profileImage,
+      profileImageUrl: userData.profileImage,
+    });
+
+    return userData;
   }
 
   private static transformProjectRowToProject(projectRow: any): Project {
@@ -542,13 +559,13 @@ export class SupabaseService {
         console.warn('잘못된 이미지 URL 형식:', imageUrl);
         return false;
       }
-      
+
       // Supabase Storage URL 형식 검증
       if (!imageUrl.includes('supabase.co/storage/v1/object/public/')) {
         console.warn('유효하지 않은 Supabase Storage URL:', imageUrl);
         return false;
       }
-      
+
       console.log('유효한 이미지 URL:', imageUrl);
       return true;
     });
@@ -565,8 +582,15 @@ export class SupabaseService {
       status: projectRow.status,
       notes: projectRow.notes,
       images: filteredImages,
-      ingredients: projectRow.ingredients ? projectRow.ingredients.map(SupabaseService.transformIngredientRowToIngredient) : [],
-      progressLogs: projectRow.progress_logs ? projectRow.progress_logs.map(SupabaseService.transformProgressLogRowToProgressLog) : [],
+      ingredients: projectRow.ingredients
+        ? projectRow.ingredients.map(SupabaseService.transformIngredientRowToIngredient)
+        : [],
+      progressLogs: projectRow.progress_logs
+        ? projectRow.progress_logs.map(SupabaseService.transformProgressLogRowToProgressLog)
+        : [],
+      customRecipeName: projectRow.custom_recipe_name,
+      customDuration: projectRow.custom_duration,
+      customBrandColor: projectRow.custom_brand_color,
       createdAt: projectRow.created_at,
       updatedAt: projectRow.updated_at,
     };
@@ -588,7 +612,9 @@ export class SupabaseService {
     };
   }
 
-  private static transformIngredientRowToIngredient(ingredientRow: Database['public']['Tables']['ingredients']['Row']): Ingredient {
+  private static transformIngredientRowToIngredient(
+    ingredientRow: Database['public']['Tables']['ingredients']['Row'],
+  ): Ingredient {
     return {
       id: ingredientRow.id,
       projectId: ingredientRow.project_id,

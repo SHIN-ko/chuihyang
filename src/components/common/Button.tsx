@@ -10,7 +10,6 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
-  className?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -21,105 +20,96 @@ const Button: React.FC<ButtonProps> = ({
   disabled = false,
   loading = false,
   fullWidth = false,
-  className,
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const { colors, brandColors } = useThemeValues();
-  
-  const styles = useThemedStyles(({ colors, shadows, brandColors }) => StyleSheet.create({
-    base: {
-      borderRadius: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-    },
-    sm: {
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      minHeight: 40,
-    },
-    md: {
-      paddingHorizontal: 24,
-      paddingVertical: 12,
-      minHeight: 48,
-    },
-    lg: {
-      paddingHorizontal: 32,
-      paddingVertical: 16,
-      minHeight: 56,
-    },
-    primary: {
-      backgroundColor: brandColors.accent.primary,
-      borderColor: colors.border.accent,
-      ...shadows.glass.medium,
-    },
-    secondary: {
-      backgroundColor: colors.background.glass,
-      borderColor: colors.border.glass,
-      ...shadows.glass.light,
-    },
-    outline: {
-      backgroundColor: 'transparent',
-      borderColor: brandColors.accent.primary,
-      borderWidth: 1.5,
-    },
-    ghost: {
-      backgroundColor: 'transparent',
-      borderColor: 'transparent',
-    },
-    disabled: {
-      opacity: 0.6,
-      backgroundColor: colors.background.surface,
-      borderColor: colors.border.secondary,
-    },
-    fullWidth: {
-      width: '100%',
-    },
-    loader: {
-      marginRight: 8,
-    },
-    textBase: {
-      fontWeight: '500',
-      fontFamily: 'System',
-      letterSpacing: 0.2,
-    },
-    textSm: {
-      fontSize: 13,
-    },
-    textMd: {
-      fontSize: 15,
-    },
-    textLg: {
-      fontSize: 17,
-    },
-    textPrimary: {
-      color: '#FFFFFF',
-      fontWeight: '600',
-    },
-    textSecondary: {
-      color: colors.text.secondary,
-      fontWeight: '600',
-    },
-    textOutline: {
-      color: brandColors.accent.primary,
-      fontWeight: '600',
-    },
-    textGhost: {
-      color: brandColors.accent.primary,
-      fontWeight: '600',
-    },
-  }));
-  
+
+  const styles = useThemedStyles(({ colors, shadows, brandColors }) =>
+    StyleSheet.create({
+      base: {
+        borderRadius: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      sm: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        minHeight: 40,
+      },
+      md: {
+        paddingHorizontal: 24,
+        paddingVertical: 14,
+        minHeight: 48,
+      },
+      lg: {
+        paddingHorizontal: 32,
+        paddingVertical: 16,
+        minHeight: 52,
+      },
+      primary: {
+        backgroundColor: brandColors.accent.primary,
+        ...shadows.glass.light,
+      },
+      secondary: {
+        backgroundColor: colors.background.surface,
+        borderWidth: 1,
+        borderColor: colors.border.primary,
+      },
+      outline: {
+        backgroundColor: 'transparent',
+        borderColor: brandColors.accent.primary,
+        borderWidth: 1.5,
+      },
+      ghost: {
+        backgroundColor: 'transparent',
+      },
+      disabled: {
+        opacity: 0.5,
+      },
+      fullWidth: {
+        width: '100%',
+      },
+      loader: {
+        marginRight: 8,
+      },
+      textBase: {
+        fontWeight: '600',
+        letterSpacing: 0.2,
+      },
+      textSm: {
+        fontSize: 13,
+      },
+      textMd: {
+        fontSize: 15,
+      },
+      textLg: {
+        fontSize: 17,
+      },
+      textPrimary: {
+        color: '#FFFFFF',
+      },
+      textSecondary: {
+        color: colors.text.primary,
+      },
+      textOutline: {
+        color: brandColors.accent.primary,
+      },
+      textGhost: {
+        color: brandColors.accent.primary,
+      },
+    }),
+  );
+
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.95,
+      toValue: 0.97,
       tension: 300,
       friction: 10,
       useNativeDriver: true,
     }).start();
   };
-  
+
   const handlePressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,
@@ -128,57 +118,29 @@ const Button: React.FC<ButtonProps> = ({
       useNativeDriver: true,
     }).start();
   };
-  
-  const getButtonStyle = () => {
-    let sizeStyle = styles.md;
-    if (size === 'sm') sizeStyle = styles.sm;
-    else if (size === 'lg') sizeStyle = styles.lg;
-    
-    let variantStyle = styles.primary;
-    if (variant === 'secondary') variantStyle = styles.secondary;
-    else if (variant === 'outline') variantStyle = styles.outline;
-    else if (variant === 'ghost') variantStyle = styles.ghost;
-    
-    return [
-      styles.base,
-      sizeStyle,
-      variantStyle,
-      (disabled || loading) && styles.disabled,
-      fullWidth && styles.fullWidth,
-    ].filter(Boolean);
+
+  const sizeStyles = { sm: styles.sm, md: styles.md, lg: styles.lg };
+  const variantStyles = {
+    primary: styles.primary,
+    secondary: styles.secondary,
+    outline: styles.outline,
+    ghost: styles.ghost,
   };
-  
-  const getTextStyle = () => {
-    let sizeTextStyle = styles.textMd;
-    if (size === 'sm') sizeTextStyle = styles.textSm;
-    else if (size === 'lg') sizeTextStyle = styles.textLg;
-    
-    let variantTextStyle = styles.textPrimary;
-    if (variant === 'secondary') variantTextStyle = styles.textSecondary;
-    else if (variant === 'outline') variantTextStyle = styles.textOutline;
-    else if (variant === 'ghost') variantTextStyle = styles.textGhost;
-    
-    return [
-      styles.textBase,
-      sizeTextStyle,
-      variantTextStyle,
-    ];
+  const textVariantStyles = {
+    primary: styles.textPrimary,
+    secondary: styles.textSecondary,
+    outline: styles.textOutline,
+    ghost: styles.textGhost,
   };
-  
-  const getLoaderColor = () => {
-    switch (variant) {
-      case 'primary':
-        return '#FFFFFF';
-      case 'secondary':
-        return colors.text.secondary;
-      case 'outline':
-      case 'ghost':
-        return brandColors.accent.primary;
-      default:
-        return '#FFFFFF';
-    }
+  const textSizeStyles = { sm: styles.textSm, md: styles.textMd, lg: styles.textLg };
+
+  const loaderColors: Record<string, string> = {
+    primary: '#FFFFFF',
+    secondary: colors.text.secondary,
+    outline: brandColors.accent.primary,
+    ghost: brandColors.accent.primary,
   };
-  
+
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <TouchableOpacity
@@ -186,17 +148,19 @@ const Button: React.FC<ButtonProps> = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}
-        style={getButtonStyle()}
+        style={[
+          styles.base,
+          sizeStyles[size],
+          variantStyles[variant],
+          (disabled || loading) && styles.disabled,
+          fullWidth && styles.fullWidth,
+        ]}
         activeOpacity={0.8}
       >
         {loading && (
-          <ActivityIndicator 
-            size="small" 
-            color={getLoaderColor()} 
-            style={styles.loader}
-          />
+          <ActivityIndicator size="small" color={loaderColors[variant]} style={styles.loader} />
         )}
-        <Text style={getTextStyle()}>
+        <Text style={[styles.textBase, textSizeStyles[size], textVariantStyles[variant]]}>
           {children}
         </Text>
       </TouchableOpacity>

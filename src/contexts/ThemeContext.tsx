@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
 
-export type ThemeMode = 'light' | 'dark';
+export type ThemeMode = 'light' | 'dark'; // 하위 호환
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -17,59 +16,19 @@ interface ThemeProviderProps {
   children: ReactNode;
 }
 
-const THEME_STORAGE_KEY = '@chuihyang_theme';
+const noop = () => {};
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setThemeState] = useState<ThemeMode>('light'); // 기본값: 라이트모드
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadTheme();
-  }, []);
-
-  const loadTheme = async () => {
-    try {
-      const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-      if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
-        setThemeState(savedTheme);
-      }
-    } catch (error) {
-      console.log('테마 로드 실패:', error);
-      // 에러가 발생해도 기본값 사용
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const saveTheme = async (newTheme: ThemeMode) => {
-    try {
-      await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
-    } catch (error) {
-      console.log('테마 저장 실패:', error);
-    }
-  };
-
-  const setTheme = (newTheme: ThemeMode) => {
-    setThemeState(newTheme);
-    saveTheme(newTheme);
-  };
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-  };
-
-  // 로딩 중에도 기본값을 제공하여 크래시 방지
   const contextValue: ThemeContextType = {
-    theme,
-    toggleTheme,
-    setTheme,
-    isLoading,
+    theme: 'light',
+    toggleTheme: noop,
+    setTheme: noop,
+    isLoading: false,
   };
 
   return (
     <ThemeContext.Provider value={contextValue}>
-      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style="dark" />
       {children}
     </ThemeContext.Provider>
   );

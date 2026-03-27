@@ -12,10 +12,7 @@ interface AppleLoginButtonProps {
   onError?: (error: Error) => void;
 }
 
-const AppleLoginButton: React.FC<AppleLoginButtonProps> = ({
-  onSuccess,
-  onError,
-}) => {
+const AppleLoginButton: React.FC<AppleLoginButtonProps> = ({ onSuccess, onError }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [available, setAvailable] = useState(false);
@@ -46,7 +43,7 @@ const AppleLoginButton: React.FC<AppleLoginButtonProps> = ({
         fontSize: 16,
         fontWeight: '600',
       },
-    })
+    }),
   );
 
   useEffect(() => {
@@ -73,7 +70,10 @@ const AppleLoginButton: React.FC<AppleLoginButtonProps> = ({
       }
     } catch (error: unknown) {
       console.error('Apple 로그인 실패:', error);
-      const err = error instanceof Error ? error : new Error('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+      const err =
+        error instanceof Error
+          ? error
+          : new Error('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
       onError?.(err);
       Alert.alert('Apple 로그인 실패', err.message);
     } finally {
@@ -94,9 +94,7 @@ const AppleLoginButton: React.FC<AppleLoginButtonProps> = ({
       activeOpacity={0.7}
     >
       <Ionicons name="logo-apple" size={24} color="#000000" style={styles.icon} />
-      <Text style={styles.buttonText}>
-        {loading ? 'Apple로 로그인 중...' : 'Apple로 계속하기'}
-      </Text>
+      <Text style={styles.buttonText}>{loading ? 'Apple로 로그인 중...' : 'Apple로 계속하기'}</Text>
     </TouchableOpacity>
   );
 };

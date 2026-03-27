@@ -31,7 +31,7 @@ const NotificationHistoryScreen: React.FC = () => {
   const { colors, brandColors } = useThemeValues();
   const [notifications, setNotifications] = useState<NotificationHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -42,24 +42,23 @@ const NotificationHistoryScreen: React.FC = () => {
       // 예약된 알림 목록 가져오기
       const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
       console.log(`[알림 히스토리] 총 ${scheduledNotifications.length}개의 예약된 알림 발견`);
-      
+
       const historyData: NotificationHistory[] = scheduledNotifications.map((notif, index) => {
         let triggerDate: Date = new Date();
-        
+
         if (notif.trigger) {
           if ('date' in notif.trigger && notif.trigger.date) {
             // Date 기반 트리거
-            triggerDate = typeof notif.trigger.date === 'number' 
-              ? new Date(notif.trigger.date) 
-              : new Date(notif.trigger.date);
+            triggerDate =
+              typeof notif.trigger.date === 'number'
+                ? new Date(notif.trigger.date)
+                : new Date(notif.trigger.date);
           } else if ('seconds' in notif.trigger && typeof notif.trigger.seconds === 'number') {
             // TimeInterval 기반 트리거 - 현재 시간부터 X초 후
-            triggerDate = new Date(Date.now() + (notif.trigger.seconds * 1000));
+            triggerDate = new Date(Date.now() + notif.trigger.seconds * 1000);
           }
         }
-        
 
-        
         return {
           id: notif.identifier,
           title: notif.content.title || '알림',
@@ -71,7 +70,7 @@ const NotificationHistoryScreen: React.FC = () => {
 
       // 날짜순으로 정렬 (최신순)
       historyData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
+
       console.log(`[알림 히스토리] 최종 ${historyData.length}개 알림 로드 완료`);
       setNotifications(historyData);
     } catch (error) {
@@ -83,7 +82,7 @@ const NotificationHistoryScreen: React.FC = () => {
 
   useEffect(() => {
     loadNotificationHistory();
-    
+
     // 초기 애니메이션
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -102,21 +101,23 @@ const NotificationHistoryScreen: React.FC = () => {
   const formatDate = (date: Date) => {
     const now = new Date();
     const targetDate = new Date(date);
-    
+
     // 날짜가 올바르게 파싱되었는지 확인
     if (isNaN(targetDate.getTime())) {
       console.error(`[날짜 오류] 잘못된 날짜:`, date);
       return '날짜 오류';
     }
-    
+
     // 날짜만 비교하기 위해 시간을 0으로 설정
     const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const targetDateOnly = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-    
+    const targetDateOnly = new Date(
+      targetDate.getFullYear(),
+      targetDate.getMonth(),
+      targetDate.getDate(),
+    );
+
     const diffTime = targetDateOnly.getTime() - nowDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-
 
     if (diffDays === 0) {
       return '오늘';
@@ -153,15 +154,11 @@ const NotificationHistoryScreen: React.FC = () => {
 
   const renderNotificationItem = (item: NotificationHistory, index: number) => {
     return (
-      <GlassCard 
-        key={item.id} 
-        style={styles.notificationCard}
-        intensity="light"
-      >
+      <GlassCard key={item.id} style={styles.notificationCard} intensity="light">
         <View style={styles.notificationIcon}>
           <Text style={styles.iconText}>{getNotificationIcon(item.data)}</Text>
         </View>
-        
+
         <View style={styles.notificationContent}>
           <Text style={styles.notificationTitle}>{item.title}</Text>
           <Text style={styles.notificationBody}>{item.body}</Text>
@@ -339,11 +336,14 @@ const NotificationHistoryScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background.primary} />
-      
+      <StatusBar
+        barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background.primary}
+      />
+
       {/* 배경 그라디언트 */}
       <View style={styles.backgroundGradient} />
-      
+
       {/* 헤더 */}
       <GlassCard style={styles.header} intensity="medium">
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -355,17 +355,17 @@ const NotificationHistoryScreen: React.FC = () => {
         </TouchableOpacity>
       </GlassCard>
 
-      <Animated.View 
+      <Animated.View
         style={[
           styles.content,
           {
             opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
+            transform: [{ translateY: slideAnim }],
+          },
         ]}
       >
-        <ScrollView 
-          style={styles.scrollView} 
+        <ScrollView
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -399,9 +399,7 @@ const NotificationHistoryScreen: React.FC = () => {
               </GlassCard>
             ) : (
               <>
-                <Text style={styles.sectionTitle}>
-                  총 {notifications.length}개의 알림
-                </Text>
+                <Text style={styles.sectionTitle}>총 {notifications.length}개의 알림</Text>
                 <View style={styles.notificationsList}>
                   {notifications.map(renderNotificationItem)}
                 </View>

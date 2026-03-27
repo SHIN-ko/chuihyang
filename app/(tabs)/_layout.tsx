@@ -3,27 +3,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, Tabs } from 'expo-router';
 import { Pressable } from 'react-native';
 
-import { useTheme } from '@/src/contexts/ThemeContext';
 import { useThemeValues } from '@/src/hooks/useThemedStyles';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
-// Modern tab bar icon component
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof Ionicons>['name'];
-  color: string;
-}) {
+function TabBarIcon(props: { name: React.ComponentProps<typeof Ionicons>['name']; color: string }) {
   return <Ionicons size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
-  const { theme } = useTheme();
   const { colors } = useThemeValues();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.text.primary,
+        tabBarActiveTintColor: '#FF8C42',
         tabBarInactiveTintColor: colors.text.muted,
         tabBarStyle: {
           backgroundColor: colors.background.surface,
@@ -38,8 +32,8 @@ export default function TabLayout() {
           fontWeight: '500',
           marginTop: 4,
         },
-        // 탭 전환 스타일 설정
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{

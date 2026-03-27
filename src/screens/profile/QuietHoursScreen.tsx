@@ -20,13 +20,13 @@ import GlassCard from '@/src/components/common/GlassCard';
 const QuietHoursScreen: React.FC = () => {
   const router = useRouter();
   const { settings, updateSettings, isLoading } = useNotificationStore();
-  
+
   const [localSettings, setLocalSettings] = useState(settings.quietHours);
-  
+
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
-  
+
   React.useEffect(() => {
     // 초기 애니메이션
     Animated.parallel([
@@ -48,32 +48,30 @@ const QuietHoursScreen: React.FC = () => {
       await updateSettings({
         quietHours: localSettings,
       });
-      
-      Alert.alert(
-        '설정 완료',
-        '조용한 시간 설정이 저장되었습니다.',
-        [{ text: '확인', onPress: () => router.back() }]
-      );
+
+      Alert.alert('설정 완료', '조용한 시간 설정이 저장되었습니다.', [
+        { text: '확인', onPress: () => router.back() },
+      ]);
     } catch (error) {
       Alert.alert('오류', '설정 저장에 실패했습니다.');
     }
   };
 
   const handleStartTimeChange = (time: string) => {
-    setLocalSettings(prev => ({ ...prev, startTime: time }));
+    setLocalSettings((prev) => ({ ...prev, startTime: time }));
   };
 
   const handleEndTimeChange = (time: string) => {
-    setLocalSettings(prev => ({ ...prev, endTime: time }));
+    setLocalSettings((prev) => ({ ...prev, endTime: time }));
   };
 
   const handleEnabledChange = (enabled: boolean) => {
-    setLocalSettings(prev => ({ ...prev, enabled }));
+    setLocalSettings((prev) => ({ ...prev, enabled }));
   };
 
   const formatTimeRange = () => {
     if (!localSettings.enabled) return '';
-    
+
     const formatTime = (timeString: string) => {
       const [hours, minutes] = timeString.split(':').map(Number);
       const period = hours >= 12 ? '오후' : '오전';
@@ -95,10 +93,10 @@ const QuietHoursScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={BRAND_COLORS.background.primary} />
-      
+
       {/* 배경 그라디언트 */}
       <View style={styles.backgroundGradient} />
-      
+
       {/* 헤더 */}
       <GlassCard style={styles.header} intensity="medium">
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -108,13 +106,13 @@ const QuietHoursScreen: React.FC = () => {
         <View style={styles.placeholder} />
       </GlassCard>
 
-      <Animated.View 
+      <Animated.View
         style={[
           styles.content,
           {
             opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
+            transform: [{ translateY: slideAnim }],
+          },
         ]}
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -123,10 +121,10 @@ const QuietHoursScreen: React.FC = () => {
             <View style={styles.descriptionHeader}>
               <Ionicons name="moon" size={24} color={BRAND_COLORS.accent.primary} />
               <Text style={styles.descriptionTitle}>방해 금지 시간</Text>
-          </View>
-          <Text style={styles.descriptionText}>
-            설정한 시간 동안에는 알림이 발송되지 않습니다. 
-            긴급하지 않은 프로젝트 알림을 차단하여 편안한 시간을 보내세요.
+            </View>
+            <Text style={styles.descriptionText}>
+              설정한 시간 동안에는 알림이 발송되지 않습니다. 긴급하지 않은 프로젝트 알림을 차단하여
+              편안한 시간을 보내세요.
             </Text>
           </GlassCard>
 
@@ -143,7 +141,9 @@ const QuietHoursScreen: React.FC = () => {
                 </Text>
               </View>
               <View style={[styles.toggle, localSettings.enabled && styles.toggleActive]}>
-                <View style={[styles.toggleThumb, localSettings.enabled && styles.toggleThumbActive]} />
+                <View
+                  style={[styles.toggleThumb, localSettings.enabled && styles.toggleThumbActive]}
+                />
               </View>
             </TouchableOpacity>
           </GlassCard>
@@ -151,51 +151,49 @@ const QuietHoursScreen: React.FC = () => {
           {/* 시간 설정 */}
           {localSettings.enabled && (
             <GlassCard style={styles.section} intensity="medium">
-            <Text style={styles.sectionTitle}>시간 설정</Text>
-            
-            <View style={styles.timeSection}>
-              <TimePicker
-                title="시작 시간"
-                value={localSettings.startTime}
-                onTimeChange={handleStartTimeChange}
-              />
-            </View>
+              <Text style={styles.sectionTitle}>시간 설정</Text>
 
-            <View style={styles.timeSection}>
-              <TimePicker
-                title="종료 시간"
-                value={localSettings.endTime}
-                onTimeChange={handleEndTimeChange}
-              />
-            </View>
+              <View style={styles.timeSection}>
+                <TimePicker
+                  title="시작 시간"
+                  value={localSettings.startTime}
+                  onTimeChange={handleStartTimeChange}
+                />
+              </View>
+
+              <View style={styles.timeSection}>
+                <TimePicker
+                  title="종료 시간"
+                  value={localSettings.endTime}
+                  onTimeChange={handleEndTimeChange}
+                />
+              </View>
 
               {/* 시간 범위 미리보기 */}
               <View style={styles.previewContainer}>
                 <Ionicons name="time-outline" size={16} color={BRAND_COLORS.text.secondary} />
-                <Text style={styles.previewText}>
-                  {formatTimeRange()} 동안 알림이 차단됩니다
-                </Text>
+                <Text style={styles.previewText}>{formatTimeRange()} 동안 알림이 차단됩니다</Text>
               </View>
             </GlassCard>
           )}
 
           {/* 예시 설명 */}
           <GlassCard style={styles.exampleContainer} intensity="light">
-          <Text style={styles.exampleTitle}>📱 알림 차단 예시</Text>
-          <View style={styles.exampleList}>
-            <View style={styles.exampleItem}>
-              <Ionicons name="checkmark-circle" size={16} color={BRAND_COLORS.accent.primary} />
-              <Text style={styles.exampleText}>3일 전 완성 알림</Text>
+            <Text style={styles.exampleTitle}>📱 알림 차단 예시</Text>
+            <View style={styles.exampleList}>
+              <View style={styles.exampleItem}>
+                <Ionicons name="checkmark-circle" size={16} color={BRAND_COLORS.accent.primary} />
+                <Text style={styles.exampleText}>3일 전 완성 알림</Text>
+              </View>
+              <View style={styles.exampleItem}>
+                <Ionicons name="checkmark-circle" size={16} color={BRAND_COLORS.accent.primary} />
+                <Text style={styles.exampleText}>중간 점검 알림</Text>
+              </View>
+              <View style={styles.exampleItem}>
+                <Ionicons name="checkmark-circle" size={16} color={BRAND_COLORS.accent.primary} />
+                <Text style={styles.exampleText}>완성일 알림</Text>
+              </View>
             </View>
-            <View style={styles.exampleItem}>
-              <Ionicons name="checkmark-circle" size={16} color={BRAND_COLORS.accent.primary} />
-              <Text style={styles.exampleText}>중간 점검 알림</Text>
-            </View>
-            <View style={styles.exampleItem}>
-              <Ionicons name="checkmark-circle" size={16} color={BRAND_COLORS.accent.primary} />
-              <Text style={styles.exampleText}>완성일 알림</Text>
-            </View>
-          </View>
             <Text style={styles.exampleNote}>
               ※ 긴급 알림은 방해 금지 시간에도 발송될 수 있습니다
             </Text>

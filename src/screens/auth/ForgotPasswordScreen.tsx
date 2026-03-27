@@ -24,72 +24,74 @@ const ForgotPasswordScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const styles = useThemedStyles(({ colors }) => StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background.primary,
-    },
-    keyboardView: {
-      flex: 1,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      backgroundColor: colors.background.primary,
-    },
-    backButton: {
-      width: 48,
-      height: 48,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    headerTitle: {
-      color: colors.text.primary,
-      fontSize: 18,
-      fontWeight: 'bold' as const,
-      flex: 1,
-      textAlign: 'center' as const,
-    },
-    placeholder: {
-      width: 48,
-    },
-    content: {
-      flex: 1,
-      paddingHorizontal: 24,
-      paddingTop: 32,
-    },
-    descriptionContainer: {
-      marginBottom: 32,
-    },
-    title: {
-      color: colors.text.primary,
-      fontSize: 24,
-      fontWeight: 'bold' as const,
-      marginBottom: 16,
-      textAlign: 'center' as const,
-    },
-    description: {
-      color: colors.text.primary,
-      fontSize: 16,
-      lineHeight: 24,
-      textAlign: 'center' as const,
-      opacity: 0.8,
-    },
-    inputContainer: {
-      marginBottom: 24,
-    },
-    input: {
-      backgroundColor: colors.background.surface,
-      color: colors.text.primary,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderRadius: 8,
-      fontSize: 16,
-    },
-  }));
+  const styles = useThemedStyles(({ colors }) =>
+    StyleSheet.create({
+      container: {
+        flex: 1,
+        backgroundColor: colors.background.primary,
+      },
+      keyboardView: {
+        flex: 1,
+      },
+      header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: colors.background.primary,
+      },
+      backButton: {
+        width: 48,
+        height: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      headerTitle: {
+        color: colors.text.primary,
+        fontSize: 18,
+        fontWeight: 'bold' as const,
+        flex: 1,
+        textAlign: 'center' as const,
+      },
+      placeholder: {
+        width: 48,
+      },
+      content: {
+        flex: 1,
+        paddingHorizontal: 24,
+        paddingTop: 32,
+      },
+      descriptionContainer: {
+        marginBottom: 32,
+      },
+      title: {
+        color: colors.text.primary,
+        fontSize: 24,
+        fontWeight: 'bold' as const,
+        marginBottom: 16,
+        textAlign: 'center' as const,
+      },
+      description: {
+        color: colors.text.primary,
+        fontSize: 16,
+        lineHeight: 24,
+        textAlign: 'center' as const,
+        opacity: 0.8,
+      },
+      inputContainer: {
+        marginBottom: 24,
+      },
+      input: {
+        backgroundColor: colors.background.surface,
+        color: colors.text.primary,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 8,
+        fontSize: 16,
+      },
+    }),
+  );
 
   const handleResetPassword = async () => {
     if (!email.trim()) {
@@ -107,10 +109,10 @@ const ForgotPasswordScreen: React.FC = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
       await SupabaseService.resetPassword(email.trim());
-      
+
       Alert.alert(
         '이메일 전송 완료',
         '비밀번호 재설정 링크가 이메일로 전송되었습니다.\n\n이메일을 확인하시고 링크를 클릭하여 새 비밀번호를 설정해주세요.',
@@ -119,14 +121,14 @@ const ForgotPasswordScreen: React.FC = () => {
             text: '확인',
             onPress: () => router.back(),
           },
-        ]
+        ],
       );
     } catch (error: any) {
       console.error('비밀번호 재설정 오류:', error);
-      
+
       // Supabase 에러 메시지 처리
       let errorMessage = '비밀번호 재설정 요청 중 오류가 발생했습니다.';
-      
+
       if (error.message) {
         if (error.message.includes('User not found')) {
           errorMessage = '등록되지 않은 이메일 주소입니다.';
@@ -136,7 +138,7 @@ const ForgotPasswordScreen: React.FC = () => {
           errorMessage = '올바른 이메일 주소를 입력해주세요.';
         }
       }
-      
+
       Alert.alert('오류', errorMessage);
     } finally {
       setIsLoading(false);
@@ -147,13 +149,11 @@ const ForgotPasswordScreen: React.FC = () => {
     router.back();
   };
 
-
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
-      
-      <KeyboardAvoidingView 
+
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -169,9 +169,7 @@ const ForgotPasswordScreen: React.FC = () => {
         <View style={styles.content}>
           {/* 설명 텍스트 */}
           <View style={styles.descriptionContainer}>
-            <Text style={styles.title}>
-              비밀번호를 잊으셨나요?
-            </Text>
+            <Text style={styles.title}>비밀번호를 잊으셨나요?</Text>
             <Text style={styles.description}>
               가입하신 이메일 주소를 입력해주세요.{'\n'}
               비밀번호 재설정 링크를 보내드립니다.
@@ -193,12 +191,7 @@ const ForgotPasswordScreen: React.FC = () => {
           </View>
 
           {/* 재설정 버튼 */}
-          <Button
-            onPress={handleResetPassword}
-            loading={isLoading}
-            disabled={isLoading}
-            fullWidth
-          >
+          <Button onPress={handleResetPassword} loading={isLoading} disabled={isLoading} fullWidth>
             재설정 링크 보내기
           </Button>
         </View>

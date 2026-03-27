@@ -10,7 +10,7 @@ interface NotificationSettings {
   quietHours: {
     enabled: boolean;
     startTime: string; // "22:00"
-    endTime: string;   // "08:00"
+    endTime: string; // "08:00"
   };
 }
 
@@ -45,7 +45,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   initializeNotifications: async () => {
     set({ isLoading: true });
-    
+
     try {
       // 저장된 설정 불러오기
       const savedSettings = await SecureStore.getItemAsync('notification-settings');
@@ -56,7 +56,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
       // 알림 서비스 초기화
       const success = await NotificationService.initialize();
-      
+
       if (success) {
         const { settings } = get();
         NotificationService.setEnabled(settings.enabled);
@@ -74,14 +74,14 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   updateSettings: async (updates: Partial<NotificationSettings>) => {
     set({ isLoading: true });
-    
+
     try {
       const { settings } = get();
       const newSettings = { ...settings, ...updates };
 
       // 알림 활성화 상태 업데이트
       NotificationService.setEnabled(newSettings.enabled);
-      
+
       // 조용한 시간 설정 업데이트
       NotificationService.setQuietHours(newSettings.quietHours);
 
@@ -96,7 +96,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   resetSettings: async () => {
     set({ isLoading: true });
-    
+
     try {
       await SecureStore.deleteItemAsync('notification-settings');
       NotificationService.setEnabled(defaultSettings.enabled);
@@ -114,7 +114,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         await NotificationService.sendImmediateNotification(
           '🧪 테스트 알림',
           '알림이 정상적으로 작동하고 있습니다!',
-          { test: true }
+          { test: true },
         );
       }
     } catch (error) {

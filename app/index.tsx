@@ -6,14 +6,21 @@ import { useThemeValues } from '@/src/hooks/useThemedStyles';
 
 export default function IndexScreen() {
   const authState = useAuthStore();
-  const { isAuthenticated = false, isLoading = true, hasCompletedOnboarding = false } = authState || {};
+  const {
+    isAuthenticated = false,
+    isLoading = true,
+    hasCompletedOnboarding = false,
+  } = authState || {};
   const themeValues = useThemeValues();
   const { colors, brandColors } = themeValues || {};
   const [timeoutReached, setTimeoutReached] = useState(false);
 
   // 안전장치: 필수 값들이 없으면 기본값 사용
   const safeColors = colors || { background: { primary: '#FFFFFF' }, text: { primary: '#000000' } };
-  const safeBrandColors = brandColors || { accent: { primary: '#007AFF' }, semantic: { error: '#FF3B30' } };
+  const safeBrandColors = brandColors || {
+    accent: { primary: '#007AFF' },
+    semantic: { error: '#FF3B30' },
+  };
 
   useEffect(() => {
     // 15초 후 타임아웃 표시 (로딩이 계속되는 경우에만)
@@ -31,19 +38,34 @@ export default function IndexScreen() {
   // 인증 상태가 확정되지 않은 경우 로딩 유지
   if (isLoading) {
     return (
-      <View style={{ 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        backgroundColor: safeColors.background?.primary || '#FFFFFF',
-        padding: 20
-      }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: safeColors.background?.primary || '#FFFFFF',
+          padding: 20,
+        }}
+      >
         <ActivityIndicator size="large" color={safeBrandColors.accent?.primary || '#007AFF'} />
-        <Text style={{ color: safeColors.text?.primary || '#000000', marginTop: 16, textAlign: 'center' }}>
+        <Text
+          style={{
+            color: safeColors.text?.primary || '#000000',
+            marginTop: 16,
+            textAlign: 'center',
+          }}
+        >
           앱을 초기화하는 중...
         </Text>
         {timeoutReached && (
-          <Text style={{ color: safeBrandColors.semantic?.error || '#FF3B30', marginTop: 8, textAlign: 'center', fontSize: 12 }}>
+          <Text
+            style={{
+              color: safeBrandColors.semantic?.error || '#FF3B30',
+              marginTop: 8,
+              textAlign: 'center',
+              fontSize: 12,
+            }}
+          >
             로딩이 오래 걸리고 있습니다.{'\n'}
             네트워크 연결을 확인해주세요.
           </Text>

@@ -1,12 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -23,26 +16,32 @@ interface CompletionSummaryCardProps {
 const CompletionSummaryCard: React.FC<CompletionSummaryCardProps> = ({ project }) => {
   const cardRef = useRef<View>(null);
   const { colors, brandColors } = useThemeValues();
-  const recipe = project.recipeId ? getRecipeById(project.recipeId) : null;
-  const brandColor = recipe?.brandColor || brandColors.accent.primary;
+  const isCustomRecipe = project.recipeId === 'custom';
+  const recipe = !isCustomRecipe && project.recipeId ? getRecipeById(project.recipeId) : null;
+  const brandColor = isCustomRecipe
+    ? project.customBrandColor || brandColors.accent.primary
+    : recipe?.brandColor || brandColors.accent.primary;
 
   const startDate = parseISO(project.startDate);
-  const endDate = project.actualEndDate ? parseISO(project.actualEndDate) : parseISO(project.expectedEndDate);
+  const endDate = project.actualEndDate
+    ? parseISO(project.actualEndDate)
+    : parseISO(project.expectedEndDate);
   const totalDays = Math.max(1, differenceInDays(endDate, startDate));
   const logCount = project.progressLogs?.length || 0;
-  const representativeImage = project.images?.[0] || project.progressLogs?.find(l => l.images?.length > 0)?.images[0];
+  const representativeImage =
+    project.images?.[0] || project.progressLogs?.find((l) => l.images?.length > 0)?.images[0];
 
   const handleShare = async () => {
     try {
       if (!cardRef.current) return;
       const uri = await captureRef(cardRef, { format: 'png', quality: 1 });
-      
+
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
         Alert.alert('알림', '이 기기에서는 공유 기능을 사용할 수 없습니다.');
         return;
       }
-      
+
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
         dialogTitle: `${project.name} 숙성 완료!`,
@@ -160,15 +159,17 @@ const CompletionSummaryCard: React.FC<CompletionSummaryCardProps> = ({ project }
           <View style={styles.cardHeader}>
             <Ionicons name="trophy" size={28} color="#FFFFFF" style={styles.headerIcon} />
             <Text style={styles.headerTitle}>{project.name}</Text>
-            {recipe && (
-              <Text style={styles.headerSubtitle}>{recipe.name}</Text>
-            )}
+            {recipe && <Text style={styles.headerSubtitle}>{recipe.name}</Text>}
           </View>
 
           <View style={styles.cardBody}>
             {representativeImage && (
               <View style={styles.imageContainer}>
-                <Image source={{ uri: representativeImage }} style={styles.summaryImage} resizeMode="cover" />
+                <Image
+                  source={{ uri: representativeImage }}
+                  style={styles.summaryImage}
+                  resizeMode="cover"
+                />
               </View>
             )}
             {!representativeImage && (
@@ -197,7 +198,8 @@ const CompletionSummaryCard: React.FC<CompletionSummaryCardProps> = ({ project }
             </View>
 
             <Text style={styles.dateRange}>
-              {formatDate(project.startDate, 'yyyy.MM.dd')} → {formatDate(project.actualEndDate || project.expectedEndDate, 'yyyy.MM.dd')}
+              {formatDate(project.startDate, 'yyyy.MM.dd')} →{' '}
+              {formatDate(project.actualEndDate || project.expectedEndDate, 'yyyy.MM.dd')}
             </Text>
           </View>
         </View>

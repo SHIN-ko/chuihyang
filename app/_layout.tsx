@@ -19,11 +19,12 @@ if (__DEV__) {
   const originalConsoleError = console.error;
   console.error = (...args: unknown[]) => {
     const message = args[0];
-    if (typeof message === 'string' && (
-      message.includes("Property 'colors' doesn't exist") ||
-      message.includes("Non-serializable values") ||
-      message.includes("Warning: Can't perform a React state update on an unmounted component")
-    )) {
+    if (
+      typeof message === 'string' &&
+      (message.includes("Property 'colors' doesn't exist") ||
+        message.includes('Non-serializable values') ||
+        message.includes("Warning: Can't perform a React state update on an unmounted component"))
+    ) {
       return;
     }
     originalConsoleError.apply(console, args);
@@ -83,7 +84,7 @@ function RootLayoutNav() {
         // 실패해도 앱은 계속 실행
       }
     };
-    
+
     initializeAuth();
   }, [checkAuthState]);
 
@@ -98,7 +99,7 @@ function RootLayoutNav() {
           // 알림 초기화 실패해도 앱은 계속 실행
         }
       };
-      
+
       initNotifications();
     }
   }, [isAuthenticated, initializeNotifications]);
@@ -109,11 +110,11 @@ function RootLayoutNav() {
     const extractTokensFromUrl = (url: string) => {
       try {
         const urlObj = new URL(url);
-        
+
         // Query parameters에서 토큰 추출
         const access_token = urlObj.searchParams.get('access_token');
         const refresh_token = urlObj.searchParams.get('refresh_token');
-        
+
         // Hash fragment에서 토큰 추출 (일부 경우)
         if (!access_token && urlObj.hash) {
           const hashParams = new URLSearchParams(urlObj.hash.substring(1));
@@ -122,7 +123,7 @@ function RootLayoutNav() {
             refresh_token: hashParams.get('refresh_token'),
           };
         }
-        
+
         return { access_token, refresh_token };
       } catch (error) {
         console.error('URL 파싱 오류:', error);
@@ -133,61 +134,63 @@ function RootLayoutNav() {
     // URL 변경 리스너 설정
     const handleDeepLink = async (url: string) => {
       console.log('Deep Link 수신:', url);
-      
+
       // Supabase가 설정되지 않은 경우 deep link 처리 건너뛰기
       if (!isSupabaseConfigured()) {
         console.warn('Supabase가 설정되지 않아 deep link를 처리할 수 없습니다.');
         return;
       }
-      
+
       // 구글 OAuth 콜백 처리 (Expo Go 및 스탠드얼론 앱 지원)
-      if (url.includes('access_token') || 
-          url.includes('code=') || 
-          url.includes('#access_token') ||
-          url.includes('refresh_token') ||
-          url.includes('auth.expo.io')) {
+      if (
+        url.includes('access_token') ||
+        url.includes('code=') ||
+        url.includes('#access_token') ||
+        url.includes('refresh_token') ||
+        url.includes('auth.expo.io')
+      ) {
         try {
           console.log('구글 OAuth 콜백 감지');
           console.log('전체 URL:', url);
-          
+
           // Hash fragment에서 토큰 직접 추출
           let access_token: string | null = null;
           let refresh_token: string | null = null;
-          
+
           if (url.includes('#')) {
             const hashPart = url.split('#')[1];
             console.log('Hash 파라미터:', hashPart);
-            
+
             const hashParams = new URLSearchParams(hashPart);
             access_token = hashParams.get('access_token');
             refresh_token = hashParams.get('refresh_token');
-            
+
             console.log('추출된 토큰:', {
               access_token: access_token ? '있음' : '없음',
-              refresh_token: refresh_token ? '있음' : '없음'
+              refresh_token: refresh_token ? '있음' : '없음',
             });
           }
-          
+
           if (access_token && refresh_token) {
             console.log('토큰으로 세션 설정 시작...');
-            
+
             // Supabase에 직접 세션 설정
             const { data, error } = await supabase.auth.setSession({
               access_token,
               refresh_token,
             });
-            
+
             if (error) {
               console.error('세션 설정 실패:', error);
               throw error;
             }
-            
+
             if (data.session) {
               console.log('✅ 구글 로그인 성공! 메인 화면으로 이동');
-              
+
               // 인증 상태 새로고침
               await checkAuthState();
-              
+
               // 메인 화면으로 이동
               setTimeout(() => {
                 router.replace('/(tabs)');
@@ -199,7 +202,7 @@ function RootLayoutNav() {
             // 토큰이 없으면 기존 방식으로 시도
             console.log('토큰 직접 추출 실패, 기존 방식 시도...');
             const result = await GoogleAuthService.handleOAuthCallback(url);
-            
+
             if (result.success && result.session) {
               console.log('구글 로그인 성공 (기존 방식), 메인 화면으로 이동');
               await checkAuthState();
@@ -212,7 +215,7 @@ function RootLayoutNav() {
           }
         } catch (error) {
           console.error('❌ 구글 OAuth 콜백 처리 실패:', error);
-          
+
           // 로그인 화면으로 이동
           setTimeout(() => {
             router.push('/auth/login');
@@ -220,16 +223,20 @@ function RootLayoutNav() {
         }
         return;
       }
-      
+
       // 비밀번호 재설정 링크 확인 (myapp scheme과 다양한 패턴 지원)
-      if (url.includes('/auth/reset-password') || 
-          url.includes('type=recovery') || 
-          url.includes('myapp://')) {
-        
+      if (
+        url.includes('/auth/reset-password') ||
+        url.includes('type=recovery') ||
+        url.includes('myapp://')
+      ) {
         const { access_token, refresh_token } = extractTokensFromUrl(url);
-        
-        console.log('추출된 토큰:', { access_token: !!access_token, refresh_token: !!refresh_token });
-        
+
+        console.log('추출된 토큰:', {
+          access_token: !!access_token,
+          refresh_token: !!refresh_token,
+        });
+
         // 약간의 딜레이 후 화면 이동 (앱 초기화 대기)
         setTimeout(() => {
           if (access_token && refresh_token) {
@@ -249,13 +256,15 @@ function RootLayoutNav() {
     };
 
     // 초기 URL 확인 (앱이 닫힌 상태에서 링크로 열린 경우)
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        handleDeepLink(url);
-      }
-    }).catch((error) => {
-      console.error('초기 URL 확인 실패:', error);
-    });
+    Linking.getInitialURL()
+      .then((url) => {
+        if (url) {
+          handleDeepLink(url);
+        }
+      })
+      .catch((error) => {
+        console.error('초기 URL 확인 실패:', error);
+      });
 
     // URL 변경 이벤트 리스너 (앱이 열린 상태에서 링크 클릭 시)
     const linkingListener = Linking.addEventListener('url', (event) => {
@@ -265,9 +274,11 @@ function RootLayoutNav() {
     // Supabase Auth 상태 변화 리스너 (설정된 경우에만)
     let subscription: any = null;
     if (isSupabaseConfigured()) {
-      const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const {
+        data: { subscription: authSubscription },
+      } = supabase.auth.onAuthStateChange((event, session) => {
         console.log('Auth 상태 변화:', event, session);
-        
+
         if (event === 'PASSWORD_RECOVERY') {
           console.log('패스워드 복구 세션 감지');
           // 비밀번호 복구 세션이 설정된 경우
@@ -291,8 +302,8 @@ function RootLayoutNav() {
   return (
     <CustomThemeProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack 
-          screenOptions={{ 
+        <Stack
+          screenOptions={{
             headerShown: false,
             animation: 'slide_from_right',
             animationTypeForReplace: 'push',
@@ -300,41 +311,41 @@ function RootLayoutNav() {
             gestureEnabled: true,
           }}
         >
-          <Stack.Screen 
-            name="index" 
-            options={{ 
+          <Stack.Screen
+            name="index"
+            options={{
               headerShown: false,
               animation: 'fade_from_bottom',
-            }} 
+            }}
           />
-          <Stack.Screen 
-            name="auth" 
-            options={{ 
+          <Stack.Screen
+            name="auth"
+            options={{
               headerShown: false,
               animation: 'slide_from_right',
-            }} 
+            }}
           />
-          <Stack.Screen 
-            name="(tabs)" 
-            options={{ 
+          <Stack.Screen
+            name="(tabs)"
+            options={{
               headerShown: false,
               animation: 'fade_from_bottom',
               animationDuration: 300,
-            }} 
+            }}
           />
-          <Stack.Screen 
-            name="project" 
-            options={{ 
+          <Stack.Screen
+            name="project"
+            options={{
               headerShown: false,
               animation: 'slide_from_right',
-            }} 
+            }}
           />
-          <Stack.Screen 
-            name="modal" 
-            options={{ 
+          <Stack.Screen
+            name="modal"
+            options={{
               presentation: 'modal',
               animation: 'slide_from_bottom',
-            }} 
+            }}
           />
         </Stack>
       </ThemeProvider>

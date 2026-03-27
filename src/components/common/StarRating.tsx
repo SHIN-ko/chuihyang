@@ -19,7 +19,7 @@ const StarRating: React.FC<StarRatingProps> = ({
   readonly = false,
 }) => {
   const scaleAnims = useRef([...Array(5)].map(() => new Animated.Value(1))).current;
-  
+
   const handleStarPress = (starIndex: number) => {
     if (!readonly && onRatingChange) {
       // 마이크로 인터랙션 애니메이션
@@ -37,7 +37,7 @@ const StarRating: React.FC<StarRatingProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
-      
+
       onRatingChange(starIndex + 1);
     }
   };
@@ -74,10 +74,7 @@ const StarRating: React.FC<StarRatingProps> = ({
   return (
     <View style={styles.container}>
       {[0, 1, 2, 3, 4].map((starIndex) => (
-        <Animated.View 
-          key={starIndex}
-          style={{ transform: [{ scale: scaleAnims[starIndex] }] }}
-        >
+        <Animated.View key={starIndex} style={{ transform: [{ scale: scaleAnims[starIndex] }] }}>
           <TouchableOpacity
             onPress={() => handleStarPress(starIndex)}
             onPressIn={() => handleStarPressIn(starIndex)}

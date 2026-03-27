@@ -37,11 +37,11 @@ if (!parsed.success) {
 
 const supabaseUrl = parsed.success
   ? parsed.data.EXPO_PUBLIC_SUPABASE_URL
-  : rawEnv.EXPO_PUBLIC_SUPABASE_URL ?? '';
+  : (rawEnv.EXPO_PUBLIC_SUPABASE_URL ?? '');
 
 const supabaseAnonKey = parsed.success
   ? parsed.data.EXPO_PUBLIC_SUPABASE_ANON_KEY
-  : rawEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+  : (rawEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '');
 
 export const env = {
   supabaseUrl,
@@ -54,9 +54,7 @@ export const requireSupabaseEnv = () => {
   if (!env.isSupabaseConfigured) {
     const issueMessages = env.issues.map((issue) => `${issue.key}: ${issue.message}`);
     const hint = issueMessages.length > 0 ? `\n- ${issueMessages.join('\n- ')}` : '';
-    throw new Error(
-      `Supabase 환경변수가 올바르게 설정되지 않았습니다.${hint ? `\n${hint}` : ''}`,
-    );
+    throw new Error(`Supabase 환경변수가 올바르게 설정되지 않았습니다.${hint ? `\n${hint}` : ''}`);
   }
 
   return {
