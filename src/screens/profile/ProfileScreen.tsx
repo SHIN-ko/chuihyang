@@ -22,7 +22,7 @@ import { SupabaseService } from '@/src/services/supabaseService';
 
 const ProfileScreen: React.FC = () => {
   const router = useRouter();
-  const { user, logout, refreshUser, deleteAccount } = useAuthStore();
+  const { user, refreshUser } = useAuthStore();
   const { colors, brandColors } = useThemeValues();
   const {
     settings: notificationSettings,
@@ -32,9 +32,7 @@ const ProfileScreen: React.FC = () => {
     initializeNotifications,
   } = useNotificationStore();
 
-  const [isLoading, setIsLoading] = useState(false);
   const [uploadingProfileImage, setUploadingProfileImage] = useState(false);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -57,66 +55,6 @@ const ProfileScreen: React.FC = () => {
       }),
     ]).start();
   }, [notificationInitialized, initializeNotifications]);
-
-  const handleLogout = () => {
-    Alert.alert('로그아웃', '정말 로그아웃하시겠습니까?', [
-      {
-        text: '취소',
-        style: 'cancel',
-      },
-      {
-        text: '로그아웃',
-        style: 'destructive',
-        onPress: async () => {
-          setIsLoading(true);
-          await logout();
-          setIsLoading(false);
-
-          router.replace('/auth/login');
-        },
-      },
-    ]);
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      '계정 삭제',
-      '계정을 삭제하면 담금주 프로젝트와 알림을 포함한 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
-      [
-        {
-          text: '취소',
-          style: 'cancel',
-        },
-        {
-          text: '계정 삭제',
-          style: 'destructive',
-          onPress: async () => {
-            setIsDeletingAccount(true);
-            try {
-              await deleteAccount();
-              Alert.alert('계정 삭제 완료', '계정과 모든 데이터가 삭제되었습니다.', [
-                {
-                  text: '확인',
-                  onPress: () => router.replace('/auth/onboarding'),
-                },
-              ]);
-            } catch (error) {
-              console.error('계정 삭제 중 오류 발생:', error);
-              Alert.alert(
-                '오류',
-                error instanceof Error
-                  ? error.message
-                  : '계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.',
-              );
-            } finally {
-              setIsDeletingAccount(false);
-            }
-          },
-        },
-      ],
-      { cancelable: false },
-    );
-  };
 
   const handleTestNotification = async () => {
     try {
@@ -199,7 +137,7 @@ const ProfileScreen: React.FC = () => {
     title: string,
     description: string,
   ) => {
-    if (key === 'quietHours') return null; // 조용한 시간은 별도 처리
+    if (key === 'quietHours') return null;
 
     return (
       <View style={styles.settingRow}>
@@ -229,23 +167,6 @@ const ProfileScreen: React.FC = () => {
       scrollView: {
         flex: 1,
         paddingHorizontal: 20,
-      },
-      header: {
-        padding: 24,
-        marginBottom: 16,
-        alignItems: 'center',
-      },
-      headerTitle: {
-        fontSize: 28,
-        fontWeight: '700',
-        color: colors.text.primary,
-        marginBottom: 8,
-        letterSpacing: -0.5,
-      },
-      headerSubtitle: {
-        fontSize: 16,
-        color: colors.text.secondary,
-        textAlign: 'center',
       },
       section: {
         padding: 20,
@@ -310,42 +231,26 @@ const ProfileScreen: React.FC = () => {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 16, // 조금 더 여유있게
+        paddingVertical: 16,
         borderBottomWidth: 1,
         borderBottomColor: colors.border.secondary,
       },
       settingInfo: {
-        flexDirection: 'column', // 세로 배치로 변경
-        alignItems: 'flex-start', // 왼쪽 정렬
-        flex: 1,
-        paddingRight: 16, // Switch와의 간격 확보
-      },
-      settingInfoWithIcon: {
-        flexDirection: 'row', // 아이콘이 있는 경우 가로 배치
-        alignItems: 'center',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
         flex: 1,
         paddingRight: 16,
-      },
-      settingTextContainer: {
-        flexDirection: 'column', // 제목과 설명은 세로 배치
-        flex: 1,
-      },
-      settingIcon: {
-        marginRight: 12,
       },
       settingTitle: {
         fontSize: 16,
         fontWeight: '600',
         color: colors.text.primary,
-        marginBottom: 4, // 제목과 설명 사이 간격 늘림
+        marginBottom: 4,
       },
       settingDescription: {
         fontSize: 13,
         color: colors.text.secondary,
-        lineHeight: 18, // 설명 텍스트 가독성 향상
-      },
-      switch: {
-        marginLeft: 12,
+        lineHeight: 18,
       },
       testButton: {
         backgroundColor: colors.background.surface,
@@ -368,6 +273,9 @@ const ProfileScreen: React.FC = () => {
         borderBottomWidth: 1,
         borderBottomColor: colors.border.secondary,
       },
+      menuItemLast: {
+        borderBottomWidth: 0,
+      },
       menuInfo: {
         flex: 1,
         marginLeft: 16,
@@ -381,41 +289,6 @@ const ProfileScreen: React.FC = () => {
       menuDescription: {
         fontSize: 13,
         color: colors.text.secondary,
-      },
-      logoutItem: {
-        borderBottomWidth: 0,
-      },
-      deleteAccountContainer: {
-        marginBottom: 20,
-      },
-      deleteAccountDescription: {
-        fontSize: 12,
-        color: colors.text.secondary,
-        lineHeight: 18,
-        marginBottom: 12,
-      },
-      deleteAccountButton: {
-        marginBottom: 16,
-      },
-      logoutButton: {
-        backgroundColor: `${brandColors.semantic.error}20`,
-        borderColor: `${brandColors.semantic.error}40`,
-        borderWidth: 1,
-        borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-        ...shadows.neumorphism.outset,
-      },
-      logoutText: {
-        color: brandColors.semantic.error,
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 8,
-      },
-      bottomSpacing: {
-        height: 20,
       },
       avatarImage: {
         width: 60,
@@ -448,6 +321,9 @@ const ProfileScreen: React.FC = () => {
         fontSize: 12,
         color: brandColors.accent.primary,
         fontWeight: '500',
+      },
+      bottomSpacing: {
+        height: 20,
       },
     }),
   );
@@ -570,7 +446,7 @@ const ProfileScreen: React.FC = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
+              style={[styles.menuItem, styles.menuItemLast]}
               onPress={() => router.push('/profile/notification-debug')}
             >
               <Ionicons name="bug-outline" size={24} color={brandColors.semantic.warning} />
@@ -595,65 +471,15 @@ const ProfileScreen: React.FC = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => router.push('/profile/terms-of-service')}
+              style={[styles.menuItem, styles.menuItemLast]}
+              onPress={() => router.push('/profile/settings')}
             >
-              <Ionicons name="document-text-outline" size={24} color={colors.text.secondary} />
+              <Ionicons name="settings-outline" size={24} color={colors.text.secondary} />
               <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>이용약관</Text>
-                <Text style={styles.menuDescription}>서비스 이용약관</Text>
+                <Text style={styles.menuTitle}>설정</Text>
+                <Text style={styles.menuDescription}>계정 관리, 이용약관, 개인정보처리방침</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => router.push('/profile/privacy-policy')}
-            >
-              <Ionicons name="shield-outline" size={24} color={colors.text.secondary} />
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>개인정보처리방침</Text>
-                <Text style={styles.menuDescription}>개인정보 보호정책</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>계정 관리</Text>
-
-            <View style={styles.deleteAccountContainer}>
-              <Text style={styles.deleteAccountDescription}>
-                계정을 삭제하면 담금주 프로젝트, 알림, 프로필 정보가 모두 제거되며 다시 복구할 수
-                없습니다.
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.logoutButton,
-                  styles.deleteAccountButton,
-                  (isDeletingAccount || isLoading) && { opacity: 0.7 },
-                ]}
-                onPress={handleDeleteAccount}
-                disabled={isDeletingAccount || isLoading}
-              >
-                <Ionicons name="trash-outline" size={22} color={brandColors.semantic.error} />
-                <Text style={styles.logoutText}>
-                  {isDeletingAccount ? '계정 삭제 중...' : '계정 삭제'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.menuItem, styles.logoutItem]}
-              onPress={handleLogout}
-              disabled={isLoading}
-            >
-              <Ionicons name="log-out-outline" size={24} color={brandColors.semantic.error} />
-              <View style={styles.menuInfo}>
-                <Text style={[styles.menuTitle, styles.logoutText]}>로그아웃</Text>
-                <Text style={styles.menuDescription}>계정에서 로그아웃합니다</Text>
-              </View>
-              {isLoading && <Ionicons name="time-outline" size={20} color={colors.text.muted} />}
             </TouchableOpacity>
           </View>
 

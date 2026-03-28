@@ -9,8 +9,8 @@
   "colors": {
     "background": {
       "primary": "#FFFBF5",
-      "secondary": "#FFF5EB",
-      "tertiary": "#FFF0E5",
+      "secondary": "#FFF8F0",
+      "tertiary": "#FFF5ED",
       "surface": "#FFFFFF",
       "elevated": "#FFFFFF",
       "overlay": "rgba(0, 0, 0, 0.3)"
@@ -25,12 +25,12 @@
     "border": {
       "primary": "#E8E8E8",
       "secondary": "#F0F0F0",
-      "accent": "#FF8C42"
+      "accent": "#D4A574"
     },
     "accent": {
-      "primary": "#FF8C42",
-      "secondary": "#FFB380",
-      "background": "#FFF0E5"
+      "primary": "#D4A574",
+      "secondary": "#E8C9A8",
+      "background": "#FFF5ED"
     },
     "semantic": {
       "success": "#34C759",

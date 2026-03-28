@@ -40,7 +40,7 @@
 | 용도 | 색상 코드 | 설명 |
 |------|----------|------|
 | **배경 Primary** | `#FFFBF5` | 따뜻한 크림색 (메인 배경) |
-| **배경 Secondary** | `#FFF5EB` | 연한 피치색 (카드 배경 대안) |
+| **배경 Secondary** | `#FFF8F0` | 연한 아이보리 (카드 배경 대안) |
 | **배경 Surface** | `#FFFFFF` | 순백색 (카드, 입력 필드) |
 | **배경 Elevated** | `#FFFFFF` | 떠있는 요소 (모달, 시트) |
 
@@ -58,9 +58,9 @@
 
 | 용도 | 색상 코드 | 설명 |
 |------|----------|------|
-| **Primary Accent** | `#FF8C42` | 따뜻한 오렌지 (메인 CTA) |
-| **Secondary Accent** | `#FFB380` | 연한 오렌지 (보조 액션) |
-| **Accent Bg** | `#FFF0E5` | 오렌지 틴트 배경 |
+| **Primary Accent** | `#D4A574` | 앰버/꿀색 (메인 CTA) |
+| **Secondary Accent** | `#E8C9A8` | 연한 꿀색 (보조 액션) |
+| **Accent Bg** | `#FFF5ED` | 앰버 틴트 배경 |
 
 ### Semantic 색상
 
@@ -77,7 +77,7 @@
 |------|----------|
 | **Primary** | `#E8E8E8` |
 | **Secondary** | `#F0F0F0` |
-| **Accent** | `#FF8C42` (accent와 동일) |
+| **Accent** | `#D4A574` (accent와 동일) |
 
 ---
 
@@ -184,7 +184,7 @@ elevation: 4
 ### 버튼
 
 #### Primary Button
-- 배경: `#FF8C42` (accent primary)
+- 배경: `#D4A574` (accent primary)
 - 텍스트: `#FFFFFF`
 - borderRadius: 24px
 - 높이: 52px
@@ -199,7 +199,7 @@ elevation: 4
 
 #### Ghost Button
 - 배경: transparent
-- 텍스트: `#FF8C42`
+- 텍스트: `#D4A574`
 - borderRadius: 24px
 
 ### 카드
@@ -218,7 +218,7 @@ elevation: 4
 
 - 배경: `#FFFFFF`
 - 테두리: `#E8E8E8` 1px
-- focus 테두리: `#FF8C42` 1.5px
+- focus 테두리: `#D4A574` 1.5px
 - borderRadius: 12px
 - padding: 16px
 - placeholder 색상: `#BBBBBB`
@@ -226,7 +226,7 @@ elevation: 4
 ### 탭 바
 
 - 배경: `#FFFFFF`
-- 활성 아이콘: `#FF8C42`
+- 활성 아이콘: `#D4A574`
 - 비활성 아이콘: `#BBBBBB`
 - 상단 테두리: `#F0F0F0` 1px
 - 높이: 65px
@@ -281,3 +281,4 @@ elevation: 4
 | 날짜 | 변경 내용 |
 |------|----------|
 | 2026-03-27 | 초안 작성 — 밝고 동글동글한 컨셉 |
+| 2026-03-28 | 색상 변경 — 오렌지(#FF8C42) → 앰버/꿀색(#D4A574) |

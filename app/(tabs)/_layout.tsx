@@ -11,13 +11,13 @@ function TabBarIcon(props: { name: React.ComponentProps<typeof Ionicons>['name']
 }
 
 export default function TabLayout() {
-  const { colors } = useThemeValues();
+  const { colors, brandColors } = useThemeValues();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#FF8C42',
+        tabBarActiveTintColor: brandColors.accent.primary,
         tabBarInactiveTintColor: colors.text.muted,
         tabBarStyle: {
           backgroundColor: colors.background.surface,
