@@ -1,3 +1,5 @@
+import type { TastingNote } from './tastingNote';
+
 // 사용자 관련 타입
 export interface User {
   id: string;
@@ -42,6 +44,7 @@ export interface Project {
   customRecipeName?: string;
   customDuration?: number; // 일 단위
   customBrandColor?: string;
+  tastingNote?: TastingNote | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -120,3 +123,12 @@ export type TabParamList = {
   calendar: undefined;
   profile: undefined;
 };
+
+// 시음 노트 타입
+export type {
+  TastingNote,
+  TastingNoteRatings,
+  TasteType,
+  TasteStats,
+} from './tastingNote';
+export { RATING_DIMENSIONS } from './tastingNote';
