@@ -1082,6 +1082,58 @@ const ProjectDetailScreen: React.FC = () => {
 
           {project.status === 'completed' && <CompletionSummaryCard project={project} />}
 
+          {project.status === 'completed' && (
+            <View style={{ ...styles.section, alignItems: 'stretch' }}>
+              {project.tastingNote?.ratings ? (
+                <>
+                  <View style={styles.logsSectionHeader}>
+                    <Text style={[styles.sectionTitle, { flex: 1, marginRight: 8, textAlign: 'left' }]}>
+                      시음 노트
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.addLogButton}
+                      onPress={() => router.push(`/project/tasting-note/${project.id}`)}
+                    >
+                      <Ionicons name="create-outline" size={16} color="#FFFFFF" />
+                      <Text style={styles.addLogButtonText}>수정</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={{ alignItems: 'center', marginBottom: 12 }}>
+                    <RadarChart
+                      data={[
+                        { label: '맛', value: project.tastingNote.ratings.taste || 0 },
+                        { label: '향', value: project.tastingNote.ratings.aroma || 0 },
+                        { label: '외관', value: project.tastingNote.ratings.appearance || 0 },
+                        { label: '바디감', value: project.tastingNote.ratings.body || 0 },
+                        { label: '여운', value: project.tastingNote.ratings.finish || 0 },
+                        { label: '전체', value: project.tastingNote.ratings.overall || 0 },
+                      ]}
+                      size={180}
+                      color={brandColor}
+                    />
+                  </View>
+                  {project.tastingNote.memo ? (
+                    <Text style={styles.notesText}>{project.tastingNote.memo}</Text>
+                  ) : null}
+                </>
+              ) : (
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: brandColor,
+                    borderRadius: 24,
+                    paddingVertical: 14,
+                    alignItems: 'center',
+                  }}
+                  onPress={() => router.push(`/project/tasting-note/${project.id}`)}
+                >
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFFFFF' }}>
+                    시음 노트 작성
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
           {project.notes && (
             <View style={{ ...styles.section, alignItems: 'stretch' }}>
               <Text style={styles.sectionTitle}>노트</Text>
