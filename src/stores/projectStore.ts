@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Project, ProjectStatus, ProjectType, ProgressLog } from '@/src/types';
+import { Project, ProjectStatus, ProjectType, ProgressLog, TastingNote } from '@/src/types';
 import NotificationService from '@/src/services/notificationService';
 import { SupabaseService } from '@/src/services/supabaseService';
 import { useAuthStore } from './authStore';
@@ -32,6 +32,9 @@ interface ProjectState {
   ) => Promise<boolean>;
   updateProgressLog: (logId: string, updates: Partial<ProgressLog>) => Promise<boolean>;
   deleteProgressLog: (projectId: string, logId: string) => Promise<boolean>;
+
+  // Tasting Note actions
+  saveTastingNote: (projectId: string, tastingNote: TastingNote) => Promise<boolean>;
 
   // Notification actions
   rescheduleAllNotifications: () => Promise<boolean>;
@@ -72,6 +75,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       projects: state.projects.filter((project) => project.id !== id),
       selectedProject: state.selectedProject?.id === id ? null : state.selectedProject,
     }));
+  },
+
+  saveTastingNote: async (projectId: string, tastingNote: TastingNote) => {
+    try {
+      set({ isLoading: true });
+      await SupabaseService.saveTastingNote(projectId, tastingNote);
+      get().updateProject(projectId, { tastingNote });
+      set({ isLoading: false });
+      return true;
+    } catch (error) {
+      console.error('시음 노트 저장 실패:', error);
+      set({ isLoading: false });
+      return false;
+    }
   },
 
   // 모든 프로젝트의 알림 재설정
