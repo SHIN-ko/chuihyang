@@ -431,34 +431,6 @@ const ProfileScreen: React.FC = () => {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>알림 관리</Text>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => router.push('/profile/notification-history')}
-            >
-              <Ionicons name="time-outline" size={24} color={colors.text.secondary} />
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>알림 히스토리</Text>
-                <Text style={styles.menuDescription}>예약된 알림 목록을 확인합니다</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.menuItem, styles.menuItemLast]}
-              onPress={() => router.push('/profile/notification-debug')}
-            >
-              <Ionicons name="bug-outline" size={24} color={brandColors.semantic.warning} />
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>알림 디버그</Text>
-                <Text style={styles.menuDescription}>알림 시스템 진단 및 문제 해결</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.section}>
             <Text style={styles.sectionTitle}>앱 정보</Text>
 
             <TouchableOpacity style={styles.menuItem}>

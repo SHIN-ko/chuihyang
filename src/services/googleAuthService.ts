@@ -1,4 +1,3 @@
-import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/src/lib/supabase';
 import Constants from 'expo-constants';
@@ -8,16 +7,15 @@ export class GoogleAuthService {
    * 리다이렉트 URI 생성
    */
   private static getRedirectUri(): string {
-    if (__DEV__ && Constants.appOwnership === 'expo') {
-      const { manifest } = Constants;
-      const slug = manifest?.slug || 'chuihyang';
-      const owner = manifest?.owner || Constants.manifest2?.extra?.expoClient?.owner || 'anonymous';
+    // Expo Go: auth.expo.io 프록시 사용
+    if (Constants.appOwnership === 'expo') {
+      const slug = Constants.expoConfig?.slug || 'chuihyang';
+      const owner = Constants.expoConfig?.owner || 'shs2810';
       return `https://auth.expo.io/@${owner}/${slug}`;
     }
-    return makeRedirectUri({
-      scheme: 'chuihyang',
-      path: 'auth',
-    });
+    // Development build / Production: 커스텀 스킴 직접 사용
+    // makeRedirectUri는 환경에 따라 localhost를 반환할 수 있으므로 명시적으로 지정
+    return 'chuihyang://auth';
   }
 
   /**

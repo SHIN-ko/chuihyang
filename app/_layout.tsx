@@ -10,6 +10,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
+import { useProjectStore } from '@/src/stores/projectStore';
 import { ThemeProvider as CustomThemeProvider } from '@/src/contexts/ThemeContext';
 import { supabase, isSupabaseConfigured } from '@/src/lib/supabase';
 import { GoogleAuthService } from '@/src/services/googleAuthService';
@@ -93,7 +94,14 @@ function RootLayoutNav() {
     if (isAuthenticated && isSupabaseConfigured()) {
       const initNotifications = async () => {
         try {
-          await initializeNotifications();
+          const success = await initializeNotifications();
+          if (success) {
+            // 프로젝트 목록을 먼저 로드한 후 알림 재등록
+            // (앱 재시작/기기 리부팅 시 OS가 예약된 알림을 초기화할 수 있으므로)
+            const projectStore = useProjectStore.getState();
+            await projectStore.fetchProjects();
+            await projectStore.rescheduleAllNotifications();
+          }
         } catch (error) {
           console.error('알림 초기화 실패:', error);
           // 알림 초기화 실패해도 앱은 계속 실행

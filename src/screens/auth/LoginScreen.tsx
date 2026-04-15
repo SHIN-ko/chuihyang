@@ -19,7 +19,7 @@ import { useAuthStore } from '@/src/stores/authStore';
 import Button from '@/src/components/common/Button';
 import GoogleLoginButton from '@/src/components/common/GoogleLoginButton';
 import AppleLoginButton from '@/src/components/common/AppleLoginButton';
-import DemoLoginButton from '@/src/components/common/DemoLoginButton';
+
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
 
 const LoginScreen: React.FC = () => {
@@ -356,14 +356,6 @@ const LoginScreen: React.FC = () => {
               />
               <View style={styles.socialGap} />
               <GoogleLoginButton />
-              <View style={styles.socialGap} />
-              <DemoLoginButton
-                onSuccess={() => {
-                  console.log('데모 로그인 성공, 메인 화면으로 이동');
-                  router.replace('/(tabs)');
-                }}
-                onError={(error) => console.log('데모 로그인 오류:', error)}
-              />
 
               <View style={styles.signupContainer}>
                 <Text style={styles.signupText}>계정이 없으신가요?</Text>
