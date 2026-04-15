@@ -1,10 +1,9 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useThemeValues } from '@/src/hooks/useThemedStyles';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
 function TabBarIcon(props: { name: React.ComponentProps<typeof Ionicons>['name']; color: string }) {
   return <Ionicons size={24} style={{ marginBottom: -3 }} {...props} />;
@@ -12,6 +11,7 @@ function TabBarIcon(props: { name: React.ComponentProps<typeof Ionicons>['name']
 
 export default function TabLayout() {
   const { colors, brandColors } = useThemeValues();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -23,9 +23,9 @@ export default function TabLayout() {
           backgroundColor: colors.background.surface,
           borderTopWidth: 1,
           borderTopColor: colors.border.secondary,
-          paddingBottom: 8,
+          paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 8,
-          height: 65,
+          height: 65 + insets.bottom,
         },
         tabBarLabelStyle: {
           fontSize: 12,
