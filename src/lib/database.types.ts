@@ -57,6 +57,7 @@ export interface Database {
           custom_recipe_name: string | null;
           custom_duration: number | null;
           custom_brand_color: string | null;
+          tasting_note: Json | null;
           created_at: string;
           updated_at: string;
         };
@@ -75,6 +76,7 @@ export interface Database {
           custom_recipe_name?: string | null;
           custom_duration?: number | null;
           custom_brand_color?: string | null;
+          tasting_note?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -93,6 +95,7 @@ export interface Database {
           custom_recipe_name?: string | null;
           custom_duration?: number | null;
           custom_brand_color?: string | null;
+          tasting_note?: Json | null;
           created_at?: string;
           updated_at?: string;
         };

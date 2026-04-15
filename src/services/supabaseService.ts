@@ -1,6 +1,6 @@
 import { supabase } from '@/src/lib/supabase';
-import { User, Project, ProgressLog, Ingredient } from '@/src/types';
-import { Database } from '@/src/lib/database.types';
+import { User, Project, ProgressLog, Ingredient, TastingNote } from '@/src/types';
+import { Database, Json } from '@/src/lib/database.types';
 import { requireSupabaseEnv } from '@/src/config/env';
 
 type ProjectRow = Database['public']['Tables']['projects']['Row'];
@@ -484,6 +484,24 @@ export class SupabaseService {
     }
   }
 
+  // 시음 노트 저장
+  static async saveTastingNote(projectId: string, tastingNote: TastingNote): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          tasting_note: tastingNote as unknown as Json,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', projectId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('시음 노트 저장 오류:', error);
+      throw error;
+    }
+  }
+
   // 이미지 업로드
   // 빈 이미지 파일 체크 유틸리티
   static async checkImageSize(url: string): Promise<boolean> {
@@ -591,6 +609,7 @@ export class SupabaseService {
       customRecipeName: projectRow.custom_recipe_name,
       customDuration: projectRow.custom_duration,
       customBrandColor: projectRow.custom_brand_color,
+      tastingNote: projectRow.tasting_note || null,
       createdAt: projectRow.created_at,
       updatedAt: projectRow.updated_at,
     };
