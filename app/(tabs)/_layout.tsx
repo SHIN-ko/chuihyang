@@ -42,6 +42,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="taste"
+        options={{
+          title: '취향',
+          tabBarIcon: ({ color }) => <TabBarIcon name="wine-outline" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="calendar"
         options={{
           title: '캘린더',
