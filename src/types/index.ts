@@ -132,3 +132,18 @@ export type {
   TasteStats,
 } from './tastingNote';
 export { RATING_DIMENSIONS } from './tastingNote';
+
+// 담금주 가이드 타입
+export type {
+  MoodId,
+  PeopleCount,
+  SweetnessLevel,
+  DrinkTiming,
+  FruitId,
+  HerbId,
+  GuideAnswers,
+  GuideResultHerb,
+  GuideResult,
+  CustomRecipe,
+  RecipeAdjustments,
+} from './customRecipe';
