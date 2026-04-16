@@ -12,6 +12,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useProjectStore } from '@/src/stores/projectStore';
+import { useCustomRecipeStore } from '@/src/stores/customRecipeStore';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { formatDate, calculateProgress, calculateDetailedProgress } from '@/src/utils/date';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +27,7 @@ type FilterType = 'all' | 'in_progress' | 'completed';
 
 export default function HomeScreen() {
   const { projects, fetchProjects, isLoading } = useProjectStore();
+  const { recipes: customRecipes, fetchRecipes: fetchCustomRecipes } = useCustomRecipeStore();
   const router = useRouter();
   const { colors, brandColors } = useThemeValues();
 
@@ -325,6 +327,64 @@ export default function HomeScreen() {
       emptyButton: {
         marginTop: 8,
       },
+      guideCard: {
+        marginHorizontal: 20,
+        marginTop: 8,
+        marginBottom: 12,
+        borderRadius: 20,
+        backgroundColor: brandColors.accent.primary,
+        padding: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        ...shadows.glass.medium,
+      },
+      guideCardContent: {
+        flex: 1,
+      },
+      guideCardTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        marginBottom: 4,
+      },
+      guideCardDescription: {
+        fontSize: 13,
+        color: '#FFFFFF',
+        opacity: 0.9,
+      },
+      guideCardIcon: {
+        marginLeft: 12,
+      },
+      myRecipesLink: {
+        marginHorizontal: 20,
+        marginBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        backgroundColor: colors.background.surface,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: colors.border.primary,
+      },
+      myRecipesLinkContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+      },
+      myRecipesLinkText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: colors.text.primary,
+        marginLeft: 10,
+      },
+      myRecipesCount: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: brandColors.accent.primary,
+        marginRight: 8,
+      },
       fab: {
         position: 'absolute',
         bottom: 24,
@@ -345,6 +405,7 @@ export default function HomeScreen() {
   useEffect(() => {
     const loadData = async () => {
       await fetchProjects();
+      await fetchCustomRecipes();
       setIsInitialLoading(false);
 
       Animated.parallel([
@@ -362,12 +423,13 @@ export default function HomeScreen() {
     };
 
     loadData();
-  }, [fetchProjects]);
+  }, [fetchProjects, fetchCustomRecipes]);
 
   useFocusEffect(
     useCallback(() => {
       fetchProjects();
-    }, [fetchProjects]),
+      fetchCustomRecipes();
+    }, [fetchProjects, fetchCustomRecipes]),
   );
 
   useEffect(() => {
@@ -528,6 +590,35 @@ export default function HomeScreen() {
           },
         ]}
       >
+        <TouchableOpacity
+          style={styles.guideCard}
+          onPress={() => router.push('/guide')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.guideCardContent}>
+            <Text style={styles.guideCardTitle}>✨ 나만의 담금주 가이드</Text>
+            <Text style={styles.guideCardDescription}>
+              7가지 질문으로 당신의 시그니처 담금주를 찾아보세요
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color="#FFFFFF" style={styles.guideCardIcon} />
+        </TouchableOpacity>
+
+        {customRecipes.length > 0 && (
+          <TouchableOpacity
+            style={styles.myRecipesLink}
+            onPress={() => router.push('/profile/my-recipes')}
+            activeOpacity={0.85}
+          >
+            <View style={styles.myRecipesLinkContent}>
+              <Ionicons name="book-outline" size={18} color={colors.text.primary} />
+              <Text style={styles.myRecipesLinkText}>내 레시피</Text>
+            </View>
+            <Text style={styles.myRecipesCount}>{customRecipes.length}개</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+          </TouchableOpacity>
+        )}
+
         {projects.length > 0 && renderCompactStats()}
 
         <View style={styles.searchContainer}>
