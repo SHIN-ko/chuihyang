@@ -200,6 +200,65 @@ export interface Database {
           },
         ];
       };
+      custom_recipes: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          base_type: string;
+          base_amount_ml: number;
+          fruit_id: string;
+          fruit_amount_g: number;
+          herbs: Json;
+          sugar_g: number;
+          duration_days: number;
+          brand_color: string | null;
+          mood_tag: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          base_type: string;
+          base_amount_ml?: number;
+          fruit_id: string;
+          fruit_amount_g: number;
+          herbs: Json;
+          sugar_g: number;
+          duration_days: number;
+          brand_color?: string | null;
+          mood_tag?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          base_type?: string;
+          base_amount_ml?: number;
+          fruit_id?: string;
+          fruit_amount_g?: number;
+          herbs?: Json;
+          sugar_g?: number;
+          duration_days?: number;
+          brand_color?: string | null;
+          mood_tag?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'custom_recipes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
