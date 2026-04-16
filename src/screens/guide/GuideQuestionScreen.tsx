@@ -104,7 +104,7 @@ const GuideQuestionScreen: React.FC = () => {
 
       const result = generateRecipe(answers);
       setPendingRecipe(result);
-      router.replace('/guide/result' as never);
+      router.replace('/guide/result');
     }
   };
 
