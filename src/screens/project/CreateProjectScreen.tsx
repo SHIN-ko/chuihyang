@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,8 @@ import {
   getTypeDescription,
 } from '@/src/data/presetRecipes';
 import { useThemedStyles, useThemeValues } from '@/src/hooks/useThemedStyles';
+import { useCustomRecipeStore } from '@/src/stores/customRecipeStore';
+import { getFruitById, getHerbById, BASE_TYPE_LABELS } from '@/src/data/recipeGuideData';
 
 type RecipeMode = 'preset' | 'custom';
 
@@ -79,6 +81,51 @@ const CreateProjectScreen: React.FC = () => {
   const [customBrandColor, setCustomBrandColor] = useState(BRAND_COLOR_OPTIONS[0]);
 
   const progressAnim = useState(() => new Animated.Value(1 / TOTAL_STEPS))[0];
+
+  // 가이드에서 넘어온 레시피 프리필
+  useEffect(() => {
+    const pending = useCustomRecipeStore.getState().consumePendingRecipe();
+    if (!pending) return;
+
+    setRecipeMode('custom');
+    setCustomRecipeName(pending.name);
+    setSelectedType(pending.baseType);
+    setCustomDuration(String(pending.durationDays));
+    setCustomBrandColor(pending.brandColor);
+
+    const fruitInfo = getFruitById(pending.fruitId);
+    const ingredients = [
+      {
+        id: `ing-fruit-${Date.now()}`,
+        name: fruitInfo?.name || '',
+        quantity: String(pending.fruitAmountG),
+        unit: 'g',
+      },
+      ...pending.herbs.map((h, idx) => {
+        const herbInfo = getHerbById(h.id);
+        return {
+          id: `ing-herb-${idx}-${Date.now()}`,
+          name: herbInfo?.name || '',
+          quantity: String(h.amountG),
+          unit: 'g',
+        };
+      }),
+      {
+        id: `ing-sugar-${Date.now()}`,
+        name: '빙탕',
+        quantity: String(pending.sugarG),
+        unit: 'g',
+      },
+      {
+        id: `ing-base-${Date.now()}`,
+        name: BASE_TYPE_LABELS[pending.baseType],
+        quantity: String(pending.baseAmountMl),
+        unit: 'ml',
+      },
+    ];
+    setCustomIngredients(ingredients);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const styles = useThemedStyles(({ colors, shadows, brandColors }) =>
     StyleSheet.create({
