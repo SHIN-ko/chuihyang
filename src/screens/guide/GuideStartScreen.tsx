@@ -36,7 +36,7 @@ const GuideStartScreen: React.FC = () => {
     if (applyProfile && canApplyProfile && tasteType) {
       params.tasteTypeTitle = tasteType.title;
     }
-    router.push({ pathname: '/guide/question' as never, params });
+    router.push({ pathname: '/guide/question', params });
   };
 
   const styles = useThemedStyles(({ colors, brandColors, shadows }) =>
