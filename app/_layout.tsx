@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Linking } from 'react-native';
 import 'react-native-reanimated';
 
@@ -40,11 +40,27 @@ export {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+// 스플래시 최소 노출 시간 (브랜딩 + 백그라운드 로딩 시간 확보)
+const SPLASH_MIN_DURATION_MS = 2500;
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
   });
+  const { hasCheckedAuth, checkAuthState } = useAuthStore();
+  const [minTimePassed, setMinTimePassed] = useState(false);
+
+  // 인증 상태 확인을 폰트 로딩과 병렬로 시작
+  useEffect(() => {
+    checkAuthState().catch((e) => console.error('앱 초기화 중 인증 상태 확인 실패:', e));
+  }, [checkAuthState]);
+
+  // 스플래시 최소 노출 시간 보장
+  useEffect(() => {
+    const timer = setTimeout(() => setMinTimePassed(true), SPLASH_MIN_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -54,15 +70,17 @@ export default function RootLayout() {
     }
   }, [error]);
 
+  const ready = loaded && hasCheckedAuth && minTimePassed;
+
   useEffect(() => {
-    if (loaded) {
+    if (ready) {
       SplashScreen.hideAsync().catch(() => {
         // 스플래시 스크린 숨기기 실패해도 무시
       });
     }
-  }, [loaded]);
+  }, [ready]);
 
-  if (!loaded) {
+  if (!ready) {
     return null;
   }
 
@@ -72,22 +90,8 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const router = useRouter();
-  const { isAuthenticated, checkAuthState, isLoading } = useAuthStore();
+  const { isAuthenticated, checkAuthState } = useAuthStore();
   const { initializeNotifications } = useNotificationStore();
-
-  useEffect(() => {
-    // 앱 시작 시 인증 상태 확인 (한 번만)
-    const initializeAuth = async () => {
-      try {
-        await checkAuthState();
-      } catch (error) {
-        console.error('앱 초기화 중 인증 상태 확인 실패:', error);
-        // 실패해도 앱은 계속 실행
-      }
-    };
-
-    initializeAuth();
-  }, [checkAuthState]);
 
   useEffect(() => {
     // 사용자가 인증된 경우에만 알림 시스템 초기화
@@ -301,11 +305,6 @@ function RootLayoutNav() {
       subscription?.unsubscribe();
     };
   }, [router, checkAuthState]);
-
-  // 로딩 중에는 null 반환 (스플래시 스크린 유지)
-  if (isLoading) {
-    return null;
-  }
 
   return (
     <CustomThemeProvider>

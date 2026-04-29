@@ -10,6 +10,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasCheckedAuth: boolean;
   hasCompletedOnboarding: boolean;
 
   // Actions
@@ -58,6 +59,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      hasCheckedAuth: false,
       hasCompletedOnboarding: false,
 
       setUser: (user: User | null) => {
@@ -82,7 +84,7 @@ export const useAuthStore = create<AuthState>()(
           // Supabase가 설정되지 않은 경우 로컬 상태만 확인
           if (!isSupabaseConfigured()) {
             console.warn('Supabase가 설정되지 않아 로컬 인증 상태만 확인합니다.');
-            set({ user: null, isAuthenticated: false, isLoading: false });
+            set({ user: null, isAuthenticated: false, isLoading: false, hasCheckedAuth: true });
             return;
           }
 
@@ -95,14 +97,14 @@ export const useAuthStore = create<AuthState>()(
           const user = await Promise.race([authPromise, timeoutPromise]);
 
           if (user) {
-            set({ user: user as User, isAuthenticated: true, isLoading: false });
+            set({ user: user as User, isAuthenticated: true, isLoading: false, hasCheckedAuth: true });
           } else {
-            set({ user: null, isAuthenticated: false, isLoading: false });
+            set({ user: null, isAuthenticated: false, isLoading: false, hasCheckedAuth: true });
           }
         } catch (error) {
           console.error('인증 상태 확인 실패:', error);
           // 인증 실패해도 앱은 계속 실행되도록 처리
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          set({ user: null, isAuthenticated: false, isLoading: false, hasCheckedAuth: true });
         }
       },
 
